@@ -11,10 +11,13 @@ use App\Models\Location;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 class AccessoryCheckoutTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     public function test_checking_out_accessory_requires_correct_permission()
     {
         $this->actingAs(User::factory()->create())
@@ -98,6 +101,7 @@ class AccessoryCheckoutTest extends TestCase
                 'assigned_user' => $user->id,
                 'checkout_to_type' => 'user',
                 'checkout_qty' => 3,
+                ...$this->duplicateAssignmentApproval(),
                 'note' => 'oh hi there',
             ]);
 
@@ -282,6 +286,7 @@ class AccessoryCheckoutTest extends TestCase
                 'checkout_to_type' => 'user',
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 
@@ -313,6 +318,7 @@ class AccessoryCheckoutTest extends TestCase
                 'checkout_to_type' => 'user',
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 

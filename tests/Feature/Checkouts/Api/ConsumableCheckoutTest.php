@@ -8,10 +8,13 @@ use App\Models\Company;
 use App\Models\Consumable;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 class ConsumableCheckoutTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     public function test_checking_out_consumable_requires_correct_permission()
     {
         $this->actingAsForApi(User::factory()->create())
@@ -60,6 +63,7 @@ class ConsumableCheckoutTest extends TestCase
             ->postJson(route('api.consumables.checkout', $consumable), [
                 'assigned_to' => $user->id,
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
             ]);
 
         $this->assertDatabaseHas('action_logs', [

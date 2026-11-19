@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 /**
@@ -47,6 +48,8 @@ use Tests\TestCase;
  */
 class PendingAcceptanceQuantityOnCheckinTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -405,8 +408,9 @@ class PendingAcceptanceQuantityOnCheckinTest extends TestCase
                 'assigned_user' => $user->id,
                 'checkout_to_type' => 'user',
                 'checkout_qty' => $qty,
-            ])
-            ->assertRedirect();
+            ] + $this->duplicateAssignmentApproval())
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
     }
 
     private function checkOutSeat(License $license, User $user): LicenseSeat
@@ -416,7 +420,7 @@ class PendingAcceptanceQuantityOnCheckinTest extends TestCase
         $this->actingAs(User::factory()->superuser()->create())
             ->post(route('licenses.checkout.save', [$license->id, $seat->id]), [
                 'assigned_user' => $user->id,
-            ])
+            ] + $this->duplicateAssignmentApproval())
             ->assertRedirect();
 
         $seat->refresh();

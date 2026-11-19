@@ -11,11 +11,13 @@ use App\Models\Location;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Tests\Concerns\TestsPermissionsRequirement;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\Support\MakesWatsonValidationLoud;
 use Tests\TestCase;
 
 class AccessoryCheckoutTest extends TestCase implements TestsPermissionsRequirement
 {
+    use ApprovesDuplicateAssignments;
     use MakesWatsonValidationLoud;
 
     public function test_requires_permission()
@@ -107,6 +109,7 @@ class AccessoryCheckoutTest extends TestCase implements TestsPermissionsRequirem
                 'assigned_user' => $user->id,
                 'checkout_to_type' => 'user',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
             ])
             ->assertOk()
             ->assertStatusMessageIs('success')

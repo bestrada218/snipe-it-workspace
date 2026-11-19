@@ -10,10 +10,13 @@ use App\Models\User;
 use App\Notifications\AcceptanceItemAcceptedNotification;
 use App\Notifications\AcceptanceItemDeclinedNotification;
 use Illuminate\Support\Facades\Notification;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 class AccessoryAcceptanceTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     public function test_can_accept_accessory_checkout()
     {
         $assignee = User::factory()->create();
@@ -180,6 +183,7 @@ class AccessoryAcceptanceTest extends TestCase
         $this->post(route('accessories.checkout.store', $accessory), [
             'assigned_user' => $assignee->id,
             'checkout_qty' => 3,
+            ...$this->duplicateAssignmentApproval(),
         ]);
 
         $originalAccessoryCheckoutCount = AccessoryCheckout::count();

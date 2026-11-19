@@ -16,11 +16,14 @@ use App\Models\LicenseSeat;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Group;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 #[Group('notifications')]
 class SignInPlaceCheckoutEmailSuppressionTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -72,6 +75,7 @@ class SignInPlaceCheckoutEmailSuppressionTest extends TestCase
                 'assigned_user' => $targetUser->id,
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 
@@ -123,6 +127,7 @@ class SignInPlaceCheckoutEmailSuppressionTest extends TestCase
                 'checkout_to_type' => 'user',
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 

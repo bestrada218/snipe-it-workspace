@@ -9,10 +9,13 @@ use App\Models\Company;
 use App\Models\Consumable;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Tests\Support\ApprovesDuplicateAssignments;
 use Tests\TestCase;
 
 class ConsumableCheckoutTest extends TestCase
 {
+    use ApprovesDuplicateAssignments;
+
     public function test_checking_out_consumable_requires_correct_permission()
     {
         $this->actingAs(User::factory()->create())
@@ -162,6 +165,7 @@ class ConsumableCheckoutTest extends TestCase
                 'assigned_user' => $user->id,
                 'redirect_option' => 'target',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
             ]);
 
         $this->assertDatabaseHas('action_logs', [
@@ -186,6 +190,7 @@ class ConsumableCheckoutTest extends TestCase
                 'assigned_user' => $targetUser->id,
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 
@@ -216,6 +221,7 @@ class ConsumableCheckoutTest extends TestCase
                 'assigned_user' => $targetUser->id,
                 'redirect_option' => 'index',
                 'checkout_qty' => 2,
+                ...$this->duplicateAssignmentApproval(),
                 'sign_in_place' => 1,
             ]);
 
