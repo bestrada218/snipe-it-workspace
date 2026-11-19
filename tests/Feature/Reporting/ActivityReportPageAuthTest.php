@@ -57,7 +57,7 @@ class ActivityReportPageAuthTest extends TestCase
         $this->actingAs(User::factory()->canViewReports()->create())
             ->get(route('reports.activity'))
             ->assertOk()
-            ->assertSee(route('api.activity.index'));
+            ->assertSee(route('api.reports.inventory.activity'));
     }
 
     public function test_scoped_viewer_breadcrumb_does_not_link_to_reports_index()
@@ -114,8 +114,9 @@ class ActivityReportPageAuthTest extends TestCase
             ->putJson(route('profile.activity-report-columns.update'), [
                 'columns' => [['field' => 'unknown', 'width' => 20, 'visible' => true]],
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['columns.0.field', 'columns.0.width']);
+            ->assertOk()
+            ->assertStatusMessageIs('error')
+            ->assertJsonStructure(['messages' => ['columns.0.field', 'columns.0.width']]);
 
         $this->assertNull($user->fresh()->activity_report_columns);
     }
