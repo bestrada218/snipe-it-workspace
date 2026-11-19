@@ -48,6 +48,7 @@ RUN { \
 		echo 'ignore_repeated_source = Off'; \
 		echo 'html_errors = Off'; \
 	} > /usr/local/etc/php/conf.d/error-logging.ini
+COPY docker/php-security.ini /usr/local/etc/php/conf.d/99-security.ini
 
 # Install php extensions inside docker containers easily
 # https://github.com/mlocati/docker-php-extension-installer

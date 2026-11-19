@@ -55,6 +55,8 @@ RUN phpenmod bcmath
 
 RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.3/apache2/php.ini
 RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.3/cli/php.ini
+COPY docker/php-security.ini /etc/php/8.3/apache2/conf.d/99-security.ini
+COPY docker/php-security.ini /etc/php/8.3/cli/conf.d/99-security.ini
 
 RUN useradd -m --uid 10000 --gid 50 docker
 
