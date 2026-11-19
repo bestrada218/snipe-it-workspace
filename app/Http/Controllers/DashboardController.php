@@ -74,10 +74,13 @@ class DashboardController extends Controller
             $counts['consumable'] = (int) Consumable::notArchived()->sum('qty');
             $counts['component'] = (int) Component::notArchived()->sum('qty');
             $counts['user'] = Company::scopeCompanyables(auth()->user())->count();
+            // Components stay out of the grand total, as upstream: they are
+            // parts installed inside assets. Disabled modules do not count.
+            $grandTotalModules = ['assets' => 'asset', 'accessories' => 'accessory', 'licenses' => 'license', 'consumables' => 'consumable'];
             $counts['grand_total'] = 0;
-            foreach (array_keys(Setting::INVENTORY_MODULES) as $module) {
+            foreach ($grandTotalModules as $module => $countKey) {
                 if (Setting::inventoryModuleEnabled($module)) {
-                    $counts['grand_total'] += $counts[str_singular($module)];
+                    $counts['grand_total'] += $counts[$countKey];
                 }
             }
         }
