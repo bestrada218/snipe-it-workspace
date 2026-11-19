@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ url(mix('css/dist/all.css')) }}">
 
     @include('partials.theme-mode-tenant-vars')
+    <link rel="stylesheet" href="{{ url(mix('css/dist/workspace.css')) }}">
 
     <script nonce="{{ csrf_token() }}">
         window.snipeit = {
@@ -48,7 +49,7 @@
 
 </head>
 
-<body class="hold-transition login-page">
+<body class="workspace-ui hold-transition login-page">
 
     @include('partials.impersonation-banner')
 

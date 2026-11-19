@@ -42,7 +42,7 @@
 
 
     @include('partials.theme-mode-tenant-vars')
-    @include('partials.interface-styles')
+    <link rel="stylesheet" href="{{ url(mix('css/dist/workspace.css')) }}">
 
     {{-- Custom CSS --}}
     @if (($snipeSettings) && ($snipeSettings->custom_css))

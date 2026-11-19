@@ -65,6 +65,14 @@ mix
 
 
 /**
+ * Interface styles of the workspace (tokens, navigation,
+ * buttons, login). Loaded after all.css by layouts/default and layouts/basic.
+ */
+mix
+  .combine(["./resources/assets/css/workspace.css"], "public/css/dist/workspace.css")
+  .version();
+
+/**
  * Copy, minify and version signature-pad.css
  */
 mix
