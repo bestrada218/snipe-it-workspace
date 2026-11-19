@@ -3,12 +3,12 @@
 return [
 
     'does_not_exist' => 'La ubicación no existe.',
-    'assoc_users' => 'This location is not currently deletable because it is the location of record for at least one item or user, has assets assigned to it, or is the parent location of another location. Please update your records to no longer reference this location and try again ',
+    'assoc_users' => 'Esta ubicación no se puede eliminar porque es la ubicación registrada de al menos un elemento o persona, tiene activos asignados o es la ubicación superior de otra. Actualice sus registros para que ya no hagan referencia a esta ubicación e inténtelo de nuevo',
     'assoc_assets' => 'Esta ubicación está actualmente asociada con al menos un activo y no puede ser eliminada. Por favor actualice sus activos para que ya no hagan referencia a esta ubicación e inténtelo de nuevo. ',
     'assoc_child_loc' => 'Esta ubicación es actualmente el padre de al menos una ubicación hija y no puede ser eliminada.   Por favor actualice sus ubicaciones para que ya no hagan referencia a esta ubicación e inténtelo de nuevo. ',
     'assigned_assets' => 'Activos asignados',
     'current_location' => 'Ubicación actual',
-    'deleted_warning' => 'This location has been deleted. Please restore it before attempting to make any changes.',
+    'deleted_warning' => 'Esta ubicación fue eliminada. Restáurela antes de hacer cambios.',
 
     'create' => [
         'error' => 'La ubicación no pudo ser creada, por favor, inténtelo de nuevo.',
@@ -33,13 +33,13 @@ return [
 
     'bulkedit' => [
         'error' => 'Ningún cambio fue cambiado, así que nada se actualizó.',
-        'success' => 'Location successfully updated.|:count locations successfully updated.',
-        'warn' => 'Edit the fields below to update this location. Fields you leave blank will not change on the location.|Edit the fields below to update all :count selected locations. Fields you leave blank will not change on any of them.',
-        'show_selected' => '1 selected location|:count selected locations',
-        'company_scope_mismatch_partial' => 'The company was not changed on 1 location because items or users at that location belong to different companies. Update or move those first.|The company was not changed on :count locations because items or users at those locations belong to different companies. Update or move those first.',
-        'company_scope_mismatch_all' => 'No locations were reassigned. The requested company does not match items or users at the selected location.|No locations were reassigned. The requested company does not match items or users at any of the :count selected locations.',
-        'parent_company_mismatch_partial' => 'The parent or company was not changed on 1 location because it would leave the location in a different company than its parent.|The parent or company was not changed on :count locations because it would leave those locations in a different company than their parent.',
-        'parent_company_mismatch_all' => 'No changes were saved. The requested parent or company would leave the location in a different company than its parent.|No changes were saved. The requested parent or company would leave every one of the :count selected locations in a different company than their parent.',
+        'success' => 'Ubicación actualizada correctamente.|Se actualizaron :count ubicaciones correctamente.',
+        'warn' => 'Edite los campos de abajo para actualizar esta ubicación. Los campos que deje en blanco no cambian.|Edite los campos de abajo para actualizar las :count ubicaciones seleccionadas. Los campos que deje en blanco no cambian en ninguna.',
+        'show_selected' => '1 ubicación seleccionada|:count ubicaciones seleccionadas',
+        'company_scope_mismatch_partial' => 'No se cambió la compañía de 1 ubicación porque tiene elementos o personas de otras compañías. Actualícelos o muévalos primero.|No se cambió la compañía de :count ubicaciones porque tienen elementos o personas de otras compañías. Actualícelos o muévalos primero.',
+        'company_scope_mismatch_all' => 'No se reasignó ninguna ubicación. La compañía indicada no coincide con los elementos o personas de la ubicación seleccionada.|No se reasignó ninguna ubicación. La compañía indicada no coincide con los elementos o personas de ninguna de las :count ubicaciones seleccionadas.',
+        'parent_company_mismatch_partial' => 'No se cambió la ubicación superior o la compañía de 1 ubicación porque quedaría en una compañía distinta a la de su ubicación superior.|No se cambió la ubicación superior o la compañía de :count ubicaciones porque quedarían en una compañía distinta a la de su ubicación superior.',
+        'parent_company_mismatch_all' => 'No se guardó ningún cambio. La ubicación superior o la compañía indicada dejaría la ubicación en una compañía distinta a la de su ubicación superior.|No se guardó ningún cambio. La ubicación superior o la compañía indicada dejaría cada una de las :count ubicaciones seleccionadas en una compañía distinta a la de su ubicación superior.',
     ],
 
 ];

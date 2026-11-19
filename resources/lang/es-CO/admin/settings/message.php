@@ -13,14 +13,14 @@ return [
         'file_not_found' => 'Ese archivo de copia de seguridad no se pudo encontrar en el servidor.',
         'restore_warning' => 'Sí, restaurarlo. Reconozco que esto sobrescribirá cualquier dato existente actualmente en la base de datos. Esto también cerrará la sesión de todos sus usuarios existentes (incluido usted).',
         'restore_confirm' => '¿Está seguro que desea restaurar su base de datos desde :filename?',
-        'delete_disabled_help' => 'Deleting backups is disabled. Contact your administrator if you wish to enable deleting backups.',
+        'delete_disabled_help' => 'La eliminación de copias de seguridad está deshabilitada. Contacte a su administrador si quiere habilitarla.',
     ],
     'restore' => [
         'success' => 'Se ha restaurado la copia de seguridad de su sistema. Por favor, vuelva a iniciar sesión.',
-        'archive_invalid' => 'The selected backup file (:filename) is not a valid zip archive. Restore aborted before touching the database.',
-        'zip_extension_missing' => 'PHP zip extension is not loaded on this server. Cannot validate the backup archive, and restore has been aborted to prevent data loss. Ask your server administrator to install ext-zip.',
-        'pre_backup_failed' => 'Could not create a pre-restore safety backup. Restore aborted so that the existing database is not destroyed without a recovery path.',
-        'failed_with_backup' => 'Restore failed. The pre-existing database was wiped as part of the restore attempt, but a pre-restore backup was saved to :backup and can be used to recover.',
+        'archive_invalid' => 'La copia de seguridad seleccionada (:filename) no es un archivo zip válido. La restauración se canceló antes de tocar la base de datos.',
+        'zip_extension_missing' => 'La extensión zip de PHP no está cargada en este servidor. No se puede validar la copia de seguridad y la restauración se canceló para evitar pérdida de datos. Pida a su administrador de servidores que instale ext-zip.',
+        'pre_backup_failed' => 'No se pudo crear la copia de seguridad previa a la restauración. La restauración se canceló para no borrar la base de datos actual sin forma de recuperarla.',
+        'failed_with_backup' => 'La restauración falló. La base de datos anterior se borró durante el intento, pero se guardó una copia previa en :backup que puede usar para recuperarla.',
     ],
     'purge' => [
         'error' => 'Ha ocurrido un error mientras se realizaba el purgado. ',
@@ -59,7 +59,7 @@ return [
     ],
     'location_scoping' => [
         'not_saved' => 'Tus ajustes no han sido guardados.',
-        'mismatch' => 'There is 1 item in the database that need your attention before you can enable location scoping.|There are :count items in the database that need your attention before you can enable location scoping.',
+        'mismatch' => 'Hay 1 elemento en la base de datos que requiere su atención antes de activar el alcance por ubicación.|Hay :count elementos en la base de datos que requieren su atención antes de activar el alcance por ubicación.',
     ],
     'oauth' => [
         'token_revoked' => 'Token de acceso personal revocado con éxito.',

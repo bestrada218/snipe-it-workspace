@@ -129,6 +129,7 @@
                             year: 'numeric',
                         },
                         headerToolbar: false,
+                        noEventsText: @json(trans('general.calendar_no_events')),
                         direction: '{{ \App\Helpers\Helper::determineLanguageDirection() }}',
                         locale: '{{ str_replace('_', '-', app()->getLocale()) }}',
                         urlState: false,

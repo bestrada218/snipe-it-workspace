@@ -32,8 +32,8 @@ return [
         ],
 
         'checkin_selected' => [
-            'success' => ':count seat checked in successfully. | :count seats checked in successfully.',
-            'no_seats_selected' => 'No seats were selected.',
+            'success' => 'Se ingresó :count puesto correctamente. | Se ingresaron :count puestos correctamente.',
+            'no_seats_selected' => 'No se seleccionó ningún puesto.',
         ],
 
         'checkout_all' => [
@@ -50,8 +50,8 @@ return [
         ],
 
         'delete_with_checkin' => [
-            'label' => 'Check in seats and delete',
-            'log_msg' => 'Checked in via bulk delete-with-checkin in license index',
+            'label' => 'Ingresar los puestos y eliminar',
+            'log_msg' => 'Ingresado al eliminar en lote con ingreso desde el listado de licencias',
         ],
     ],
 

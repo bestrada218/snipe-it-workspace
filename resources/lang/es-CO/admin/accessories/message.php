@@ -42,28 +42,28 @@ return [
     ],
 
     'restore' => [
-        'error' => 'Accessory was not restored, please try again',
-        'success' => 'Accessory restored successfully.',
+        'error' => 'El accesorio no se restauró, inténtelo de nuevo',
+        'success' => 'Accesorio restaurado correctamente.',
     ],
 
     'bulk' => [
-        'no_accessories_selected' => 'No accessories were selected.',
-        'no_action_selected' => 'Please pick an action from the dropdown.',
+        'no_accessories_selected' => 'No se seleccionó ningún accesorio.',
+        'no_action_selected' => 'Elija una acción en el menú desplegable.',
         'no_fields_updated' => 'Ningún cambio fue cambiado, así que nada se actualizó.',
-        'skipped_unauthorized' => ':count accessory(s) were skipped because you do not have permission to update them.',
+        'skipped_unauthorized' => 'Se omitieron :count accesorio(s) porque no tiene permiso para actualizarlos.',
 
         'update' => [
-            'success' => ':count accessory was updated.|:count accessories were updated.',
-            'none_updated' => 'The selected accessory could not be updated. See errors below for details.|None of the selected accessories could be updated. See errors below for details.',
+            'success' => 'Se actualizó :count accesorio.|Se actualizaron :count accesorios.',
+            'none_updated' => 'No se pudo actualizar el accesorio seleccionado. Vea los errores de abajo.|No se pudo actualizar ninguno de los accesorios seleccionados. Vea los errores de abajo.',
         ],
 
         'restore' => [
-            'success' => ':count accessory was restored.|:count accessories were restored.',
+            'success' => 'Se restauró :count accesorio.|Se restauraron :count accesorios.',
         ],
 
         'checkin_selected' => [
-            'no_rows_selected' => 'No checked-out accessories were selected.',
-            'success' => ':count accessory checkout was returned.|:count accessory checkouts were returned.',
+            'no_rows_selected' => 'No se seleccionó ningún accesorio asignado.',
+            'success' => 'Se ingresó :count asignación de accesorio.|Se ingresaron :count asignaciones de accesorios.',
         ],
     ],
 ];

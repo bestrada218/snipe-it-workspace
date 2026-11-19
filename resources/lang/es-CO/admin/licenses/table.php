@@ -11,7 +11,7 @@ return [
     'purchase_date' => 'Fecha de compra',
     'purchased' => 'Comprado',
     'seats' => 'Total de licencias',
-    'hardware' => 'Hardware',
+    'hardware' => 'Equipos',
     'serial' => 'Número de serie',
     'title' => 'Licencia',
 

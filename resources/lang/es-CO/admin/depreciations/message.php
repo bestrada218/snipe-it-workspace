@@ -19,8 +19,8 @@ return [
         'confirm' => '¿Está seguro de que desea eliminar esta clase de depreciación?',
         'error' => 'Ha sucedido un error eliminando el tipo de depreciación, por favor intente de nuevo.',
         'success' => 'La clase de depreciación fue eliminada con éxito.',
-        'bulk_success' => 'Depreciation class deleted successfully.|:count depreciation classes were deleted successfully.',
-        'partial_success' => 'Depreciation class deleted successfully. See additional information below.|:count depreciation classes were deleted successfully. See additional information below.',
+        'bulk_success' => 'Clase de depreciación eliminada correctamente.|Se eliminaron :count clases de depreciación correctamente.',
+        'partial_success' => 'Clase de depreciación eliminada correctamente. Vea la información adicional abajo.|Se eliminaron :count clases de depreciación correctamente. Vea la información adicional abajo.',
     ],
 
 ];

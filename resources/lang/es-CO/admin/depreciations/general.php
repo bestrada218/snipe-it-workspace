@@ -7,15 +7,15 @@ return [
     'create' => 'Crear depreciación',
     'depreciation_name' => 'Nombre de depreciación',
     'number_of_months' => 'Número de meses',
-    'rate_multiplier' => 'Rate Multiplier',
+    'rate_multiplier' => 'Multiplicador de tasa',
     'update' => 'Actualizar depreciación',
-    'fiscal_year_start_month' => 'Fiscal Year Start Month',
+    'fiscal_year_start_month' => 'Mes de inicio del año fiscal',
     'no_depreciations_warning' => '<strong>Advertencia: </strong>
                       No tiene ninguna depreciación configurada.
                       Por favor, configure al menos una depreciación para ver el informe de depreciación.',
     'depreciation_method' => 'Informe de depreciación',
     'linear_depreciation' => 'Lineal (por defecto)',
-    'diminishing_depreciation' => 'Diminishing Value Depreciation',
+    'diminishing_depreciation' => 'Depreciación de saldo decreciente',
     'half_1' => 'Convención de medio año, siempre aplicada',
     'half_2' => 'Convención semestral, aplicada con condición',
 ];

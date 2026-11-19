@@ -14,8 +14,8 @@ return [
         'confirm' => '¿Está seguro que desea eliminar este tipo de mantenimiento?',
         'error' => 'Hubo un problema al eliminar este tipo de mantenimiento. Por favor, inténtelo de nuevo.',
         'success' => 'El tipo de mantenimiento se ha eliminado correctamente.',
-        'bulk_success' => 'Maintenance type deleted successfully.|:count maintenance types were deleted successfully.',
-        'partial_success' => 'Maintenance type deleted successfully. See additional information below. | :count maintenance types were deleted successfully. See additional information below.',
+        'bulk_success' => 'Tipo de mantenimiento eliminado correctamente.|Se eliminaron :count tipos de mantenimiento correctamente.',
+        'partial_success' => 'Tipo de mantenimiento eliminado correctamente. Vea la información adicional abajo. | Se eliminaron :count tipos de mantenimiento correctamente. Vea la información adicional abajo.',
     ],
     'complete' => [
         'success' => 'Mantenimiento marcado como completo.',

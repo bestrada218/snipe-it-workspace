@@ -20,8 +20,8 @@ return [
         'confirm' => '¿Está seguro de que desea eliminar esta etiqueta de estado?',
         'error' => 'Hubo un problema borrando la etiqueta de estado. Por favor, inténtelo de nuevo.',
         'success' => 'La etiqueta de estado fue eliminada de forma exitosa.',
-        'bulk_success' => 'Status Label deleted successfully.|:count status labels were deleted successfully.',
-        'partial_success' => 'Status Label deleted successfully. See additional information below. | :count status labels were deleted successfully. See additional information below.',
+        'bulk_success' => 'Etiqueta de estado eliminada correctamente.|Se eliminaron :count etiquetas de estado correctamente.',
+        'partial_success' => 'Etiqueta de estado eliminada correctamente. Vea la información adicional abajo. | Se eliminaron :count etiquetas de estado correctamente. Vea la información adicional abajo.',
     ],
 
     'help' => [

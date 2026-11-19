@@ -17,11 +17,11 @@ return [
     'name' => 'Nombre de la categoría',
     'require_acceptance' => 'Requerir a los usuarios que confirmen la aceptación de los elementos en esta categoría.',
     'required_acceptance' => 'Este usuario recibirá un correo electrónico con un enlace para confirmar la aceptación de este elemento.',
-    'global_signature_required_notice' => 'The global "Require Signature" setting is on. Signatures only apply when this category also has "Require acceptance" turned on: enable both to require users to sign when accepting items from this category.',
+    'global_signature_required_notice' => 'La opción global «Requerir firma» está activa. Las firmas solo aplican cuando esta categoría también tiene activado «Requerir aceptación»: active ambas para exigir firma al aceptar elementos de esta categoría.',
     'required_eula' => 'Se enviará un correo electrónico a este usuario con una copia del acuerdo de uso',
-    'required_acceptance_component' => 'If the target asset is currently assigned to a user, that user will be emailed with a link to confirm acceptance of this component.',
-    'required_eula_component' => 'If the target asset is currently assigned to a user, that user will be emailed a copy of the EULA.',
-    'required_signature' => 'This user will be required to sign to confirm acceptance of this item.',
+    'required_acceptance_component' => 'Si el activo destino está asignado a una persona, se le enviará un correo con un enlace para confirmar la aceptación de este componente.',
+    'required_eula_component' => 'Si el activo destino está asignado a una persona, se le enviará una copia del EULA por correo.',
+    'required_signature' => 'Esta persona deberá firmar para confirmar que acepta este elemento.',
     'no_default_eula' => 'No se encontró una definición del acuerdo de uso por defecto. Agregue uno en Configuración.',
     'update' => 'Actualizar categoría',
     'use_default_eula' => 'En su lugar, utilice el <a href="#" data-toggle="modal" data-target="#eulaModal">acuerdo de uso predeterminado</a>.',
@@ -31,6 +31,6 @@ return [
     'import_checkin_email' => 'Enviar email de devolución',
     'import_eula_text' => 'Texto del EULA',
     'import_category_type' => 'Tipo de categoría',
-    'import_alert_on_response' => 'Alert on Response',
+    'import_alert_on_response' => 'Alertar al responder',
 
 ];

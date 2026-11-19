@@ -909,4 +909,13 @@ return [
     'token_unrevoked' => 'API token reinstated',
     'token_revoked' => 'API token revoked',
 
+    'page_not_found_title' => '404 Page not found.',
+    'page_not_found_body' => 'We could not find the page you were looking for. You can <a href=":link">return to the dashboard</a>.',
+    'forbidden_title' => '403 Forbidden.',
+    'calendar_no_events' => 'No events to display',
+    'calendar_button_today' => 'Today',
+    'calendar_button_month' => 'Month',
+    'calendar_button_week' => 'Week',
+    'calendar_button_day' => 'Day',
+    'calendar_button_list' => 'List',
 ];

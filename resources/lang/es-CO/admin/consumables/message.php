@@ -19,8 +19,8 @@ return [
         'confirm' => '¿Está seguro de que desea eliminar este consumible?',
         'error' => 'Hubo un problema al eliminar el consumible. Por favor inténtelo de nuevo.',
         'success' => 'El consumible ha sido eliminado correctamente.',
-        'bulk_success' => 'Consumable deleted successfully.|:count consumables were deleted successfully.',
-        'partial_success' => ':count consumable was deleted successfully, but others could not be deleted. See below for details.|:count consumables were deleted successfully, but others could not be deleted. See below for details.',
+        'bulk_success' => 'Consumible eliminado correctamente.|Se eliminaron :count consumibles correctamente.',
+        'partial_success' => 'Se eliminó :count consumible correctamente, pero otros no se pudieron eliminar. Vea los detalles abajo.|Se eliminaron :count consumibles correctamente, pero otros no se pudieron eliminar. Vea los detalles abajo.',
     ],
 
     'checkout' => [
@@ -31,11 +31,11 @@ return [
     ],
 
     'consumed' => [
-        'success' => 'Distribution marked as consumed.',
-        'bulk_success' => ':count distribution was marked as consumed.|:count distributions were marked as consumed.',
-        'already' => 'That distribution was already marked as consumed.',
-        'error' => 'Could not mark the distribution as consumed, please try again.',
-        'no_rows_selected' => 'No valid distributions were selected.',
+        'success' => 'Entrega marcada como consumida.',
+        'bulk_success' => 'Se marcó :count entrega como consumida.|Se marcaron :count entregas como consumidas.',
+        'already' => 'Esa entrega ya estaba marcada como consumida.',
+        'error' => 'No se pudo marcar la entrega como consumida, inténtelo de nuevo.',
+        'no_rows_selected' => 'No se seleccionó ninguna entrega válida.',
     ],
 
     'checkin' => [
@@ -45,23 +45,23 @@ return [
     ],
 
     'restore' => [
-        'error' => 'Consumable was not restored, please try again',
-        'success' => 'Consumable restored successfully.',
+        'error' => 'El consumible no se restauró, inténtelo de nuevo',
+        'success' => 'Consumible restaurado correctamente.',
     ],
 
     'bulk' => [
-        'no_consumables_selected' => 'No consumables were selected.',
-        'no_action_selected' => 'Please pick an action from the dropdown.',
+        'no_consumables_selected' => 'No se seleccionó ningún consumible.',
+        'no_action_selected' => 'Elija una acción en el menú desplegable.',
         'no_fields_updated' => 'Ningún cambio fue cambiado, así que nada se actualizó.',
-        'skipped_unauthorized' => ':count consumable(s) were skipped because you do not have permission to update them.',
+        'skipped_unauthorized' => 'Se omitieron :count consumible(s) porque no tiene permiso para actualizarlos.',
 
         'update' => [
-            'success' => ':count consumable was updated.|:count consumables were updated.',
-            'none_updated' => 'The selected consumable could not be updated. See errors below for details.|None of the selected consumables could be updated. See errors below for details.',
+            'success' => 'Se actualizó :count consumible.|Se actualizaron :count consumibles.',
+            'none_updated' => 'No se pudo actualizar el consumible seleccionado. Vea los errores de abajo.|No se pudo actualizar ninguno de los consumibles seleccionados. Vea los errores de abajo.',
         ],
 
         'restore' => [
-            'success' => ':count consumable was restored.|:count consumables were restored.',
+            'success' => 'Se restauró :count consumible.|Se restauraron :count consumibles.',
         ],
     ],
 ];

@@ -18,10 +18,9 @@
     <div style="padding-top: 200px">
       <img src="{{ config('app.url') }}/img/sad-panda.png" style="width: 200px; height: 200px;" class="pull-left" alt="Sad Panda cartoon" />
             <div class="error-content">
-              <h2><x-icon type="warning" class="text-yellow" /> 404 Page not found.</h2>
+              <h2><x-icon type="warning" class="text-yellow" /> {{ trans('general.page_not_found_title') }}</h2>
               <p>
-                Sad panda. We could not find the page you were looking for.
-                You should maybe <a href="{{ config('app.url') }}">return to the dashboard</a>.
+                {!! trans('general.page_not_found_body', ['link' => config('app.url')]) !!}
               </p>
 
     </div>

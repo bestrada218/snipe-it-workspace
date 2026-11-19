@@ -41,6 +41,10 @@ return [
             'success' => 'Grupo de campos actualizado correctamente.',
         ],
 
+        'clone' => [
+            'success' => 'Grupo de campos clonado correctamente.',
+        ],
+
         'delete' => [
             'confirm' => '¿Está seguro de que quiere eliminar este grupo de campos?',
             'error' => 'Hubo un problema al eliminar el grupo de campos. Inténtelo de nuevo.',

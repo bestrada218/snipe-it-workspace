@@ -17,11 +17,11 @@ return [
 
     'superuser' => [
         'name' => 'Super Usuario',
-        'note' => 'Determines whether the user has full access to all aspects of the admin. This setting overrides ALL more specific and restrictive permissions throughout the system. ',
+        'note' => 'Determina si la persona tiene acceso completo a todo el sistema. Esta opción anula TODOS los permisos más específicos y restrictivos del sistema.',
     ],
     'admin' => [
         'name' => 'Acceso de administrador',
-        'note' => 'Determines whether the user has access to most aspects of the system EXCEPT the System Admin Settings. These users will be able to manage users, locations, categories, etc, but ARE constrained by Full Multiple Company Support if it is enabled.',
+        'note' => 'Determina si la persona tiene acceso a casi todo el sistema EXCEPTO la configuración de administración. Puede gestionar personas, ubicaciones, categorías, etc., pero SÍ queda limitada por el soporte completo para múltiples compañías si está activo.',
     ],
 
     'import' => [
@@ -31,7 +31,7 @@ return [
 
     'reports' => [
         'name' => 'Acceso a Informes',
-        'note' => 'Determines whether the user has access to the Reports section of the application.',
+        'note' => 'Determina si la persona tiene acceso a la sección de informes.',
     ],
 
     'assets' => [
@@ -41,7 +41,7 @@ return [
 
     'assetsview' => [
         'name' => 'Ver activos',
-        'note' => 'Note that users with this permission will also be able to see (not modify or delete) files uploaded to the asset model as well. This is to make it easier to share common documents like user manuals across assets without having to upload them to every asset, and to avoid having to grant the user permission to modify asset files. Users with this permission will also be able to view edit and checkin history.',
+        'note' => 'Las personas con este permiso también podrán ver (sin modificar ni eliminar) los archivos cargados en el modelo del activo. Así se comparten documentos comunes, como manuales, sin cargarlos en cada activo y sin dar permiso para modificar archivos de activos. También podrán ver el historial de ediciones e ingresos.',
     ],
 
     'assetscreate' => [
@@ -57,33 +57,33 @@ return [
     ],
 
     'assetscheckin' => [
-        'name' => 'Check In',
-        'note' => 'Check assets back into inventory that are currently checked out.',
+        'name' => 'Ingresar',
+        'note' => 'Ingresar al inventario activos que están asignados.',
     ],
 
     'assetscheckout' => [
-        'name' => 'Check Out',
-        'note' => 'Assign assets in inventory by checking them out.',
+        'name' => 'Asignar',
+        'note' => 'Asignar activos del inventario.',
     ],
 
     'assetsaudit' => [
         'name' => 'Auditar Activos',
-        'note' => 'Allows the user to mark an asset as physically inventoried.',
+        'note' => 'Permite marcar un activo como inventariado físicamente.',
     ],
 
     'assetsviewrequestable' => [
-        'name' => 'View Requestable Items',
-        'note' => 'Allows the user to view items that are marked as requestable.',
+        'name' => 'Ver elementos solicitables',
+        'note' => 'Permite ver los elementos marcados como solicitables.',
     ],
 
     'assetsviewencrypted-custom-fields' => [
         'name' => 'Ver Campos Personalizados Encriptados',
-        'note' => 'Allows the user to view and modify encrypted custom fields on assets.',
+        'note' => 'Permite ver y modificar los campos personalizados cifrados de los activos.',
     ],
 
     'accessories' => [
         'name' => 'Accesorios',
-        'note' => 'Grants access to the Accessories section of the application.',
+        'note' => 'Da acceso a la sección de accesorios.',
     ],
 
     'accessoriesview' => [
@@ -99,46 +99,46 @@ return [
         'name' => 'Eliminar Accesorios',
     ],
     'accessoriescheckout' => [
-        'name' => 'Check Out Accessories',
-        'note' => 'Assign accessories in inventory by checking them out.',
+        'name' => 'Asignar accesorios',
+        'note' => 'Asignar accesorios del inventario.',
     ],
     'accessoriescheckin' => [
-        'name' => 'Check In Accessories',
-        'note' => 'Check accessories back into inventory that are currently checked out.',
+        'name' => 'Ingresar accesorios',
+        'note' => 'Ingresar al inventario accesorios que están asignados.',
     ],
     'accessoriesfiles' => [
         'name' => 'Ges',
-        'note' => 'Allows the user to upload, download, and delete files associated with accessories. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de accesorios. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'assetsfiles' => [
         'name' => 'Gestionar Archivos de Activos',
-        'note' => 'Allows the user to upload, download, and delete files associated with assets. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de activos. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'usersfiles' => [
         'name' => 'Administrar archivos de usuario',
-        'note' => 'Allows the user to upload, download, and delete files associated with users. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de personas. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'modelsfiles' => [
         'name' => 'Gestionar Archivos de Modelos',
-        'note' => 'Allows the user to upload, download, and delete files associated with asset models on both the model view and the asset view screens. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de modelos de activo, tanto en la vista del modelo como en la del activo. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'departmentsfiles' => [
         'name' => 'Gestionar Ficheros del Departamento',
-        'note' => 'Allows the user to upload, download, and delete files associated with departments. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de departamentos. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'suppliersfiles' => [
         'name' => 'Gestionar Ficheros del Proveedor',
-        'note' => 'Allows the user to upload, download, and delete files associated with suppliers. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de proveedores. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'locationsfiles' => [
         'name' => 'Gestionar Archivos de Ubicaciones',
-        'note' => 'Allows the user to upload, download, and delete files associated with locations.(This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de ubicaciones. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'companiesfiles' => [
@@ -148,12 +148,12 @@ return [
 
     'consumablesfiles' => [
         'name' => 'Gestionar Ficheros de los Consumibles',
-        'note' => 'Allows the user to upload, download, and delete files associated with consumables. (This only makes sense with view privileges or higher.)',
+        'note' => 'Permite cargar, descargar y eliminar archivos de consumibles. (Solo tiene sentido con permiso de ver o superior).',
     ],
 
     'consumables' => [
         'name' => 'Consumibles',
-        'note' => 'Grants access to the Consumables section of the application.',
+        'note' => 'Da acceso a la sección de consumibles.',
     ],
     'consumablesview' => [
         'name' => 'Ver Comsumibles',
@@ -168,13 +168,13 @@ return [
         'name' => 'Eliminar Consumibles',
     ],
     'consumablescheckout' => [
-        'name' => 'Check Out Consumables',
-        'note' => 'Assign consumables in inventory by checking them out.',
+        'name' => 'Asignar consumibles',
+        'note' => 'Asignar consumibles del inventario.',
     ],
 
     'licenses' => [
         'name' => 'Licencias',
-        'note' => 'Grants access to the Licenses section of the application.',
+        'note' => 'Da acceso a la sección de licencias.',
     ],
     'licensesview' => [
         'name' => 'Ver licencias',
@@ -202,16 +202,16 @@ return [
     ],
     'componentsfiles' => [
         'name' => 'Gestionar Ficheros de Componentes',
-        'note' => 'Allows the user to upload, download, and delete files associated with components.',
+        'note' => 'Permite cargar, descargar y eliminar archivos de componentes.',
     ],
 
     'licenseskeys' => [
         'name' => 'Administrar claves de licencia',
-        'note' => 'Allows the user to view product keys associated with licenses.',
+        'note' => 'Permite ver las claves de producto de las licencias.',
     ],
     'components' => [
         'name' => 'Componentes',
-        'note' => 'Grants access to the Components section of the application.',
+        'note' => 'Da acceso a la sección de componentes.',
     ],
     'componentsview' => [
         'name' => 'Ver componentes',
@@ -227,16 +227,16 @@ return [
     ],
 
     'componentscheckout' => [
-        'name' => 'Check Out Components',
-        'note' => 'Assign components in inventory by checking them out.',
+        'name' => 'Asignar componentes',
+        'note' => 'Asignar componentes del inventario.',
     ],
     'componentscheckin' => [
-        'name' => 'Check In Components',
-        'note' => 'Check components back into inventory that are currently checked out.',
+        'name' => 'Ingresar componentes',
+        'note' => 'Ingresar al inventario componentes que están asignados.',
     ],
     'kits' => [
         'name' => 'Kits predefinidos',
-        'note' => 'Grants access to the Predefined Kits section of the application.',
+        'note' => 'Da acceso a la sección de kits predefinidos.',
     ],
     'kitsview' => [
         'name' => 'Ver Kits Predefinidos',
@@ -252,11 +252,11 @@ return [
     ],
     'users' => [
         'name' => 'Usuarios',
-        'note' => 'Grants access to the Users section of the application.',
+        'note' => 'Da acceso a la sección de personas.',
     ],
     'usersview' => [
         'name' => 'Ver usuarios',
-        'note' => 'Note that users with this permission will also be able to see (not modify or delete) files uploaded to the user as well. Users with this permission will also be able to view edit and checkin history.',
+        'note' => 'Las personas con este permiso también podrán ver (sin modificar ni eliminar) los archivos cargados a la persona, y el historial de ediciones e ingresos.',
     ],
     'userscreate' => [
         'name' => 'Crear Nuevos Usuarios',
@@ -318,7 +318,7 @@ return [
     ],
     'locations' => [
         'name' => 'Ubicaciones',
-        'note' => 'Grants access to the Locations section of the application.',
+        'note' => 'Da acceso a la sección de ubicaciones.',
     ],
     'locationsview' => [
         'name' => 'Ver Ubicaciones',
@@ -334,16 +334,16 @@ return [
     ],
     'status-labels' => [
         'name' => 'Etiquetas de estado',
-        'note' => 'Grants access to the Status Labels section of the application used by Assets.',
+        'note' => 'Da acceso a la sección de etiquetas de estado de los activos.',
     ],
     'statuslabelsview' => [
-        'name' => 'View Status Labels',
+        'name' => 'Ver etiquetas de estado',
     ],
     'statuslabelscreate' => [
-        'name' => 'Create New Status Labels',
+        'name' => 'Crear etiquetas de estado',
     ],
     'statuslabelsedit' => [
-        'name' => 'Edit Status Labels',
+        'name' => 'Editar etiquetas de estado',
     ],
     'statuslabelsdelete' => [
         'name' => 'Eliminar Etiquetas de Estado',
@@ -382,7 +382,7 @@ return [
     ],
     'manufacturers' => [
         'name' => 'Fabricantes',
-        'note' => 'Grants access to the Manufacturers section of the application.',
+        'note' => 'Da acceso a la sección de fabricantes.',
     ],
     'manufacturersview' => [
         'name' => 'Ver Fabricantes',
@@ -398,7 +398,7 @@ return [
     ],
     'companies' => [
         'name' => 'Compañías',
-        'note' => 'Grants access to the Companies section of the application.',
+        'note' => 'Da acceso a la sección de compañías.',
     ],
     'companiesview' => [
         'name' => 'Ver empresas',
@@ -414,7 +414,7 @@ return [
     ],
     'user-self-accounts' => [
         'name' => 'Cuentas propias del usuario',
-        'note' => 'Grants non-admin users the ability to manage certain aspects of their own user accounts.',
+        'note' => 'Permite a personas que no son administradoras gestionar algunos aspectos de su propia cuenta.',
     ],
     'selftwo-factor' => [
         'name' => 'Administrar Autenticación de dos Factores',
@@ -429,37 +429,37 @@ return [
         'note' => 'Permite a los usuarios editar la ubicación asociada con su propia cuenta de usuario.',
     ],
     'selfcheckout-assets' => [
-        'name' => 'Self Check Out Assets',
-        'note' => 'Allows users to check out assets to themselves without admin intervention.',
+        'name' => 'Autoasignarse activos',
+        'note' => 'Permite que las personas se asignen activos a sí mismas sin intervención de un administrador.',
     ],
     'selfview-purchase-cost' => [
         'name' => 'Ver Coste de Compra',
-        'note' => 'Allows users to view the purchase cost of items in their account view.',
+        'note' => 'Permite ver el costo de compra de los elementos en la vista de su cuenta.',
     ],
 
     'depreciations' => [
-        'name' => 'Depreciation Management',
-        'note' => 'Allows users to manage and view asset depreciation details.',
+        'name' => 'Gestión de depreciación',
+        'note' => 'Permite gestionar y ver los detalles de depreciación de los activos.',
     ],
     'depreciationsview' => [
-        'name' => 'View Depreciation Details',
+        'name' => 'Ver detalles de depreciación',
     ],
     'depreciationsedit' => [
-        'name' => 'Edit Depreciation Settings',
+        'name' => 'Editar configuración de depreciación',
     ],
     'depreciationsdelete' => [
-        'name' => 'Delete Depreciation Records',
+        'name' => 'Eliminar registros de depreciación',
     ],
     'depreciationscreate' => [
-        'name' => 'Create Depreciation Records',
+        'name' => 'Crear registros de depreciación',
     ],
 
     'grant_all' => 'Permitir todos los permisos para :area',
-    'deny_all' => 'Deny all permissions for :area',
+    'deny_all' => 'Negar todos los permisos de :area',
     'inherit_all' => 'Heredar todos los permisos del :area de grupos de permisos',
     'grant' => 'Otorgar permiso para :area',
     'deny' => 'Denegar permiso para :area',
     'inherit' => 'Heredar permiso para :area de los grupos de permisos',
-    'use_groups' => 'We strongly suggest using Permission Groups instead of assigning individual permissions for easier management.',
+    'use_groups' => 'Recomendamos usar grupos de permisos en lugar de asignar permisos individuales, para que sea más fácil de gestionar.',
 
 ];

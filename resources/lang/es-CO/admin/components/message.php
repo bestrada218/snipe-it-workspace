@@ -15,15 +15,15 @@ return [
     ],
 
     'restore' => [
-        'error' => 'Component was not restored, please try again',
-        'success' => 'Component restored successfully.',
+        'error' => 'El componente no se restauró, inténtelo de nuevo',
+        'success' => 'Componente restaurado correctamente.',
     ],
 
     'delete' => [
         'confirm' => '¿Está seguro de que desea eliminar este componente?',
         'error' => 'Hubo un problema eliminando el componente. Por favor, inténtelo de nuevo.',
         'success' => 'El componente fue borrado correctamente.',
-        'error_qty' => 'Some components of this type are still checked out. Please check them in and try again.',
+        'error_qty' => 'Todavía hay componentes de este tipo asignados. Ingréselos e inténtelo de nuevo.',
     ],
 
     'checkout' => [
@@ -34,28 +34,28 @@ return [
     ],
 
     'bulk' => [
-        'no_components_selected' => 'No components were selected.',
-        'no_action_selected' => 'Please pick an action from the dropdown.',
+        'no_components_selected' => 'No se seleccionó ningún componente.',
+        'no_action_selected' => 'Elija una acción en el menú desplegable.',
         'no_fields_updated' => 'Ningún cambio fue cambiado, así que nada se actualizó.',
-        'skipped_unauthorized' => ':count component(s) were skipped because you do not have permission to update them.',
+        'skipped_unauthorized' => 'Se omitieron :count componente(s) porque no tiene permiso para actualizarlos.',
 
         'update' => [
-            'success' => ':count component was updated.|:count components were updated.',
-            'none_updated' => 'The selected component could not be updated. See errors below for details.|None of the selected components could be updated. See errors below for details.',
+            'success' => 'Se actualizó :count componente.|Se actualizaron :count componentes.',
+            'none_updated' => 'No se pudo actualizar el componente seleccionado. Vea los errores de abajo.|No se pudo actualizar ninguno de los componentes seleccionados. Vea los errores de abajo.',
         ],
 
         'delete' => [
-            'success' => ':count component was deleted.|:count components were deleted.',
-            'partial_success' => ':count component was deleted. See errors below for the rest.|:count components were deleted. See errors below for the rest.',
+            'success' => 'Se eliminó :count componente.|Se eliminaron :count componentes.',
+            'partial_success' => 'Se eliminó :count componente. Vea abajo los errores del resto.|Se eliminaron :count componentes. Vea abajo los errores del resto.',
         ],
 
         'restore' => [
-            'success' => ':count component was restored.|:count components were restored.',
+            'success' => 'Se restauró :count componente.|Se restauraron :count componentes.',
         ],
 
         'checkin_selected' => [
-            'no_rows_selected' => 'No checked-out components were selected.',
-            'success' => ':unit_count unit returned across :count checkout.|:unit_count units returned across :count checkouts.',
+            'no_rows_selected' => 'No se seleccionó ningún componente asignado.',
+            'success' => 'Se ingresó :unit_count unidad en :count asignación.|Se ingresaron :unit_count unidades en :count asignaciones.',
         ],
     ],
 

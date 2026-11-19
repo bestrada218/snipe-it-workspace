@@ -37,14 +37,14 @@ return [
         'confirm' => '¿Está seguro de que desea eliminar esta licencia?',
         'error' => 'Hubo un problema al eliminar la licencia. Por favor, inténtelo de nuevo.',
         'success' => 'La licencia se ha eliminado correctamente.',
-        'bulk_success' => 'The selected licenses were deleted successfully.',
-        'partial_success' => 'License deleted successfully. See additional information below. | :count licenses were deleted successfully. See additional information below.',
-        'bulk_checkout_warning' => ':license_name has seats that are currently checked out and cannot be deleted. Please check in all seats before deleting.',
+        'bulk_success' => 'Las licencias seleccionadas se eliminaron correctamente.',
+        'partial_success' => 'Licencia eliminada correctamente. Vea la información adicional abajo. | Se eliminaron :count licencias correctamente. Vea la información adicional abajo.',
+        'bulk_checkout_warning' => ':license_name tiene puestos asignados y no se puede eliminar. Ingrese todos los puestos antes de eliminarla.',
     ],
 
     'delete_with_checkin' => [
-        'bulk_success' => ':count licenses were deleted successfully after checking in :seats seats.',
-        'partial_success' => ':count licenses were deleted successfully after checking in :seats seats. See additional information below.',
+        'bulk_success' => 'Se eliminaron :count licencias correctamente después de ingresar :seats puestos.',
+        'partial_success' => 'Se eliminaron :count licencias correctamente después de ingresar :seats puestos. Vea la información adicional abajo.',
     ],
 
     'checkout' => [
@@ -63,7 +63,7 @@ return [
     ],
 
     'import' => [
-        'no_free_seats' => 'License ":license" has no free seats. ":target" was not assigned to a seat.',
+        'no_free_seats' => 'La licencia ":license" no tiene puestos libres. ":target" no se asignó a ningún puesto.',
     ],
 
 ];
