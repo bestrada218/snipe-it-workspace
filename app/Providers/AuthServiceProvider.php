@@ -167,9 +167,34 @@ class AuthServiceProvider extends ServiceProvider
          * These control general sections of the admin. These definitions are used in our blades via @can('blah) and also
          * use in our controllers to determine if a user has access to a certain area.
          */
-        Gate::define('canEditAuthFields', fn (User $user, $item) => $item instanceof User
-            && $user->isAdmin()
-            && ! $item->isSuperUser());
+        Gate::define('canEditAuthFields', function ($user, $item) {
+
+            if ($item instanceof User) {
+
+                // if they can only edit users, deny them if the user is admin or superadmin
+                if (! $user->isAdmin()) {
+
+                    if ($item->isAdmin() || $item->isSuperUser()) {
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                // if they are an admin, deny them only if the user is a superadmin
+                if ($user->hasAccess('admin')) {
+                    if ($item->isSuperUser()) {
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            return false;
+        });
 
         /**
          * Define the demo mode gate so we have an easy way to use @can and Gate::allows()
