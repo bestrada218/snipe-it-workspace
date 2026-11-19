@@ -146,7 +146,7 @@ final class DuplicateAssignments
 
         $validated = $request->validate([
             'duplicate_assignment_approver' => ['required', 'integer', Rule::in($approvers->keys()->all())],
-            'duplicate_assignment_evidence' => ['bail', 'required', 'file', 'extensions:pdf,jpg,jpeg,png,webp', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.Helper::file_upload_max_size()],
+            'duplicate_assignment_evidence' => ['bail', 'required', 'file', 'extensions:pdf,jpg,jpeg,png,webp', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.(int) ceil(Helper::file_upload_max_size() / 1024)],
         ], [], [
             'duplicate_assignment_approver' => trans('duplicate-assignments.approved_by'),
             'duplicate_assignment_evidence' => trans('duplicate-assignments.evidence'),
