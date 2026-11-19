@@ -141,6 +141,17 @@ class AssetShipmentFlowTest extends TestCase
         $this->assertTrue($shipment->asset->fresh()->availableForCheckout());
     }
 
+    public function test_reserved_asset_is_not_ready_to_deploy_until_the_shipment_closes(): void
+    {
+        $shipment = AssetShipment::factory()->create();
+
+        $this->assertFalse(Asset::RTD()->whereKey($shipment->asset_id)->exists());
+
+        $shipment->forceFill(['cancelled_at' => now()])->save();
+
+        $this->assertTrue(Asset::RTD()->whereKey($shipment->asset_id)->exists());
+    }
+
     public function test_recipient_cannot_cancel(): void
     {
         $shipment = AssetShipment::factory()->create();

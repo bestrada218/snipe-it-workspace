@@ -3,6 +3,7 @@
 namespace App\Models\Builders;
 
 use App\Models\Asset;
+use App\Models\AssetShipment;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\Setting;
@@ -65,8 +66,13 @@ class AssetQueryBuilder extends Builder
     {
         $ids = Statuslabel::idsFor('deployable');
 
+        // Assets reserved by an open shipment are not ready to deploy. Pluck
+        // the (few) reserved ids instead of whereDoesntHave(): a correlated
+        // NOT EXISTS here is the shape QueryShapeTest guards against.
+        $reserved = AssetShipment::query()->open()->distinct()->pluck('asset_id');
+
         return $this->whereNull('assets.assigned_to')
-            ->whereDoesntHave('shipments', fn ($shipments) => $shipments->open())
+            ->when($reserved->isNotEmpty(), fn (self $query) => $query->whereNotIn('assets.id', $reserved))
             ->whereIn('assets.status_id', $ids->isEmpty() ? [0] : $ids);
     }
 
