@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\DuplicateAssignments;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
 use App\Http\Controllers\Consumables\BulkConsumablesController;
@@ -21,6 +20,7 @@ use App\Models\Consumable;
 use App\Models\ConsumableAssignment;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

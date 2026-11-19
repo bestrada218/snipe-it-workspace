@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\DuplicateAssignments;
 use App\Events\CheckoutableCheckedIn;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -21,6 +20,7 @@ use App\Models\Accessory;
 use App\Models\AccessoryCheckout;
 use App\Models\Company;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Http\JsonResponse;

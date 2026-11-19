@@ -517,7 +517,7 @@ class LocationsController extends Controller
      */
     public function selectlist(Request $request): array
     {
-        
+
         abort_unless(
             auth()->user()?->canAny(['view.selectlists', 'self.edit_location']),
             403

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Licenses;
 
-use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -15,6 +14,7 @@ use App\Models\License;
 use App\Models\LicenseSeat;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Exceptions\HttpResponseException;

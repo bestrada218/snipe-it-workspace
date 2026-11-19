@@ -2,7 +2,6 @@
 
 namespace App\Models\Traits;
 
-use App\Services\DuplicateAssignments;
 use App\Exceptions\MissingLogTarget;
 use App\Models\Actionlog;
 use App\Models\Asset;
@@ -14,6 +13,7 @@ use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\AuditNotification;
+use App\Services\DuplicateAssignments;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;

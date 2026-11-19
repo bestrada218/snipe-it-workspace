@@ -20,11 +20,11 @@ use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\User;
 use App\Observers\AssetObserver;
+use App\Services\AssetReplacement;
+use App\Services\AssetShipments;
 use App\View\Label;
 use Carbon\Carbon;
 use Com\Tecnick\Barcode\Barcode;
-use App\Services\AssetReplacement;
-use App\Services\AssetShipments;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -136,12 +136,12 @@ class AssetsController extends Controller
             ]);
             $location = Location::findOrFail($request->integer('assigned_location'));
             if (! Statuslabel::idsFor('deployable')->contains($request->integer('status_id'))) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'status_id' => trans('admin/settings/general.inventory_deployable_status'),
                 ]);
             }
             if ($inventoryView['location_id'] !== null && $location->id !== (int) $inventoryView['location_id']) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'assigned_location' => trans('admin/settings/general.inventory_location_mismatch'),
                 ]);
             }

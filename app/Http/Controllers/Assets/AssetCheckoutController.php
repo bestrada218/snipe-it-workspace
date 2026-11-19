@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Assets;
 
-use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Exceptions\CheckoutNotAllowed;
 use App\Helpers\Helper;
@@ -13,6 +12,7 @@ use App\Models\Asset;
 use App\Models\CheckoutAcceptance;
 use App\Models\CheckoutRequest;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\RedirectResponse;

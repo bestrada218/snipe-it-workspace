@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\DuplicateAssignments;
 use App\Exceptions\MissingLogTarget;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
@@ -12,6 +11,7 @@ use App\Models\License;
 use App\Models\LicenseSeat;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

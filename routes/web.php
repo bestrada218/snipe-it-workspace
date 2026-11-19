@@ -1,10 +1,9 @@
 <?php
 
-use App\Http\Controllers\Assets\AssetShipmentController;
-use App\Http\Controllers\DuplicateAssignmentsController;
 use App\Actions\Breadcrumbs\BuildAcceptanceBreadcrumbs;
 use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
+use App\Http\Controllers\Assets\AssetShipmentController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -21,6 +20,7 @@ use App\Http\Controllers\CompaniesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentsController;
 use App\Http\Controllers\DepreciationsController;
+use App\Http\Controllers\DuplicateAssignmentsController;
 use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LabelsController;
@@ -1096,7 +1096,6 @@ Route::view('/guide/asset-tags', 'guide.asset-tags')->middleware('auth')
     ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
         ->push(trans('asset-tags.title'), route('guide.asset-tags')));
 
-
 Route::middleware('auth')->group(function () {
     Route::get('duplicate-assignments', [DuplicateAssignmentsController::class, 'index'])
         ->name('duplicate-assignments.index')
@@ -1112,7 +1111,6 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('id')
         ->name('duplicate-assignments.evidence');
 });
-
 
 Route::middleware('auth')->group(function () {
     Route::get('shipments', [AssetShipmentController::class, 'index'])

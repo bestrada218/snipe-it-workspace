@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\DuplicateAssignments;
 use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedIn;
 use App\Helpers\Helper;
@@ -31,6 +30,7 @@ use App\Models\LicenseSeat;
 use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use App\View\Label;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;

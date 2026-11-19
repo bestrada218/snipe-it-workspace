@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Accessories;
 
-use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -14,6 +13,7 @@ use App\Models\AccessoryCheckout;
 use App\Models\CheckoutAcceptance;
 use App\Models\CheckoutRequest;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;

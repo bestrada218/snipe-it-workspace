@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Consumables;
 
-use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -13,6 +12,7 @@ use App\Models\CheckoutRequest;
 use App\Models\Consumable;
 use App\Models\ConsumableAssignment;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
