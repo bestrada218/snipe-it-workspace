@@ -77,6 +77,12 @@ final class LocationGroupScope implements Scope
 
         if ($model instanceof Location) {
             $builder->whereIntegerInRaw($model->qualifyColumn('id'), $ids);
+        } elseif ($model instanceof User) {
+            // The signed-in person always resolves their own record, even when
+            // their location sits outside the scope; otherwise they are signed out.
+            $builder->where(fn (Builder $users) => $users
+                ->whereIntegerInRaw($model->qualifyColumn('location_id'), $ids)
+                ->orWhere($model->qualifyColumn('id'), self::currentUser()?->getKey()));
         } elseif (in_array($model::class, self::LOCATION_MODELS, true)) {
             $builder->whereIntegerInRaw($model->qualifyColumn('location_id'), $ids);
         } elseif ($model instanceof License) {
@@ -109,6 +115,10 @@ final class LocationGroupScope implements Scope
             return in_array((int) $subject->getKey(), $ids, true);
         }
 
+        if ($subject instanceof User && $subject->is($actor)) {
+            return true;
+        }
+
         return ! in_array($type, self::LOCATION_MODELS, true)
             || in_array((int) $subject->location_id, $ids, true);
     }
@@ -125,6 +135,12 @@ final class LocationGroupScope implements Scope
         }
 
         if (! in_array($model::class, self::LOCATION_MODELS, true)) {
+            return;
+        }
+
+        // Signing in and editing one's own profile save the actor's record;
+        // only a change of location is still checked against the scope.
+        if ($model instanceof User && $model->is(self::currentUser()) && ! $model->isDirty('location_id')) {
             return;
         }
 
