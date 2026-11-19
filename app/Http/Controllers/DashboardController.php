@@ -9,6 +9,8 @@ use App\Models\Company;
 use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
+use App\Models\Setting;
+use App\Services\AssetReplacement;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
@@ -47,7 +49,19 @@ class DashboardController extends Controller
         // hasAccess('admin') gates short-circuit before touching any
         // $counts key.
         $counts = [];
+        $fixedAssetMetric = null;
         if (auth()->user()->hasAccess('admin')) {
+            $fixedModule = Setting::inventoryLocationModules()['fixed-assets'] ?? null;
+            if ($fixedModule !== null && ($fixedModule['enabled'] ?? true) && Gate::allows('index', Asset::class)) {
+                $fixedAssetMetric = [
+                    'label' => Setting::inventoryLocationModuleLabel($fixedModule),
+                    'count' => Asset::inInventoryLocationModule($fixedModule['location_id'])
+                        ->join('status_labels', 'status_labels.id', '=', 'assets.status_id')
+                        ->when(Setting::getSettings()->show_archived_in_list != 1, fn ($assets) => $assets->where('status_labels.archived', 0))
+                        ->count(),
+                ];
+            }
+
             $counts['asset'] = Asset::count();
             // Accessory / Consumable / Component rows are parents with a
             // qty column that represents individual units in stock. Show
@@ -60,7 +74,12 @@ class DashboardController extends Controller
             $counts['consumable'] = (int) Consumable::notArchived()->sum('qty');
             $counts['component'] = (int) Component::notArchived()->sum('qty');
             $counts['user'] = Company::scopeCompanyables(auth()->user())->count();
-            $counts['grand_total'] = $counts['asset'] + $counts['accessory'] + $counts['license'] + $counts['consumable'];
+            $counts['grand_total'] = 0;
+            foreach (array_keys(Setting::INVENTORY_MODULES) as $module) {
+                if (Setting::inventoryModuleEnabled($module)) {
+                    $counts['grand_total'] += $counts[str_singular($module)];
+                }
+            }
         }
 
         if ((! file_exists(storage_path().'/oauth-private.key')) || (! file_exists(storage_path().'/oauth-public.key'))) {
@@ -68,8 +87,17 @@ class DashboardController extends Controller
             Artisan::call('passport:install', ['--no-interaction' => true]);
         }
 
+        $replacementCounts = [];
+        if (Gate::allows('index', Asset::class)) {
+            foreach (AssetReplacement::windows() as $key => $window) {
+                $replacementCounts[$key] = AssetReplacement::query($window)->count();
+            }
+        }
+
         return view('dashboard')
+            ->with('replacementCounts', $replacementCounts)
             ->with('asset_stats', null)
+            ->with('fixedAssetMetric', $fixedAssetMetric)
             ->with('counts', $counts);
     }
 }

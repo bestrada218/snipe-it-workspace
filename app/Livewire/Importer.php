@@ -365,11 +365,16 @@ class Importer extends Component
             'consumable' => trans('general.consumables'),
             'license' => trans('general.licenses'),
             'location' => trans('general.locations'),
-            'user' => trans('general.users'),
+            ...(auth()->user()->can('canEditAuthFields', new \App\Models\User) ? ['user' => trans('general.users')] : []),
             'supplier' => trans('general.suppliers'),
             'manufacturer' => trans('general.manufacturers'),
             'category' => trans('general.categories'),
         ];
+        $this->importTypes = array_filter(
+            $this->importTypes,
+            Setting::inventoryImportEnabled(...),
+            ARRAY_FILTER_USE_KEY,
+        );
 
         /**
          * These are the item-type specific columns
@@ -905,7 +910,8 @@ class Importer extends Component
             return;
         }
 
-        $this->typeOfImport = $this->activeFile->import_type;
+        $savedType = $this->activeFile->import_type;
+        $this->typeOfImport = isset($this->importTypes[$savedType]) ? $savedType : null;
 
         $this->field_map = null;
         foreach ($this->headerRow as $element) {

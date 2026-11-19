@@ -194,21 +194,29 @@
 
                                     <div class="well-display">
 
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                         <x-data-row icon_type="asset" label="{{ trans('general.assets') }}" align="right">
                                             {{ Helper::formatCurrencyOutput($user->getUserTotalCost()->asset_cost) }}
                                         </x-data-row>
+                                        @endif
 
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('licenses'))
                                         <x-data-row icon_type="licenses" label="{{ trans('general.licenses') }}" align="right">
                                             {{ Helper::formatCurrencyOutput($user->getUserTotalCost()->license_cost)}}
                                         </x-data-row>
+                                        @endif
 
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                                         <x-data-row icon_type="accessories" label="{{ trans('general.accessories') }}" align="right">
                                             {{ Helper::formatCurrencyOutput($user->getUserTotalCost()->accessory_cost)}}
                                         </x-data-row>
+                                        @endif
 
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
                                         <x-data-row icon_type="consumables" label="{{ trans('general.consumables') }}" align="right">
                                             {{ Helper::formatCurrencyOutput($user->getUserTotalCost()->consumable_cost) }}
                                         </x-data-row>
+                                        @endif
 
                                         {{-- Sum across complete + active maintenances tied
                                              to this user — used to surface "which users
@@ -521,6 +529,7 @@
                             </form>
                         @endif
 
+                        @can('canEditAuthFields', $user)
                         @if (!empty($user->email) && ($user->activated=='1'))
                             <form action="{{ route('users.password',['userId'=> $user->id]) }}" method="POST" class="form-inline" style="display: inline">
                                 {{ csrf_field() }}
@@ -533,6 +542,7 @@
                                 <x-icon class="fa-solid fa-key"/>
                             </button>
                         @endif
+                        @endcan
 
                         <x-button.delete :item="$user"/>
 

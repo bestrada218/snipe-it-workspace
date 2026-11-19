@@ -109,11 +109,11 @@ class UsersController extends Controller
 
         $authenticatedUser = auth()->user();
         $user = new User;
-        // Username, email, and password need to be handled specially because the need to respect config values on an edit.
-        $user->email = trim($request->input('email'));
-        $user->username = trim($request->input('username'));
+        $canManageLogin = $authenticatedUser->can('canEditAuthFields', $user);
+        $user->email = $canManageLogin && $request->filled('email') ? trim($request->input('email')) : null;
+        $user->username = $canManageLogin && $request->filled('username') ? trim($request->input('username')) : null;
         $user->display_name = $request->input('display_name');
-        if ($request->filled('password')) {
+        if ($canManageLogin && $request->filled('password')) {
             $user->password = bcrypt($request->input('password'));
         } else {
             // SaveUserRequest only skips password validation when the
@@ -128,7 +128,7 @@ class UsersController extends Controller
         $user->last_name = $request->input('last_name');
         $user->locale = $request->input('locale');
         $user->employee_num = $request->input('employee_num');
-        $user->activated = $request->input('activated', 0);
+        $user->activated = $canManageLogin && $request->boolean('activated');
         $user->jobtitle = $request->input('jobtitle');
         $user->phone = $request->input('phone');
         $user->mobile = $request->input('mobile');
@@ -149,10 +149,12 @@ class UsersController extends Controller
         $user->end_date = $request->input('end_date', null);
         $user->autoassign_licenses = $request->input('autoassign_licenses', 0);
 
-        $user->permissions = json_encode(PreserveUnauthorizedPrivilegedPermissionsAction::run(
-            requestedPermissions: NormalizePermissionsPayloadAction::run($request->input('permission')),
-            authenticatedUser: $authenticatedUser,
-        ));
+        if ($canManageLogin) {
+            $user->permissions = json_encode(PreserveUnauthorizedPrivilegedPermissionsAction::run(
+                requestedPermissions: NormalizePermissionsPayloadAction::run($request->input('permission')),
+                authenticatedUser: $authenticatedUser,
+            ));
+        }
 
         // we have to invoke the form request here to handle image uploads
         app(ImageUploadRequest::class)->handleImages($user, 600, 'avatar', 'avatars', 'avatar');
@@ -338,7 +340,7 @@ class UsersController extends Controller
         // can't reach past the gate on any of them.
         if (auth()->user()->can('canEditAuthFields', $user) && auth()->user()->can('editableOnDemo')) {
 
-            $user->username = trim($request->input('username'));
+            $user->username = $request->filled('username') ? trim($request->input('username')) : null;
             $user->email = trim($request->input('email'));
             $user->activated = $request->input('activated', $request->user()->is($user) ? 1 : 0);
             $user->two_factor_optin = $request->input('two_factor_optin') ?: 0;
@@ -868,6 +870,7 @@ class UsersController extends Controller
         $user = User::find($id);
         if ($user) {
             $this->authorize('view', $user);
+            $this->authorize('canEditAuthFields', $user);
         }
 
         if ($user && ($user->activated == '1') && ($user->email != '') && ($user->ldap_import == '0')) {

@@ -35,27 +35,41 @@
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.users') }}">
                                 <i class="fas fa-users fa-fw fa-lg"></i>
                             </th>
+                            @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('admin/locations/message.current_location') }}">
                                 <i class="fas fa-barcode fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('admin/hardware/form.default_location') }}">
                                 <i class="fa-solid fa-house-flag fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('admin/locations/message.assigned_assets') }}">
                                 <i class="fas fa-barcode fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.accessories') }}">
                                 <i class="far fa-keyboard fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.accessories_assigned') }}">
                                 <i class="fas fa-keyboard fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.consumables') }}">
                                 <i class="fas fa-tint fa-fw fa-lg"></i>
                             </th>
+                            @endif
+                            @if (\App\Models\Setting::inventoryModuleEnabled('components'))
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.components') }}">
                                 <i class="far fa-hdd fa-fw fa-lg"></i>
                             </th>
+                            @endif
                             <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.child_locations') }}">
                                 <i class="fa-solid fa-city fa-fw fa-lg"></i>
                             </th>
@@ -76,13 +90,27 @@
                                     {{ $location->name }}
                                 </td>
                                 <td class="text-right {{ $location->users_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->users_count) }}</td>
+                                @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                 <td class="text-right {{ $location->assets_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->assets_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                 <td class="text-right {{ $location->rtd_assets_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->rtd_assets_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                 <td class="text-right {{ $location->assigned_assets_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->assigned_assets_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                                 <td class="text-right {{ $location->accessories_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->accessories_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                                 <td class="text-right {{ $location->assigned_accessories_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->assigned_accessories_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
                                 <td class="text-right {{ $location->consumables_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->consumables_count) }}</td>
+                                @endif
+                                @if (\App\Models\Setting::inventoryModuleEnabled('components'))
                                 <td class="text-right {{ $location->components_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->components_count) }}</td>
+                                @endif
                                 <td class="text-right {{ $location->children_count > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format((int) $location->children_count) }}</td>
                             </tr>
                         @endforeach

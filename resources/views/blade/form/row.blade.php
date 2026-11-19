@@ -77,6 +77,7 @@
                 :rows="$rows"
                 :placeholder="$placeholder"
                 :help_text="$help_text"
+                :has_help="isset($help)"
                 :end_date="$end_date"
                 :default_now="$default_now"
                 :side_by_side="$side_by_side"
@@ -99,6 +100,7 @@
                 :rows="$rows"
                 :placeholder="$placeholder"
                 :help_text="$help_text"
+                :has_help="isset($help)"
                 :end_date="$end_date"
                 :default_now="$default_now"
                 :side_by_side="$side_by_side"
@@ -148,7 +150,9 @@
     <div @class([($help_class ?? $input_div_class.' col-md-offset-3') => ! $stacked])>
         <x-form.error :name="$name" />
 
-        @if ($help_text)
+        @isset($help)
+            {{ $help }}
+        @elseif ($help_text)
             {{-- $help_text is already HTML-entity-escaped by Blade's
                  attribute-binding sanitize pass. Using {!! !!} outputs
                  those entities as-is so the browser renders them as real

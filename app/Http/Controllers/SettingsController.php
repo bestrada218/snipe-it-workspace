@@ -17,6 +17,7 @@ use App\Models\Asset;
 use App\Models\CustomField;
 use App\Models\Group;
 use App\Models\Labels\CustomUserLabel;
+use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\MailTest;
@@ -91,7 +92,11 @@ class SettingsController extends Controller
     {
         $setting = Setting::getSettings();
 
-        return view('settings/general', compact('setting'));
+        $inventoryLocations = Location::orderBy('name')->pluck('name', 'id');
+
+        $approvalCandidates = User::orderBy('first_name')->orderBy('last_name')->get();
+
+        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates'));
     }
 
     /**
@@ -105,6 +110,43 @@ class SettingsController extends Controller
     {
         if (is_null($setting = Setting::getSettings())) {
             return redirect()->to('admin')->with('error', trans('admin/settings/message.update.error'));
+        }
+
+        if ($request->has('inventory_modules')) {
+            $modules = $request->validate([
+                'inventory_modules' => 'required|array:'.implode(',', array_keys(Setting::INVENTORY_MODULES)),
+                'inventory_modules.*' => 'required|boolean',
+            ])['inventory_modules'];
+
+            $disabled = $setting->disabled_inventory_modules ?? [];
+            foreach ($modules as $module => $enabled) {
+                $disabled = array_values(array_diff($disabled, [$module]));
+                if (! $enabled) {
+                    $disabled[] = $module;
+                }
+            }
+            $setting->disabled_inventory_modules = $disabled;
+        }
+
+        $this->updateInventoryModuleNames($request, $setting);
+
+        if ($request->boolean('duplicate_approvers_configured')) {
+            $approvalSettings = $request->validate([
+                'duplicate_assignment_approvers' => ['sometimes', 'array', 'list'],
+                'duplicate_assignment_approvers.*' => ['required', 'integer', 'distinct', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            ]);
+
+            $setting->duplicate_assignment_approvers = array_map('intval', $approvalSettings['duplicate_assignment_approvers'] ?? []);
+        }
+
+        if ($request->boolean('purchase_approvers_configured')) {
+            abort_unless($request->user()->isSuperUser(), 403);
+            $purchaseSettings = $request->validate([
+                'purchase_approvers' => ['sometimes', 'array', 'list'],
+                'purchase_approvers.*' => ['required', 'integer', 'distinct', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            ]);
+
+            $setting->purchase_approvers = array_map('intval', $purchaseSettings['purchase_approvers'] ?? []);
         }
 
         $setting->modellist_displays = '';
@@ -167,6 +209,51 @@ class SettingsController extends Controller
         }
 
         return redirect()->back()->withInput()->withErrors($setting->getErrors());
+    }
+
+    private function updateInventoryModuleNames(Request $request, Setting $setting): void
+    {
+        $locationModules = Setting::inventoryLocationModules();
+        $allowedKeys = implode(',', [...array_keys($locationModules), 'new']);
+        $input = $request->validate([
+            'inventory_module_labels' => 'sometimes|array:'.implode(',', array_keys(Setting::INVENTORY_MODULES)),
+            'inventory_module_labels.*' => 'nullable|string|max:60',
+            'inventory_location_modules' => 'sometimes|array:'.$allowedKeys,
+            'inventory_location_modules.*' => 'array:name,location_id,enabled',
+            'inventory_location_modules.*.enabled' => 'sometimes|boolean',
+            'inventory_location_modules.*.name' => 'nullable|string|max:60',
+            'inventory_location_modules.*.location_id' => ['nullable', 'integer', Rule::exists('locations', 'id')->whereNull('deleted_at')],
+        ]);
+
+        if (isset($input['inventory_module_labels'])) {
+            $setting->inventory_module_labels = array_filter($input['inventory_module_labels']);
+        }
+
+        if (isset($input['inventory_location_modules'])) {
+            foreach ($input['inventory_location_modules'] as $key => $module) {
+                $name = $module['name'] ?? null;
+                if ($key === 'new') {
+                    if ($name === null) {
+                        continue;
+                    }
+                    if (count($locationModules) >= 25) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'inventory_location_modules.new.name' => trans('admin/settings/general.inventory_location_limit'),
+                        ]);
+                    }
+                    $key = (string) Str::uuid();
+                } elseif ($name === null && $key !== 'fixed-assets') {
+                    continue;
+                }
+
+                $locationModules[$key] = [
+                    'name' => $name,
+                    'location_id' => $module['location_id'] ?? null,
+                    'enabled' => (bool) ($module['enabled'] ?? $locationModules[$key]['enabled'] ?? true),
+                ];
+            }
+            $setting->inventory_location_modules = $locationModules;
+        }
     }
 
     /**

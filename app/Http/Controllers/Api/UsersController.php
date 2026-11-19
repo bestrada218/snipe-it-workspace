@@ -555,17 +555,21 @@ class UsersController extends Controller
         }
 
         $user = new User;
-        $user->fill($request->all());
+        $canManageLogin = $authenticatedUser->can('canEditAuthFields', $user);
+        $user->fill($request->except('scim_externalid'));
+        if (! $canManageLogin) {
+            $user->forceFill(['username' => null, 'email' => null, 'activated' => 0, 'ldap_import' => 0]);
+        }
         $user->created_by = auth()->id();
 
-        if ($request->has('permissions')) {
+        if ($canManageLogin && $request->has('permissions')) {
             $user->permissions = json_encode(PreserveUnauthorizedPrivilegedPermissionsAction::run(
                 requestedPermissions: NormalizePermissionsPayloadAction::run($request->input('permissions')),
                 authenticatedUser: $authenticatedUser,
             ));
         }
 
-        if ($request->filled('password')) {
+        if ($canManageLogin && $request->filled('password')) {
             $user->password = bcrypt($request->input('password'));
         } else {
             $user->password = $user->noPassword();
@@ -706,6 +710,8 @@ class UsersController extends Controller
         $user->fill($request->except(array_merge(User::GATED_AUTH_FIELDS, [
             'activation_code',
             'remember_token',
+            'ldap_import',
+            'scim_externalid',
             'two_factor_secret',
             'two_factor_enrolled',
         ])));

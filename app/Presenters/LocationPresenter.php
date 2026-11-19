@@ -12,7 +12,7 @@ class LocationPresenter extends Presenter
      *
      * @return string
      */
-    public static function dataTableLayout()
+    public static function dataTableLayout(bool $hierarchy = false)
     {
         $layout = [
             [
@@ -50,7 +50,7 @@ class LocationPresenter extends Presenter
                 'switchable' => false,
                 'title' => trans('general.name'),
                 'visible' => true,
-                'formatter' => 'locationsLinkFormatter',
+                'formatter' => $hierarchy ? 'locationHierarchyNameFormatter' : 'locationsLinkFormatter',
             ], [
                 'field' => 'image',
                 'scope' => 'col',
@@ -312,6 +312,13 @@ class LocationPresenter extends Presenter
                 'class' => 'hidden-print',
             ],
         ];
+
+        if ($hierarchy) {
+            $layout = array_values(array_filter($layout, fn (array $column) => $column['field'] !== 'parent'));
+            foreach ($layout as &$column) {
+                $column['sortable'] = false;
+            }
+        }
 
         return json_encode($layout);
     }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Assets\AssetShipmentController;
+use App\Http\Controllers\DuplicateAssignmentsController;
 use App\Actions\Breadcrumbs\BuildAcceptanceBreadcrumbs;
 use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
@@ -581,6 +583,9 @@ Route::group(['prefix' => 'account', 'middleware' => ['auth']], function () {
     Route::post('profile', [ProfileController::class, 'postIndex'])
         ->name('profile.update');
 
+    Route::put('profile/activity-report-columns', [ProfileController::class, 'updateActivityReportColumns'])
+        ->name('profile.activity-report-columns.update');
+
     Route::get('menu', [ProfileController::class, 'getMenuState'])
         ->name('account.menuprefs');
 
@@ -1085,3 +1090,48 @@ Route::middleware(['auth'])->get(
 )->name('home')
     ->breadcrumbs(fn (Trail $trail) => $trail->push('Home', route('home'))
     );
+
+Route::view('/guide/asset-tags', 'guide.asset-tags')->middleware('auth')
+    ->name('guide.asset-tags')
+    ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
+        ->push(trans('asset-tags.title'), route('guide.asset-tags')));
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('duplicate-assignments', [DuplicateAssignmentsController::class, 'index'])
+        ->name('duplicate-assignments.index')
+        ->breadcrumbs(fn (Trail $trail) => $trail
+            ->parent(Gate::allows('index', \App\Models\Asset::class) ? 'hardware.index' : 'home')
+            ->push(trans('duplicate-assignments.title'), route('duplicate-assignments.index')));
+
+    Route::get('duplicate-assignments/preview/{type}/{id}', [DuplicateAssignmentsController::class, 'preview'])
+        ->whereNumber('id')
+        ->name('duplicate-assignments.preview');
+
+    Route::get('duplicate-assignments/evidence/{id}', [DuplicateAssignmentsController::class, 'evidence'])
+        ->whereNumber('id')
+        ->name('duplicate-assignments.evidence');
+});
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('shipments', [AssetShipmentController::class, 'index'])
+        ->name('shipments.index')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')->push(trans('asset-shipments.title'), route('shipments.index')));
+    Route::get('shipments/create', [AssetShipmentController::class, 'create'])
+        ->name('shipments.new')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('shipments.index')->push(trans('asset-shipments.create'), ''));
+    Route::post('shipments', [AssetShipmentController::class, 'store'])->name('shipments.store-selected');
+    Route::get('hardware/{asset}/shipments/create', [AssetShipmentController::class, 'create'])
+        ->name('shipments.create')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('shipments.index')->push(trans('asset-shipments.create'), ''));
+    Route::post('hardware/{asset}/shipments', [AssetShipmentController::class, 'store'])->name('shipments.store');
+    Route::get('shipments/{shipment}', [AssetShipmentController::class, 'show'])
+        ->name('shipments.show')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('shipments.index')->push(trans('asset-shipments.details'), ''));
+    Route::post('shipments/{shipment}/receive', [AssetShipmentController::class, 'receive'])->name('shipments.receive');
+    Route::post('shipments/{shipment}/complete', [AssetShipmentController::class, 'complete'])->name('shipments.complete');
+    Route::post('shipments/{shipment}/reschedule', [AssetShipmentController::class, 'reschedule'])->name('shipments.reschedule');
+    Route::post('shipments/{shipment}/cancel', [AssetShipmentController::class, 'cancel'])->name('shipments.cancel');
+    Route::get('shipments/{shipment}/approval', [AssetShipmentController::class, 'approval'])->name('shipments.approval');
+});

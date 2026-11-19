@@ -9,6 +9,7 @@ use App\Models\Asset;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\CurrentInventory;
+use App\Presenters\HistoryPresenter;
 use App\Rules\CssColor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -41,6 +43,29 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         return view('account/profile', compact('user'));
+    }
+
+    public function updateActivityReportColumns(Request $request): Response
+    {
+        abort_unless(Gate::allows('reports.view') || Gate::allows('canViewUsersAndCheckoutables'), 403);
+
+        $fields = array_column(HistoryPresenter::activityReportColumns(), 'field');
+        $validated = $request->validate([
+            'columns' => ['present', 'array', 'list', 'max:'.count($fields)],
+            'columns.*' => ['required', 'array:field,width,visible'],
+            'columns.*.field' => ['required', 'string', 'distinct:strict', Rule::in($fields)],
+            'columns.*.width' => ['required', 'integer', 'between:48,1600'],
+            'columns.*.visible' => ['required', 'boolean'],
+        ]);
+
+        $columns = $validated['columns'];
+        abort_if($columns !== [] && collect(HistoryPresenter::activityReportColumns($columns))->where('visible', true)->count() < 2, 422);
+
+        $user = $request->user();
+        $user->activity_report_columns = $columns ?: null;
+        abort_unless($user->saveQuietly(), 500);
+
+        return response()->noContent();
     }
 
     /**

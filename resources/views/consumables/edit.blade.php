@@ -29,6 +29,16 @@
                 />
 
                 <x-form.row
+                    :label="trans('admin/hardware/table.asset_tag')"
+                    :$item
+                    name="asset_tag"
+                >
+                    @unless ($item->exists)
+                        <x-slot:help><x-form.asset-tag-help /></x-slot:help>
+                    @endunless
+                </x-form.row>
+
+                <x-form.row
                     :label="trans('general.name')"
                     :$item
                     name="name"

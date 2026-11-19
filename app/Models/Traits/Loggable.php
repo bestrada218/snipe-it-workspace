@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Services\DuplicateAssignments;
 use App\Exceptions\MissingLogTarget;
 use App\Models\Actionlog;
 use App\Models\Asset;
@@ -192,7 +193,11 @@ trait Loggable
         $log->quantity = $quantity;
         $log->company_id = $this->resolveLoggableCompanyId();
 
-        $changed = [];
+        $changed = ['_activity_assignment_target' => $target->display_name];
+        if (array_key_exists('_activity_previous_assignment', $originalValues)) {
+            $changed['_activity_previous_assignment'] = $originalValues['_activity_previous_assignment'];
+        }
+
         $array_to_flip = array_keys($fields_array);
         $array_to_flip = array_merge($array_to_flip, ['name', 'status_id', 'location_id', 'expected_checkin', 'requestable']);
         $originalValues = array_intersect_key($originalValues, array_flip($array_to_flip));
@@ -209,11 +214,13 @@ trait Loggable
             // NOTE - if the attribute exists in $originalValues, but *not* in ->getAttributes(), it isn't added to $changed
         }
 
-        if (! empty($changed)) {
-            $log->log_meta = json_encode($changed);
+        $approval = DuplicateAssignments::recordApproval($this, $target);
+        $log->log_meta = json_encode($changed + $approval);
+        if (! $log->logaction('checkout') && $approval !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'duplicate_assignment_evidence' => trans('duplicate-assignments.evidence_store_failed'),
+            ]);
         }
-
-        $log->logaction('checkout');
 
         return $log;
     }
@@ -338,6 +345,10 @@ trait Loggable
                 $changed[$key]['old'] = $value;
                 $changed[$key]['new'] = $this->getAttributes()[$key];
             }
+        }
+
+        if ($target) {
+            $changed['_activity_assignment_target'] = $target->display_name;
         }
 
         if (! empty($changed)) {
@@ -538,7 +549,7 @@ trait Loggable
      *
      * @return Actionlog
      */
-    public function logUpload($filename, $note)
+    public function logUpload($filename, $note, ?string $originalFilename = null)
     {
         $log = new Actionlog;
         if (static::class == LicenseSeat::class) {
@@ -555,6 +566,7 @@ trait Loggable
         $log->created_at = date('Y-m-d H:i:s');
         $log->action_date = date('Y-m-d H:i:s');
         $log->filename = $filename;
+        $log->original_filename = $originalFilename === null ? null : mb_substr($originalFilename, 0, 255);
         $log->logaction('uploaded');
 
         return $log;

@@ -70,7 +70,7 @@ class DashboardController extends Controller
         // report page anyway.
         $hasFullActivityView = Gate::allows('activity.view');
 
-        $query = Actionlog::with('item', 'user', 'adminuser', 'target', 'location');
+        $query = Actionlog::forEnabledInventoryModules()->with('item', 'user', 'adminuser', 'target', 'location');
 
         if (! $hasFullActivityView) {
             $query->where(function ($sub) use ($viewableTypes) {
@@ -97,7 +97,7 @@ class DashboardController extends Controller
             ->get();
 
         return response()->json(
-            (new ActionlogsTransformer)->transformActionlogs($rows, $total),
+            (new ActionlogsTransformer)->transformActionlogs($rows, $total, onlyViewableChanges: ! $hasFullActivityView),
             200,
             ['Content-Type' => 'application/json;charset=utf8'],
             JSON_UNESCAPED_UNICODE,

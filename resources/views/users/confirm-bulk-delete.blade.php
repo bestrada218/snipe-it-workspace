@@ -57,22 +57,30 @@
                                     <th scope="col" class="col-md-1"></th>
                                     <th scope="col" class="col-md-3">{{ trans('general.name') }}</th>
                                     <th scope="col" class="col-md-3">{{ trans('general.groups') }}</th>
+                                    @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                     <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.assets') }}">
                                         <i class="fas fa-barcode fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
                                         <span class="sr-only">{{ trans('general.assets') }}</span>
                                     </th>
+                                    @endif
+                                    @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                                     <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.accessories') }}">
                                         <i class="far fa-keyboard fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
                                         <span class="sr-only">{{ trans('general.accessories') }}</span>
                                     </th>
+                                    @endif
+                                    @if (\App\Models\Setting::inventoryModuleEnabled('licenses'))
                                     <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.licenses') }}">
                                         <i class="far fa-save fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
                                         <span class="sr-only">{{ trans('general.licenses') }}</span>
                                     </th>
+                                    @endif
+                                    @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
                                     <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.consumables') }}">
                                         <i class="fas fa-tint fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
                                         <span class="sr-only">{{ trans('general.consumables') }}</span>
                                     </th>
+                                    @endif
                                     <th scope="col" class="text-right" data-tooltip="true" data-title="{{ trans('general.files') }}">
                                         <i class="fas fa-paperclip fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
                                         <span class="sr-only">{{ trans('general.files') }}</span>
@@ -117,10 +125,18 @@
                                                 </a>&nbsp;
                                             @endforeach
                                         </td>
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
                                         <td class="text-right">{{ number_format($user->assets->count()) }}</td>
+                                        @endif
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
                                         <td class="text-right">{{ number_format($user->accessories->count()) }}</td>
+                                        @endif
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('licenses'))
                                         <td class="text-right">{{ number_format($user->licenses->count()) }}</td>
+                                        @endif
+                                        @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
                                         <td class="text-right">{{ number_format($user->consumables->count()) }}</td>
+                                        @endif
                                         <td class="text-right">{{ number_format($user->uploads->count()) }}</td>
                                     </tr>
                                 @endforeach

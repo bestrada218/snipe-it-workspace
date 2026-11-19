@@ -25,6 +25,7 @@ class LicensesTransformer
 
         $array = [
             'id' => (int) $license->id,
+            'asset_tag' => $license->asset_tag ? e($license->asset_tag) : null,
             'name' => e($license->name),
             'qr_code_url' => route('qr_code/common', ['object_type' => 'licenses', 'id' => $license->id]),
             'company' => ($license->company) ? ['id' => (int) $license->company->id, 'name' => e($license->company->name)] : null,

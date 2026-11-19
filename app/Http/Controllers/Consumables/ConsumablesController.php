@@ -83,6 +83,7 @@ class ConsumablesController extends Controller
         $this->authorize('create', Consumable::class);
         $consumable = new Consumable;
         $consumable->name = $request->input('name');
+        $consumable->asset_tag = request('asset_tag', $consumable->asset_tag);
         $consumable->category_id = $request->input('category_id');
         $consumable->location_id = $request->input('location_id');
         $consumable->company_id = Company::getIdForCurrentUser($request->input('company_id'));
@@ -177,6 +178,7 @@ class ConsumablesController extends Controller
         // editable again (imperfect single-value semantics accepted for
         // the info-panel display).
         $consumable->name = $request->input('name');
+        $consumable->asset_tag = request('asset_tag', $consumable->asset_tag);
         $consumable->category_id = $request->input('category_id');
         $consumable->location_id = $request->input('location_id');
         $consumable->company_id = Company::getIdForCurrentUser($request->input('company_id'));

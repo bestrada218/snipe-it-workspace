@@ -73,6 +73,10 @@ class GroupsController extends Controller
         );
         $group->created_by = auth()->id();
         $group->notes = $request->input('notes');
+        if ($request->has('scope_location_id')) {
+            $scope = $request->validate(['scope_location_id' => 'nullable|integer|exists_undeleted:locations,id']);
+            $group->scope_location_id = $scope['scope_location_id'];
+        }
 
         if ($group->save()) {
 
@@ -126,6 +130,10 @@ class GroupsController extends Controller
     {
         $group->name = $request->input('name');
         $group->notes = $request->input('notes');
+        if ($request->has('scope_location_id')) {
+            $scope = $request->validate(['scope_location_id' => 'nullable|integer|exists_undeleted:locations,id']);
+            $group->scope_location_id = $scope['scope_location_id'];
+        }
 
         if ($request->has('permission')) {
             $group->permissions = json_encode(

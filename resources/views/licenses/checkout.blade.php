@@ -50,6 +50,7 @@
                         :companyId="$license->company_id"
                         :style="(session('checkout_to_type') ?: 'user') == 'user' ? null : 'display: none;'"
                     />
+                    <x-checkout.duplicate-assignment type="licenses" :item="$license" />
                     @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.select_asset'), 'fieldname' => 'assigned_asset', 'company_id' => $license->company_id, 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
 
                     <x-form.row

@@ -16,6 +16,7 @@ use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\Setting;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -179,6 +180,10 @@ class LocationsController extends Controller
 
         $limit = app('api_limit_value');
 
+        if ($request->boolean('hierarchy')) {
+            return $this->hierarchyPage($locations, $request, $limit);
+        }
+
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
         $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
 
@@ -202,6 +207,44 @@ class LocationsController extends Controller
         $locations = $locations->skip($offset)->take($limit)->get();
 
         return (new LocationsTransformer)->transformLocations($locations, $total);
+    }
+
+    private function hierarchyPage(Builder $query, FilterRequest $request, int $limit): array
+    {
+        // Resolve depth before search and pagination, so a matching child
+        // keeps its indentation even when its parent isn't on this page.
+        $tree = Location::query()
+            ->when($request->input('status') === 'deleted', fn ($locations) => $locations->withTrashed())
+            ->orderBy('locations.name')->orderBy('locations.id')
+            ->get(['locations.id', 'locations.parent_id'])->keyBy('id');
+        $children = $tree->groupBy(fn (Location $location) => $tree->has($location->parent_id) ? (int) $location->parent_id : 0);
+        $depths = [];
+        $visit = function (int $id, int $depth) use (&$visit, &$depths, $children): void {
+            if (isset($depths[$id])) {
+                return;
+            }
+
+            $depths[$id] = $depth;
+            foreach ($children->get($id, []) as $child) {
+                $visit((int) $child->id, $depth + 1);
+            }
+        };
+
+        foreach ($children->get(0, []) as $root) {
+            $visit((int) $root->id, 0);
+        }
+        foreach ($tree->keys() as $id) {
+            $visit((int) $id, 0);
+        }
+
+        $matching = (clone $query)->select('locations.id')->pluck('locations.id')->flip();
+        $ordered = array_intersect_key($depths, $matching->all());
+        $page = array_slice($ordered, (int) app('api_offset_value'), $limit, true);
+        $positions = array_flip(array_keys($page));
+        $locations = $query->whereIntegerInRaw('locations.id', array_keys($page))
+            ->get()->sortBy(fn (Location $location) => $positions[$location->id]);
+
+        return (new LocationsTransformer)->transformLocations($locations, count($ordered), $page);
     }
 
     /**
@@ -486,6 +529,8 @@ class LocationsController extends Controller
             'locations.parent_id',
             'locations.image',
             'locations.tag_color',
+            'locations.country',
+            'locations.currency',
         ]);
 
         if ($request->filled('search')) {
@@ -558,7 +603,10 @@ class LocationsController extends Controller
             $locations_formatted = new Collection($location_options);
         }
 
-        return (new SelectlistTransformer)->transformSelectlist(Helper::paginateCollection($locations_formatted));
+        return (new SelectlistTransformer)->transformSelectlist(
+            Helper::paginateCollection($locations_formatted),
+            ['country', 'currency'],
+        );
     }
 
     public function history(Request $request, Location $location): JsonResponse|array

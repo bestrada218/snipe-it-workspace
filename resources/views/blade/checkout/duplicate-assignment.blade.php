@@ -1,0 +1,218 @@
+@props(['type', 'item'])
+
+@php($availableApprovers = \App\Services\DuplicateAssignments::approvers())
+
+<div class="form-group" data-duplicate-assignment
+    data-preview="{{ route('duplicate-assignments.preview', ['type' => $type, 'id' => $item->getKey()]) }}">
+    <div class="col-md-8 col-md-offset-3">
+        <div class="workspace-duplicate-warning" role="status" hidden>
+            <strong data-duplicate-title></strong>
+            <p data-duplicate-message></p>
+        </div>
+        <x-form.error name="duplicate_assignment_reason" />
+        <x-form.error name="duplicate_assignment_approver" />
+        <x-form.error name="duplicate_assignment_evidence" />
+    </div>
+    <input type="hidden" name="duplicate_assignment_confirmed" value="0">
+    <input type="hidden" name="duplicate_assignment_reason" value="">
+    <dialog class="workspace-duplicate-dialog" aria-labelledby="duplicate-assignment-question">
+        <h2 id="duplicate-assignment-question">{{ trans('duplicate-assignments.confirm_title') }}</h2>
+        <p data-duplicate-dialog-message></p>
+        <label for="duplicate-assignment-motive">{{ trans('duplicate-assignments.reason') }}</label>
+        <textarea id="duplicate-assignment-motive" class="form-control" rows="3" maxlength="1000"
+            placeholder="{{ trans('duplicate-assignments.reason_placeholder') }}">{{ old('duplicate_assignment_reason') }}</textarea>
+        <label for="duplicate-assignment-approver">{{ trans('duplicate-assignments.approved_by') }}</label>
+        <select id="duplicate-assignment-approver" name="duplicate_assignment_approver" class="form-control" aria-required="true">
+            <option value="">{{ trans('duplicate-assignments.select_approver') }}</option>
+            @foreach ($availableApprovers as $approver)
+                <option value="{{ $approver->id }}" @selected((string) old('duplicate_assignment_approver') === (string) $approver->id)>
+                    {{ $approver->display_name }}{{ $approver->username ? ' ('.$approver->username.')' : '' }}
+                </option>
+            @endforeach
+        </select>
+        @if ($availableApprovers->isEmpty())
+            <p class="help-block">{{ trans('duplicate-assignments.no_approvers') }}</p>
+        @endif
+        <label for="duplicate-assignment-evidence">{{ trans('duplicate-assignments.evidence') }}</label>
+        <input id="duplicate-assignment-evidence" name="duplicate_assignment_evidence" type="file" class="form-control"
+            accept=".pdf,.jpg,.jpeg,.png,.webp" aria-required="true" aria-describedby="duplicate-evidence-help">
+        <p class="help-block" id="duplicate-evidence-help">{{ trans('duplicate-assignments.evidence_help') }}</p>
+        <div class="workspace-duplicate-actions">
+            <button type="button" data-duplicate-cancel class="btn btn-default">{{ trans('duplicate-assignments.cancel') }}</button>
+            <button type="button" data-duplicate-confirm class="btn btn-theme" @disabled($availableApprovers->isEmpty())>{{ trans('duplicate-assignments.confirm') }}</button>
+        </div>
+    </dialog>
+</div>
+
+@once
+    @push('js')
+        <script nonce="{{ csrf_token() }}">
+            $(function () {
+                document.querySelectorAll('[data-duplicate-assignment]').forEach(panel => {
+                    const form = panel.closest('form');
+                    const dialog = panel.querySelector('dialog');
+                    const warning = panel.querySelector('[role="status"]');
+                    const reason = dialog.querySelector('textarea');
+                    const approver = dialog.querySelector('[name="duplicate_assignment_approver"]');
+                    const evidence = dialog.querySelector('[name="duplicate_assignment_evidence"]');
+                    const confirmed = panel.querySelector('[name="duplicate_assignment_confirmed"]');
+                    const submittedReason = panel.querySelector('[name="duplicate_assignment_reason"]');
+                    const messages = {
+                        warning: @json(trans('duplicate-assignments.warning')),
+                        assigned: @json(trans('duplicate-assignments.warning_title')),
+                        multiple: @json(trans('duplicate-assignments.multi_title')),
+                        failed: @json(trans('duplicate-assignments.check_failed')),
+                        reason: @json(trans('duplicate-assignments.reason')),
+                        approver: @json(trans('duplicate-assignments.select_approver')),
+                        evidence: @json(trans('duplicate-assignments.evidence_help')),
+                    };
+                    let pending;
+                    let approved = false;
+                    let savedSubmitter;
+                    let submitting = false;
+
+                    function selection() {
+                        const targetType = form.querySelector('[name="checkout_to_type"]:checked');
+                        return {
+                            user: !targetType || targetType.value === 'user' ? form.elements.assigned_user?.value : '',
+                            quantity: Math.max(1, Number(form.elements.checkout_qty?.value) || 1),
+                        };
+                    }
+
+                    function display(data) {
+                        warning.hidden = !data?.duplicate;
+                        if (!data?.duplicate) {
+                            return '';
+                        }
+
+                        const text = messages.warning.replace(/:(existing|category|total)\b/g, (_, key) => ({
+                            existing: data.existing,
+                            category: data.category,
+                            total: data.existing + data.incoming,
+                        })[key]);
+                        warning.querySelector('[data-duplicate-title]').textContent = data.existing ? messages.assigned : messages.multiple;
+                        warning.querySelector('[data-duplicate-message]').textContent = text;
+                        return text;
+                    }
+
+                    async function check() {
+                        pending?.abort();
+                        const current = selection();
+                        if (!current.user) {
+                            display(null);
+                            return null;
+                        }
+                        const controller = new AbortController();
+                        pending = controller;
+                        try {
+                            const response = await fetch(panel.dataset.preview + '?' + new URLSearchParams(current), {
+                                signal: controller.signal,
+                                headers: {'Accept': 'application/json'},
+                            });
+                            if (!response.ok) {
+                                throw new Error(messages.failed);
+                            }
+                            const result = await response.json();
+                            return pending === controller ? result : undefined;
+                        } catch (error) {
+                            if (error.name === 'AbortError' || pending !== controller) {
+                                return undefined;
+                            }
+                            warning.hidden = false;
+                            warning.querySelector('[data-duplicate-title]').textContent = '';
+                            warning.querySelector('[data-duplicate-message]').textContent = messages.failed;
+                            return undefined;
+                        }
+                    }
+
+                    $(form).on('change', '[name="assigned_user"], [name="checkout_to_type"], [name="checkout_qty"]', async () => {
+                        approved = false;
+                        confirmed.value = '0';
+                        submittedReason.value = '';
+                        reason.value = '';
+                        approver.value = '';
+                        evidence.value = '';
+                        const result = await check();
+                        if (result !== undefined) {
+                            display(result);
+                        }
+                    });
+                    check().then(result => {
+                        if (result !== undefined) {
+                            display(result);
+                        }
+                    });
+
+                    form.addEventListener('submit', async event => {
+                        if (approved || !selection().user) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        if (submitting) {
+                            return;
+                        }
+
+                        submitting = true;
+                        savedSubmitter = event.submitter;
+                        const result = await check();
+                        submitting = false;
+                        if (result === undefined) {
+                            return;
+                        }
+
+                        if (result?.duplicate) {
+                            dialog.querySelector('[data-duplicate-dialog-message]').textContent = display(result);
+                            dialog.showModal();
+                            reason.focus();
+                        } else {
+                            approved = true;
+                            form.requestSubmit(savedSubmitter || undefined);
+                            approved = false;
+                        }
+                    });
+
+                    const fields = [reason, approver, evidence];
+                    for (const field of fields) {
+                        field.addEventListener('input', () => field.setCustomValidity(''));
+                        field.addEventListener('change', () => field.setCustomValidity(''));
+                    }
+                    dialog.addEventListener('close', () => {
+                        for (const field of fields) {
+                            field.setCustomValidity('');
+                        }
+                        if (confirmed.value !== '1') {
+                            evidence.value = '';
+                        }
+                    });
+                    panel.querySelector('[data-duplicate-cancel]').addEventListener('click', () => dialog.close());
+                    panel.querySelector('[data-duplicate-confirm]').addEventListener('click', () => {
+                        if (!reason.value.trim()) {
+                            reason.setCustomValidity(messages.reason);
+                            reason.reportValidity();
+                            return;
+                        }
+
+                        if (!approver.value) {
+                            approver.setCustomValidity(messages.approver);
+                            approver.reportValidity();
+                            return;
+                        }
+                        if (!evidence.files.length) {
+                            evidence.setCustomValidity(messages.evidence);
+                            evidence.reportValidity();
+                            return;
+                        }
+
+                        confirmed.value = '1';
+                        submittedReason.value = reason.value.trim();
+                        dialog.close();
+                        approved = true;
+                        form.requestSubmit(savedSubmitter || undefined);
+                        approved = false;
+                    });
+                });
+            });
+        </script>
+    @endpush
+@endonce

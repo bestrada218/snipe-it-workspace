@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\DuplicateAssignments;
 use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedIn;
 use App\Helpers\Helper;
@@ -236,6 +237,11 @@ class AssetsController extends Controller
         // to return a list of all assets with the status *type* of Deployed, etc. The inuput field used to be "status" (which was consistent
         // with the relation rename, but it broke the sidebar. This should handle both use cases in the event that someone didn't update
         // their API integration code
+        if ($request->has('inventory_view')) {
+            $inventoryView = Setting::inventoryLocationModule($request->input('inventory_view'));
+            $assets->inInventoryLocationModule($inventoryView['location_id']);
+        }
+
         $status_type_key = null;
         if ($request->filled('status_type')) {
             $status_type_key = $request->input('status_type');
@@ -257,6 +263,7 @@ class AssetsController extends Controller
                 break;
             case 'RTD':
                 $assets->whereNull('assets.assigned_to')
+                    ->whereDoesntHave('shipments', fn ($shipments) => $shipments->open())
                     ->join('status_labels AS status_alias', function ($join) {
                         $join->on('status_alias.id', '=', 'assets.status_id')
                             ->where('status_alias.deployable', '=', 1)
@@ -858,6 +865,8 @@ class AssetsController extends Controller
             }
 
             if ($requestedCheckout) {
+                DuplicateAssignments::confirm($request, $asset, $target);
+
                 // Keep create + optional checkout side effects atomic.
                 return $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), '', 'Checked out on asset creation', e($request->input('name')));
             }
@@ -1180,6 +1189,8 @@ class AssetsController extends Controller
                     return false;
                 }
 
+                DuplicateAssignments::confirm($request, $locked, $target);
+
                 // Preserve the asset name if the name wasn't in the payload.
                 $asset_name = $request->has('name') ? $request->input('name') : $asset->name;
 
@@ -1448,11 +1459,13 @@ class AssetsController extends Controller
         // this transaction commits, then sees the asset as no longer
         // available. Mirrors the pattern in ConsumablesController::store
         // (GHSA-x4g2-87xc-m5jm).
-        $wasCheckedOut = DB::transaction(function () use ($asset, $target, $checkout_at, $expected_checkin, $note, $asset_name): bool {
+        $wasCheckedOut = DB::transaction(function () use ($asset, $target, $checkout_at, $expected_checkin, $note, $asset_name, $request): bool {
             $locked = Asset::whereKey($asset->id)->lockForUpdate()->first();
             if (! $locked || ! $locked->availableForCheckout()) {
                 return false;
             }
+
+            DuplicateAssignments::confirm($request, $locked, $target);
 
             return $asset->checkOut($target, auth()->user(), $checkout_at, $expected_checkin, $note, $asset_name, $asset->location_id);
         });

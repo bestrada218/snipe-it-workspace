@@ -167,6 +167,12 @@ class ViewAssetsController extends Controller
             'licenses' => License::Requestable()->count(),
         ];
 
+        foreach ($counts as $type => $count) {
+            if (! Setting::inventoryModuleEnabled($type === 'models' ? 'assets' : $type)) {
+                $counts[$type] = 0;
+            }
+        }
+
         return view('account/requestable-assets', compact('counts'));
     }
 
@@ -182,6 +188,7 @@ class ViewAssetsController extends Controller
         $cancel_by_admin = $requestingUser !== null
             && (int) $requestingUser !== (int) auth()->id();
         $fullItemType = 'App\\Models\\'.studly_case($itemType);
+        abort_unless(Setting::inventoryModelEnabled($fullItemType), 404);
 
         if ($itemType == 'asset_model') {
             $itemType = 'model';

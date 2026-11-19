@@ -17,6 +17,7 @@
     'rows' => null,
     'placeholder' => null,
     'help_text' => null,
+    'has_help' => false,
     'end_date' => null,
     'default_now' => true,
     'side_by_side' => false,
@@ -80,7 +81,7 @@
         :$name
         :$type
         :aria-label="$name"
-        :aria-describedby="$help_text ? $input_id.'-help' : null"
+        :aria-describedby="($help_text || $has_help) ? $input_id.'-help' : null"
         :component="'input.'.$blade_type"
         :id="$input_id"
         :required="$is_required"

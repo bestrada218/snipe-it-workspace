@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Assets\AssetCheckinController;
 use App\Http\Controllers\Assets\AssetCheckoutController;
+use App\Http\Controllers\Assets\AssetReplacementController;
 use App\Http\Controllers\Assets\AssetsController;
 use App\Http\Controllers\Assets\BulkAssetsController;
 use App\Http\Controllers\BulkMaintenancesController;
@@ -27,6 +28,11 @@ Route::group(
     ],
 
     function () {
+
+        Route::get('replacement-alerts', [AssetReplacementController::class, 'index'])
+            ->name('hardware.replacement-alerts')
+            ->breadcrumbs(fn (Trail $trail) => $trail->parent('home', route('home'))
+                ->push(trans('asset-replacement.alerts'), route('hardware.replacement-alerts')));
 
         Route::get('bulkaudit', [AssetsController::class, 'quickScan'])
             ->name('assets.bulkaudit')

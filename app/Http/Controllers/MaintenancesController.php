@@ -326,7 +326,7 @@ class MaintenancesController extends Controller
                 $file
             );
 
-            $maintenance->logUpload($fileName, $request->input('file_notes'));
+            $maintenance->logUpload($fileName, $request->input('file_notes'), $file->getClientOriginalName());
         }
     }
 

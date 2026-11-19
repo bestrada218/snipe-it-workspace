@@ -1,0 +1,32 @@
+<?php
+
+return [
+    'title' => 'Reemplazo obligatorio',
+    'required' => 'Este activo requiere reemplazo obligatorio',
+    'mode' => 'Cómo definir el vencimiento',
+    'years_mode' => 'Plazo en años',
+    'date_mode' => 'Fecha exacta',
+    'years' => 'Años desde el registro',
+    'registration_hint' => 'Fecha de registro: :date.',
+    'deadline' => 'Fecha límite de reemplazo',
+    'future_date' => 'Selecciona una fecha de reemplazo futura.',
+    'calculated' => 'Fecha calculada: :date.',
+    'remaining' => 'Tiempo restante: :duration.',
+    'alerts' => 'Alertas de reemplazo obligatorio',
+    'alert_hint' => 'Cada activo aparece una sola vez, en el tramo de vencimiento más próximo.',
+    'view_schedule' => 'Ver calendario de reemplazos',
+    'filter' => 'Vencimiento',
+    'days_remaining' => 'Días restantes',
+    'days_until_due' => ':count día|:count días',
+    'due_today' => 'Vence hoy',
+    'days_overdue' => 'Vencido hace :count día|Vencido hace :count días',
+    'all_scheduled' => 'Todos los reemplazos programados',
+    'empty' => 'No hay activos para este filtro.',
+    'windows' => [
+        'overdue' => 'Vencidos',
+        'one_day' => 'Hoy o mañana',
+        'fifteen_days' => 'Hasta 15 días',
+        'one_month' => 'Hasta 1 mes',
+        'three_months' => 'Hasta 3 meses',
+    ],
+];

@@ -39,6 +39,7 @@
                 :companyId="$consumable->company_id"
                 required
             />
+            <x-checkout.duplicate-assignment type="consumables" :item="$consumable" />
 
             <x-checkout.checkout-notification-callout :item="$consumable" :category="$consumable->category" />
 

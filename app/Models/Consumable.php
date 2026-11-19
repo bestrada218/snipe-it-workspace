@@ -58,6 +58,7 @@ class Consumable extends SnipeModel
      * validation rules
      */
     public $rules = [
+        'asset_tag' => 'nullable|string|max:255',
         'name' => 'required|max:255',
         'qty' => 'required|integer|min:0|max:99999',
         'category_id' => 'required|integer',
@@ -123,6 +124,7 @@ class Consumable extends SnipeModel
     // default_supplier_id / default_purchase_cost are parent-level
     // "template" values that seed the adjust-quantity modal.
     protected $fillable = [
+        'asset_tag',
         'category_id',
         'company_id',
         'item_no',
@@ -147,6 +149,7 @@ class Consumable extends SnipeModel
      * @var array
      */
     protected $searchableAttributes = [
+        'asset_tag',
         'name',
         'item_no',
         'model_number',

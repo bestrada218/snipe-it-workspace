@@ -13,12 +13,48 @@
 @push('js')
     <script nonce="{{ csrf_token() }}">
         $(function () {
-            $('[name="company_id"]').on('select2:select select2:clear', function (e) {
-                var companyId = $(this).val() || null;
-                var $parentSelect = $('#parent_id_location_select');
-                $parentSelect.data('company-id', companyId);
+            const $parentSelect = $('#parent_id_location_select');
+            $('[name="company_id"]').on('select2:select select2:clear', function () {
+                $parentSelect.data('company-id', $(this).val() || null);
                 $parentSelect.val(null).trigger('change');
             });
+
+            @if (! $item->id)
+                const fields = ['country', 'currency'].map(function (name) {
+                    const $field = $parentSelect.closest('form').find('select[name="' + name + '"]');
+                    const original = $field.val() || '';
+                    const field = { name, $field, original, edited: original !== '' };
+                    $field.on('change', function () {
+                        field.edited = true;
+                    });
+
+                    return field;
+                });
+
+                function suggestValues(parent) {
+                    fields.forEach(function (field) {
+                        if (field.edited) {
+                            return;
+                        }
+
+                        const value = parent?.[field.name] || field.original;
+                        if (value && !Array.from(field.$field[0].options).some(option => option.value === value)) {
+                            field.$field.append(new Option(value, value));
+                        }
+                        field.$field.val(value).trigger('change.select2');
+                    });
+                }
+
+                $parentSelect.on('select2:select', function (event) {
+                    suggestValues(event.params.data);
+                });
+
+                $parentSelect.on('change', function () {
+                    if (!$(this).val()) {
+                        suggestValues(null);
+                    }
+                });
+            @endif
         });
     </script>
 @endpush

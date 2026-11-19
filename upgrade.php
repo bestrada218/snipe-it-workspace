@@ -6,6 +6,11 @@ $info_icon = "\e[93mⓘ\e[0m";
 
 (PHP_SAPI !== 'cli' || isset($_SERVER['HTTP_USER_AGENT'])) && die('Access denied.');
 
+if (getenv('SNIPEIT_ENABLE_UPGRADER') !== '1') {
+    fwrite(STDERR, "The updater is disabled for this installation.\n");
+    exit(1);
+}
+
 // We define this because we can't reliably use file_get_contents because some
 // machines don't allow URL access via allow_url_fopen being set to off
 function url_get_contents ($Url) {

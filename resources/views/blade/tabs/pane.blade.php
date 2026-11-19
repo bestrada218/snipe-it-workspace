@@ -2,6 +2,7 @@
     'name' => 'default',
 ])
 
+@if (\App\Models\Setting::inventoryModuleEnabled($name))
 <!-- tab-pane -->
 
 <div id="{{ $name }}" {{ $attributes->merge(['class' => 'snipetab-pane tab-pane fade']) }}>
@@ -38,3 +39,4 @@
 
 </div>
 <!-- /.tab-pane -->
+@endif

@@ -63,6 +63,7 @@ class Accessory extends SnipeModel
      * @var array
      */
     protected $searchableAttributes = [
+        'asset_tag',
         'created_at',
         'model_number',
         'name',
@@ -99,6 +100,7 @@ class Accessory extends SnipeModel
      * Accessory validation rules
      */
     public $rules = [
+        'asset_tag' => 'nullable|string|max:255',
         'name' => 'required|max:255',
         'qty' => 'nullable|integer|min:0',
         'category_id' => 'required|integer|exists:categories,id',
@@ -168,6 +170,7 @@ class Accessory extends SnipeModel
     // items with no order history yet. See lastOrderDefaults() on the
     // HasOrders trait for the merge behavior.
     protected $fillable = [
+        'asset_tag',
         'category_id',
         'company_id',
         'location_id',

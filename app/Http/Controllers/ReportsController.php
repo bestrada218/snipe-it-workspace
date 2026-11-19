@@ -266,11 +266,15 @@ class ReportsController extends Controller
         // Dropdown filter lists for the activity report toolbar. Both
         // are sourced from enums (ActivityItemType, ActionType) so a
         // future case addition shows up in the UI automatically.
-        $typeFilters = array_map(fn (\App\Enums\ActivityItemType $case) => [
-            'value' => $case->value,
-            'label' => $case->label(),
-            'icon' => $case->icon(),
-        ], \App\Enums\ActivityItemType::cases());
+        $typeFilters = collect(\App\Enums\ActivityItemType::cases())
+            ->filter(fn (\App\Enums\ActivityItemType $case) => $hasReportsView || Setting::inventoryModelEnabled($case->class()))
+            ->map(fn (\App\Enums\ActivityItemType $case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'icon' => $case->icon(),
+            ])
+            ->values()
+            ->all();
 
         $actionTypes = collect(\App\Enums\ActionType::cases())
             ->pluck('value')
@@ -322,7 +326,7 @@ class ReportsController extends Controller
 
         $this->disableDebugbar();
 
-        $response = new StreamedResponse(function () use ($viewableTypeFilter) {
+        $response = new StreamedResponse(function () use ($viewableTypeFilter, $hasReportsView) {
             Log::debug('Starting streamed response');
             Log::debug('CSV escaping is set to: '.config('app.escape_formulas'));
 
@@ -353,7 +357,7 @@ class ReportsController extends Controller
             $executionTime = microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'];
             Log::debug('Added headers: '.$executionTime);
 
-            $actionlogs = Actionlog::with('item', 'user', 'target', 'location', 'adminuser')
+            $actionlogs = Actionlog::forEnabledInventoryModules(! $hasReportsView)->with('item', 'user', 'target', 'location', 'adminuser')
                 ->when($viewableTypeFilter !== null, fn ($q) => $q->where(function ($inner) use ($viewableTypeFilter) {
                     $inner->whereIn('item_type', $viewableTypeFilter)
                         ->orWhereIn('target_type', $viewableTypeFilter);
@@ -409,7 +413,7 @@ class ReportsController extends Controller
                             $actionlog->remote_ip,
                             $actionlog->user_agent,
                             $actionlog->action_source,
-                            $actionlog->log_meta,
+                            \App\Services\DuplicateAssignments::exportMetadata($actionlog),
                         ];
 
                         // CSV_ESCAPE_FORMULAS is set to false in the .env

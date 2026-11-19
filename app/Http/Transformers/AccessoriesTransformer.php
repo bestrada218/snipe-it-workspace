@@ -32,6 +32,7 @@ class AccessoriesTransformer
 
         $array = [
             'id' => $accessory->id,
+            'asset_tag' => $accessory->asset_tag ? e($accessory->asset_tag) : null,
             'name' => e($accessory->name),
             'image' => ($accessory->image) ? Storage::disk('public')->url(FileStorage::Accessories->publicPath().e($accessory->image)) : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'accessories', 'id' => $accessory->id]),

@@ -3,10 +3,12 @@
 namespace App\Http\Requests;
 
 use App\Models\Company;
+use App\Models\LocationGroupScope;
 use App\Models\Setting;
 use App\Models\User;
 use App\Rules\UserCannotSwitchCompaniesIfItemsAssigned;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class SaveUserRequest extends FormRequest
@@ -42,12 +44,27 @@ class SaveUserRequest extends FormRequest
             'location_id' => 'nullable|integer|exists:locations,id|fmcs_location',
         ];
 
+        $allowedLocations = LocationGroupScope::allowedIds($this->user());
+        if ($allowedLocations !== null && ($this->method() !== 'PATCH' || $this->has('location_id'))) {
+            $rules['location_id'] = ['required', 'integer', Rule::in($allowedLocations), 'fmcs_location'];
+        }
+
+        $target = $this->route('user');
+        $canManageLogin = $this->user()?->can('canEditAuthFields', $target instanceof User ? $target : new User);
+
         switch ($this->method()) {
 
             // Brand new user
             case 'POST':
                 $rules['first_name'] = 'required|string|min:1';
-                $rules['username'] = 'required_unless:ldap_import,1|string|min:1';
+                if (! $canManageLogin) {
+                    foreach ([...User::GATED_AUTH_FIELDS, 'password_confirmation', 'permission', 'ldap_import', 'groups'] as $field) {
+                        $rules[$field] = 'prohibited';
+                    }
+                    break;
+                }
+
+                $rules['username'] = 'nullable|required_if:activated,1|string|min:1';
                 if ($this->input('ldap_import') == false && $this->boolean('activated')) {
                     // Password rules only apply when the user will actually be
                     // able to log in. If "This user can login" is unchecked,
@@ -63,8 +80,10 @@ class SaveUserRequest extends FormRequest
                 // Save all fields
             case 'PUT':
                 $rules['first_name'] = 'required|string|min:1';
-                $rules['username'] = 'required_unless:ldap_import,1|string|min:1';
-                $rules['password'] = Setting::passwordComplexityRulesSaving('update').'|confirmed';
+                if ($canManageLogin) {
+                    $rules['username'] = 'nullable|required_if:activated,1|string|min:1';
+                    $rules['password'] = Setting::passwordComplexityRulesSaving('update').'|confirmed';
+                }
                 $rules['company_id'] = ['nullable', 'integer', 'exists:companies,id', new UserCannotSwitchCompaniesIfItemsAssigned];
                 break;
 

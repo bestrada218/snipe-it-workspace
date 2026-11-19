@@ -15,7 +15,10 @@
                  is wired the same way as every other list page. Preserves
                  the company_id / status query-string filtering the index
                  has always supported. --}}
-            <x-table.locations :route="route('api.locations.index', ['company_id' => e(request('company_id')), 'status' => e(request('status'))])" />
+            <x-table.locations
+                :route="route('api.locations.index', ['company_id' => e(request('company_id')), 'status' => e(request('status')), 'hierarchy' => 1])"
+                :presenter="\App\Presenters\LocationPresenter::dataTableLayout(hierarchy: true)"
+            />
         </x-box>
         <x-shiftclick/>
     </x-container>

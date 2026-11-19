@@ -13,7 +13,7 @@
 
             <x-table
                 name="maintenanceReport"
-                api_url="{{ route('api.maintenances.index', ['format' => 'flat']) }}"
+                api_url="{{ route('api.reports.inventory.maintenances', ['format' => 'flat']) }}"
                 :presenter="\App\Presenters\MaintenancesPresenter::reportLayout()"
                 export_filename="export-maintenances-{{ date('Y-m-d') }}"
             />

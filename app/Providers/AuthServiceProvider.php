@@ -17,10 +17,12 @@ use App\Models\Department;
 use App\Models\Depreciation;
 use App\Models\License;
 use App\Models\Location;
+use App\Models\LocationGroupScope;
 use App\Models\Maintenance;
 use App\Models\MaintenanceType;
 use App\Models\Manufacturer;
 use App\Models\PredefinedKit;
+use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\Supplier;
 use App\Models\User;
@@ -130,7 +132,24 @@ class AuthServiceProvider extends ServiceProvider
          * If this condition is true, ANYTHING else below will be assumed to be true.
          * This is where we set the superadmin permission to allow superadmins to be able to do everything within the system.
          */
-        Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, $ability, array $arguments) {
+            $subject = $arguments[0] ?? null;
+            $reportRead = in_array($ability, ['view', 'index'], true)
+                && request()->routeIs('reports.*', 'reports/*', 'ui.reports.*', 'api.reports.inventory.*', 'api.depreciation-report.index')
+                && Gate::forUser($user)->allows('reports.view');
+            if ((! $reportRead && ! Setting::inventoryModelEnabled($subject)) || ! LocationGroupScope::allows($user, $subject)) {
+                return false;
+            }
+
+            if (LocationGroupScope::allowedIds($user) !== null) {
+                if (in_array($ability, ['import', 'reports.view', 'activity.view', 'superuser'], true)) {
+                    return false;
+                }
+                if (($subject === Location::class || $subject instanceof Location)
+                    && in_array($ability, ['create', 'update', 'delete', 'restore', 'forceDelete'], true)) {
+                    return false;
+                }
+            }
 
             // Disallow even superadmins to edit non-editable things when in demo mode.
             // (We have to do this to prevent jerks from trying to break the demo by editing things they shouldn't.)
@@ -148,34 +167,9 @@ class AuthServiceProvider extends ServiceProvider
          * These control general sections of the admin. These definitions are used in our blades via @can('blah) and also
          * use in our controllers to determine if a user has access to a certain area.
          */
-        Gate::define('canEditAuthFields', function ($user, $item) {
-
-            if ($item instanceof User) {
-
-                // if they can only edit users, deny them if the user is admin or superadmin
-                if (! $user->isAdmin()) {
-
-                    if ($item->isAdmin() || $item->isSuperUser()) {
-                        return false;
-                    }
-
-                    return true;
-                }
-
-                // if they are an admin, deny them only if the user is a superadmin
-                if ($user->hasAccess('admin')) {
-                    if ($item->isSuperUser()) {
-                        return false;
-                    }
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            return false;
-        });
+        Gate::define('canEditAuthFields', fn (User $user, $item) => $item instanceof User
+            && $user->isAdmin()
+            && ! $item->isSuperUser());
 
         /**
          * Define the demo mode gate so we have an easy way to use @can and Gate::allows()

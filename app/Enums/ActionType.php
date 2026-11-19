@@ -9,6 +9,10 @@ enum ActionType: string
     case Update = 'update';
     case Delete = 'delete';
     case Restore = 'restore';
+    case ShipmentCreated = 'shipment created';
+    case ShipmentRescheduled = 'shipment rescheduled';
+    case ShipmentReceived = 'shipment received';
+    case ShipmentCancelled = 'shipment cancelled';
 
     // Assets/Accessories/Components/Licenses/Consumables
     case Checkout = 'checkout';

@@ -9,6 +9,8 @@
 {{-- Account page content --}}
 @section('content')
 
+    @include('asset-shipments.due-alert')
+
     @if (!request()->filled('user_id') || auth()->user()->id == $user->id)
         @if ($acceptanceQuantity = \App\Models\CheckoutAcceptance::forUser(Auth::user())->pending()->sum('qty'))
           <div class="row">
@@ -66,6 +68,7 @@
             </a>
           </li>
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
           <li>
             <a href="#assets" data-toggle="tab">
               <span class="hidden-lg hidden-md" aria-hidden="true">
@@ -77,7 +80,9 @@
             </span>
             </a>
           </li>
+          @endif
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('licenses'))
           <li>
             <a href="#licenses" data-toggle="tab">
             <span class="hidden-lg hidden-md">
@@ -88,7 +93,9 @@
             </span>
             </a>
           </li>
+          @endif
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
           <li>
             <a href="#accessories" data-toggle="tab">
             <span class="hidden-lg hidden-md">
@@ -99,7 +106,9 @@
             </span>
             </a>
           </li>
+          @endif
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
           <li>
             <a href="#consumables" data-toggle="tab">
             <span class="hidden-lg hidden-md" aria-hidden="true">
@@ -110,6 +119,7 @@
             </span>
             </a>
           </li>
+          @endif
 
           <li>
             <a href="#eulas" data-toggle="tab">
@@ -305,6 +315,7 @@
             </div> <!--/.row-->
           </div><!-- /.tab-pane -->
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('assets'))
           <div class="tab-pane" id="assets">
             <table
                 data-cookie-id-table="userAssignedAssets"
@@ -355,8 +366,10 @@
                 </thead>
             </table>
           </div><!-- /asset -->
+          @endif
 
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('licenses'))
           <div class="tab-pane" id="licenses">
 
               <table
@@ -421,6 +434,7 @@
               </table>
           </div>
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('accessories'))
           <div class="tab-pane" id="accessories">
               <table
                       data-toolbar="#userAccessoryToolbar"
@@ -466,7 +480,10 @@
                 </tbody>
               </table>
           </div><!-- /accessories-tab -->
+          @endif
+          @endif
 
+          @if (\App\Models\Setting::inventoryModuleEnabled('consumables'))
           <div class="tab-pane" id="consumables">
               <table
                       data-toolbar="#userConsumableToolbar"
@@ -514,6 +531,7 @@
                 </tbody>
               </table>
           </div><!-- /consumables-tab -->
+          @endif
           <div class="tab-pane" id="eulas">
             <table
                     data-toolbar="#userEULAToolbar"

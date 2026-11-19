@@ -10,6 +10,10 @@
       $requestPastEol = request()->boolean('past_eol');
   @endphp
 
+  @if ($inventoryView)
+    {{ \App\Models\Setting::inventoryLocationModuleLabel($inventoryView) }}
+  @else
+
   @if (is_scalar($requestCompanyId) && ($company instanceof \App\Models\Company))
     {{ $company->name }}
   @endif
@@ -39,11 +43,20 @@
 @else
 {{ trans('general.all') }}
 @endif
-{{ trans('general.assets') }}
+{{ \App\Models\Setting::inventoryModuleLabel('assets') }}
 
   @if (Request::has('order_number') && is_scalar($requestOrderNumber))
     : Order #{{ strval($requestOrderNumber) }}
   @endif
+  @endif
+@stop
+
+@section('header_right')
+    @if ($inventoryView && Gate::allows('create', \App\Models\Asset::class) && Gate::allows('checkout', \App\Models\Asset::class))
+        <a class="btn btn-primary" href="{{ route('hardware.create', ['inventory_view' => $inventoryViewKey]) }}">
+            <x-icon type="plus" /> {{ trans('general.new_asset') }}
+        </a>
+    @endif
 @stop
 
 {{-- Page title --}}
@@ -63,7 +76,9 @@
                     'company_id' => is_scalar($requestCompanyId) ? $requestCompanyId : null,
                     'status_id' => is_scalar($requestStatusTypeId) ? $requestStatusTypeId : null,
                     'past_eol' => $requestPastEol ? 1 : null,
+                    'inventory_view' => $inventoryViewKey,
                 ))"
+                :table_header="$inventoryView ? \App\Models\Setting::inventoryLocationModuleLabel($inventoryView) : \App\Models\Setting::inventoryModuleLabel('assets')"
                 :status_type="is_scalar($requestStatusType) ? $requestStatusType : null"
             />
         </x-box>

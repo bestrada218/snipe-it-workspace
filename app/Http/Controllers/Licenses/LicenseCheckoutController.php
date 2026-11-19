@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Licenses;
 
+use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -145,7 +146,7 @@ class LicenseCheckoutController extends Controller
             if ($request->filled('assigned_asset')) {
                 $checkoutTarget = $this->checkoutToAsset($licenseSeat);
             } elseif ($request->filled('assigned_user')) {
-                $checkoutTarget = $this->checkoutToUser($licenseSeat);
+                $checkoutTarget = $this->checkoutToUser($license, $licenseSeat);
             }
         });
 
@@ -248,12 +249,13 @@ class LicenseCheckoutController extends Controller
         return false;
     }
 
-    protected function checkoutToUser($licenseSeat)
+    protected function checkoutToUser(License $license, $licenseSeat)
     {
         // Fetch the target and set the license user
         if (is_null($target = User::find(request('assigned_user')))) {
             return redirect()->route('licenses.index')->with('error', trans('admin/licenses/message.user_does_not_exist'));
         }
+        DuplicateAssignments::confirm(request(), $license, $target);
         $licenseSeat->assigned_to = request('assigned_user');
 
         if ($licenseSeat->save()) {

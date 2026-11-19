@@ -18,6 +18,14 @@
                   {{ trans('admin/settings/general.legends.display') }}
               </x-form.legend>
 
+              @if (Gate::allows('reports.view') || Gate::allows('canViewUsersAndCheckoutables'))
+                  <p>
+                      <a class="btn btn-default" href="{{ route('reports.activity') }}#activityReportColumnControls">
+                          {{ trans('activity-log.profile_columns') }}
+                      </a>
+                  </p>
+              @endif
+
               <x-form.row
                   :label="trans('general.language')"
                   name="locale"

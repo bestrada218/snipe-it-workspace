@@ -23,6 +23,7 @@
     'wrapperId' => null,
     'id' => null,
     'style' => null,
+    'inputColumn' => 'col-md-7',
 ])
 
 @php
@@ -41,7 +42,7 @@
 >
     <label for="{{ $id }}" class="col-md-3 control-label">{{ $label }}</label>
 
-    <div class="col-md-7">
+    <div class="{{ $inputColumn }}">
         <select
             class="js-data-ajax"
             data-endpoint="users"
@@ -74,7 +75,7 @@
 
     @if ($snipeSettings->full_multiple_companies_support == '1')
         @cannot('superadmin')
-            <div class="col-md-7 col-md-offset-3">
+            <div class="{{ $inputColumn }} col-md-offset-3">
                 <p class="help-block"><x-icon type="tip" /> {{ trans('general.fmcs_select_note') }}</p>
             </div>
         @endcannot

@@ -9,9 +9,23 @@ class HistoryPresenter extends Presenter
      *
      * @return string
      */
-    public static function dataTableLayout($hide_fields = [], $extra_columns = [])
+    public static function dataTableLayout($hide_fields = [], $extra_columns = []): string
+    {
+        return json_encode(self::columns($hide_fields, $extra_columns));
+    }
+
+    private static function columns(array $hide_fields = [], array $extra_columns = []): array
     {
         $layout = [];
+        $changeColumn = [
+            'field' => 'log_meta',
+            'scope' => 'col',
+            'searchable' => false,
+            'sortable' => false,
+            'visible' => true,
+            'title' => trans('activity-log.details'),
+            'formatter' => 'activityDetailsFormatter',
+        ];
 
         if (! in_array('id', $hide_fields)) {
             array_push($layout,
@@ -77,7 +91,12 @@ class HistoryPresenter extends Presenter
                     'switchable' => true,
                     'title' => trans('general.action'),
                     'visible' => true,
+                    'formatter' => 'activityActionFormatter',
                 ]);
+        }
+
+        if (! in_array('log_meta', $hide_fields)) {
+            $layout[] = $changeColumn;
         }
 
         if (! in_array('action_date', $hide_fields)) {
@@ -139,9 +158,9 @@ class HistoryPresenter extends Presenter
                     'searchable' => true,
                     'sortable' => true,
                     'switchable' => true,
-                    'title' => trans('general.file_name'),
+                    'title' => trans('activity-log.attachment'),
                     'visible' => true,
-                    'formatter' => 'fileNameFormatter',
+                    'formatter' => 'activityAttachmentFormatter',
                 ]);
         }
 
@@ -210,19 +229,6 @@ class HistoryPresenter extends Presenter
                 ]);
         }
 
-        if (! in_array('log_meta', $hide_fields)) {
-            array_push($layout,
-                [
-                    'field' => 'log_meta',
-                    'scope' => 'col',
-                    'searchable' => false,
-                    'sortable' => false,
-                    'visible' => true,
-                    'title' => trans('admin/hardware/table.changed'),
-                    'formatter' => 'changeLogFormatter',
-                ]);
-        }
-
         if (! in_array('remote_ip', $hide_fields)) {
             array_push($layout,
                 [
@@ -259,6 +265,45 @@ class HistoryPresenter extends Presenter
                 ]);
         }
 
-        return json_encode(array_merge($layout, $extra_columns));
+        return array_merge($layout, $extra_columns);
+    }
+
+    public static function activityReportColumns(array $preferences = []): array
+    {
+        $primaryWidths = [
+            'created_at' => 153,
+            'created_by' => 137,
+            'action_type' => 116,
+            'item' => 220,
+            'log_meta' => 330,
+            'target' => 175,
+            'note' => 180,
+        ];
+        $available = array_column(self::columns(['id']), null, 'field');
+        $ordered = [];
+
+        foreach (array_keys($primaryWidths) as $field) {
+            $ordered[$field] = $available[$field];
+        }
+
+        $ordered += $available;
+        foreach ($ordered as $field => &$column) {
+            $column['width'] = $primaryWidths[$field] ?? ($field === 'icon' ? 80 : 140);
+            $column['visible'] = isset($primaryWidths[$field]);
+        }
+        unset($column);
+
+        $custom = [];
+        foreach ($preferences as $preference) {
+            $field = $preference['field'];
+            if (isset($ordered[$field])) {
+                $custom[$field] = array_replace($ordered[$field], [
+                    'width' => (int) $preference['width'],
+                    'visible' => (bool) $preference['visible'],
+                ]);
+            }
+        }
+
+        return array_values($custom + $ordered);
     }
 }

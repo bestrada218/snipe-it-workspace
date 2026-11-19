@@ -112,7 +112,7 @@ class UploadedFilesController extends Controller
             foreach ($request->file('file') as $file) {
                 $file_name = $request->handleFile(parent::getMapStoragePath()[$object_type], parent::getMapFilePrefix()[$object_type].'-'.$object->id, $file);
                 $files[] = $file_name;
-                $object->logUpload($file_name, $request->input('notes'));
+                $object->logUpload($file_name, $request->input('notes'), $file->getClientOriginalName());
             }
 
             if (isset($files)) {

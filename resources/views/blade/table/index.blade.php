@@ -24,6 +24,16 @@
      us having to remember to add it. --}}
 @php
     $aria_labelledby ??= ($name && $name !== 'default') ? $name.'-title' : null;
+
+    if (is_string($presenter) && ! request()->routeIs('reports.*', 'reports/*', 'ui.reports.*', 'report-templates.*')) {
+        $columns = json_decode($presenter, true);
+        if (is_array($columns)) {
+            $presenter = json_encode(array_values(array_filter(
+                $columns,
+                fn ($column) => \App\Models\Setting::inventoryColumnVisible($column['field'] ?? ''),
+            )));
+        }
+    }
 @endphp
 
 {{-- fixed_number / fixed_right_number pin the first / last N columns

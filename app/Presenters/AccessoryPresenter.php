@@ -41,6 +41,15 @@ class AccessoryPresenter extends Presenter
                 'visible' => false,
                 'printIgnore' => true,
             ], [
+                'field' => 'asset_tag',
+                'scope' => 'col',
+                'searchable' => true,
+                'sortable' => false,
+                'switchable' => false,
+                'title' => trans('admin/hardware/table.asset_tag'),
+                'visible' => true,
+                'formatter' => 'accessoriesLinkFormatter',
+            ], [
                 'field' => 'name',
                 'scope' => 'col',
                 'searchable' => true,

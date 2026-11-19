@@ -1541,6 +1541,12 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
      */
     Route::group(['prefix' => 'reports'], function () {
 
+        Route::prefix('inventory')->middleware('can:reports.view')->group(function () {
+            Route::get('accessories', [Api\AccessoriesController::class, 'index'])->name('api.reports.inventory.accessories');
+            Route::get('maintenances', [Api\MaintenancesController::class, 'index'])->name('api.reports.inventory.maintenances');
+            Route::get('activity', [Api\ReportsController::class, 'index'])->name('api.reports.inventory.activity');
+        });
+
         Route::get('activity',
             [
                 Api\ReportsController::class,

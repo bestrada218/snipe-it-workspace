@@ -51,9 +51,13 @@
 
         <x-page-column class="col-md-9 main-panel">
 
+            @php($assetShipments = $asset->shipments()->with(['recipient', 'asset.model'])->latest()->get())
             <x-tabs>
                 <x-slot:tabnav>
                     <x-tabs.details-tab/>
+                    @if ($assetShipments->isNotEmpty())
+                        <x-tabs.nav-item name="shipments" icon_type="shipment" :label="trans('asset-shipments.title')" :tooltip="trans('asset-shipments.title')" />
+                    @endif
                     <x-tabs.license-tab count="{{ $asset->licenses->count() }}"/>
                     <x-tabs.component-tab count="{{ $asset->components()->sum('assigned_qty') }}"/>
                     <x-tabs.asset-tab count="{{ $asset->assignedAssets()->AssetsForShow()->count() }}"/>
@@ -75,6 +79,12 @@
                 </x-slot:tabnav>
 
                 <x-slot:tabpanes>
+
+                    @if ($assetShipments->isNotEmpty())
+                        <x-tabs.pane name="shipments">
+                            @include('asset-shipments.asset-history')
+                        </x-tabs.pane>
+                    @endif
 
                     <!-- start details tab content -->
                     <x-tabs.pane name="details">
@@ -168,6 +178,13 @@
                                 <x-data-row :label="trans('admin/hardware/form.default_location')" copy_what="default_location">
                                     {!!  $asset->defaultLoc?->present()->formattedNameLink !!}
                                 </x-data-row>
+
+                                @if ($asset->replacement_due_on)
+                                    <x-data-row :label="trans('asset-replacement.deadline')">
+                                        {{ Helper::getFormattedDateObject($asset->replacement_due_on, 'date', false) }}
+                                        <span class="text-muted">{{ $asset->replacement_due_on->diffForHumans(['parts' => 3]) }}</span>
+                                    </x-data-row>
+                                @endif
 
                                 @if ($asset->asset_eol_date)
                                     <x-data-row :label="trans('general.device_eol')" copy_what="eol_date">

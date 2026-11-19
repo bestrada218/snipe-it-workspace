@@ -68,6 +68,7 @@ class License extends Depreciable
     ];
 
     protected $rules = [
+        'asset_tag' => 'nullable|string|max:255',
         'name' => 'required|string|max:255',
         'seats' => 'required|min:1|integer|limit_change:10000', // limit_change is a "pseudo-rule" that translates into 'between', see prepareLimitChangeRule() below
         'license_email' => 'email|nullable|max:120',
@@ -89,6 +90,7 @@ class License extends Depreciable
      * @var list<string>
      */
     protected $fillable = [
+        'asset_tag',
         'company_id',
         'depreciation_id',
         'expiration_date',
@@ -120,6 +122,7 @@ class License extends Depreciable
      * @var array
      */
     protected $searchableAttributes = [
+        'asset_tag',
         'name',
         'serial',
         'notes',

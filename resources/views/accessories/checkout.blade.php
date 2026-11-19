@@ -44,6 +44,7 @@
                 :companyId="$accessory->company_id"
                 :style="(session('checkout_to_type') ?: 'user') == 'user' ? null : 'display: none;'"
             />
+            <x-checkout.duplicate-assignment type="accessories" :item="$accessory" />
             @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.asset'), 'asset_selector_div_id' => 'assigned_asset', 'company_id' => $accessory->company_id, 'fieldname' => 'assigned_asset', 'unselect' => 'true', 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
             @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'company_id' => $accessory->company_id, 'style' => session('checkout_to_type') == 'location' ? '' : 'display: none;'])
 

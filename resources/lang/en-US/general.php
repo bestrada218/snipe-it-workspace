@@ -548,6 +548,8 @@ return [
     'dashboard_info' => 'This is your dashboard. There are many like it, but this one is yours.',
     '60_percent_warning' => '60% Complete (warning)',
     'dashboard_empty' => 'It looks like you have not added anything yet, so we do not have anything awesome to display. Get started by adding some assets, accessories, consumables, or licenses now!',
+    'dashboard_empty_title' => 'Your inventory is empty',
+    'dashboard_empty_description' => 'Use the shortcuts below to add your first inventory records.',
     'new_asset' => 'New Asset',
     'new_license' => 'New License',
     'new_accessory' => 'New Accessory',

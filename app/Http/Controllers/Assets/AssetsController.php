@@ -15,6 +15,7 @@ use App\Models\AssetModel;
 use App\Models\CheckoutRequest;
 use App\Models\Company;
 use App\Models\Location;
+use App\Models\LocationGroupScope;
 use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\User;
@@ -22,6 +23,8 @@ use App\Observers\AssetObserver;
 use App\View\Label;
 use Carbon\Carbon;
 use Com\Tecnick\Barcode\Barcode;
+use App\Services\AssetReplacement;
+use App\Services\AssetShipments;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use TypeError;
 
@@ -69,7 +73,10 @@ class AssetsController extends Controller
         $companyId = $request->input('company_id');
         $company = is_scalar($companyId) ? Company::find($companyId) : null;
 
-        return view('hardware/index')->with('company', $company);
+        $inventoryViewKey = $request->query('inventory_view');
+        $inventoryView = $inventoryViewKey === null ? null : Setting::inventoryLocationModule($request->input('inventory_view'));
+
+        return view('hardware/index', compact('company', 'inventoryViewKey', 'inventoryView'));
     }
 
     /**
@@ -84,7 +91,16 @@ class AssetsController extends Controller
     public function create(Request $request): View
     {
         $this->authorize('create', Asset::class);
+        $inventoryViewKey = $request->query('inventory_view');
+        $inventoryView = null;
+        if ($inventoryViewKey !== null) {
+            $this->authorize('checkout', Asset::class);
+            $inventoryView = Setting::inventoryLocationModule($request->input('inventory_view'));
+        }
+
         $view = view('hardware/edit')
+            ->with('inventoryView', $inventoryView)
+            ->with('inventoryViewKey', $inventoryViewKey)
             ->with('statuslabel_list', Helper::statusLabelList())
             ->with('item', new Asset)
             ->with('statuslabel_types', Helper::statusTypeList());
@@ -107,6 +123,55 @@ class AssetsController extends Controller
     public function store(CreateMultipleAssetRequest $request): RedirectResponse
     {
         $this->authorize(Asset::class);
+
+        $isInventoryView = $request->has('inventory_view');
+        if ($isInventoryView) {
+            $this->authorize('checkout', Asset::class);
+            $inventoryView = Setting::inventoryLocationModule($request->input('inventory_view'));
+            $request->validate([
+                'assigned_location' => 'required|integer|exists_undeleted:locations,id',
+                'assigned_user' => 'prohibited',
+                'assigned_asset' => 'prohibited',
+                'assigned_to' => 'prohibited',
+            ]);
+            $location = Location::findOrFail($request->integer('assigned_location'));
+            if (! Statuslabel::idsFor('deployable')->contains($request->integer('status_id'))) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status_id' => trans('admin/settings/general.inventory_deployable_status'),
+                ]);
+            }
+            if ($inventoryView['location_id'] !== null && $location->id !== (int) $inventoryView['location_id']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'assigned_location' => trans('admin/settings/general.inventory_location_mismatch'),
+                ]);
+            }
+        }
+
+        $request->validate(['track_shipment' => ['sometimes', 'boolean']]);
+        $shipmentData = null;
+        $shipmentRecipient = null;
+        if ($request->boolean('track_shipment')) {
+            $this->authorize('checkout', Asset::class);
+            if ($isInventoryView) {
+                throw ValidationException::withMessages(['track_shipment' => trans('asset-shipments.person_assets_only')]);
+            }
+
+            $shipmentData = $request->validate(AssetShipments::rules() + [
+                'asset_tags' => ['required', 'array', 'size:1'],
+                'assigned_to' => ['prohibited'],
+                'assigned_user' => ['prohibited'],
+                'assigned_asset' => ['prohibited'],
+                'assigned_location' => ['prohibited'],
+            ], [
+                'asset_tags.size' => trans('asset-shipments.one_asset'),
+            ]);
+            if (! Statuslabel::idsFor('deployable')->contains($request->integer('status_id'))) {
+                throw ValidationException::withMessages(['status_id' => trans('asset-shipments.deployable_required')]);
+            }
+            $shipmentRecipient = User::find($shipmentData['recipient_id']) ?? throw ValidationException::withMessages([
+                'recipient_id' => trans('admin/hardware/message.create.target_not_found.user'),
+            ]);
+        }
 
         // The create form accepts assigned_user / assigned_asset /
         // assigned_location and normally triggers a real checkOut() on every
@@ -139,6 +204,7 @@ class AssetsController extends Controller
         // There are a lot more rules to add here but prevents
         // errors around `asset_tags` not being present below.
         $this->validate($request, ['asset_tags' => ['required', 'array']]);
+        $replacement = AssetReplacement::attributes($request);
 
         // Handle asset tags - there could be one, or potentially many.
         // This is only necessary on create, not update, since bulk editing is handled
@@ -166,13 +232,16 @@ class AssetsController extends Controller
 
         $asset = null;
         $companyId = Company::getIdForCurrentUser($request->input('company_id'));
+        $scopedActor = LocationGroupScope::allowedIds($request->user()) !== null;
         $successes = [];
         $failures = [];
+        $shipment = null;
 
         try {
             DB::beginTransaction();
             for ($a = 1, $aMax = count($asset_tags); $a <= $aMax; $a++) {
                 $asset = new Asset;
+                $asset->forceFill($replacement);
 
                 $asset->model()->associate($model);
                 $asset->name = $request->input('name');
@@ -208,7 +277,14 @@ class AssetsController extends Controller
 
                 // Set location_id to rtd_location_id ONLY if the asset isn't being checked out
                 if (! request('assigned_user') && ! request('assigned_asset') && ! request('assigned_location')) {
-                    $asset->location_id = $request->input('rtd_location_id', null);
+                    $asset->location_id = $scopedActor
+                        ? ($request->input('location_id') ?? $asset->rtd_location_id)
+                        : $asset->rtd_location_id;
+                } elseif ($scopedActor) {
+                    $assignedLocation = $request->filled('assigned_location') ? Location::find($request->integer('assigned_location')) : null;
+                    $assignedUser = $request->filled('assigned_user') ? User::find($request->integer('assigned_user')) : null;
+                    $assignedAsset = $request->filled('assigned_asset') ? Asset::find($request->integer('assigned_asset')) : null;
+                    $asset->location_id = $assignedLocation?->id ?? $assignedUser?->location_id ?? $assignedAsset?->location_id;
                 }
 
                 if ($request->has('use_cloned_image')) {
@@ -282,7 +358,10 @@ class AssetsController extends Controller
                     }
 
                     if (isset($target)) {
-                        $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), $request->input('expected_checkin', null), 'Checked out on asset creation', $request->input('name'), $location);
+                        $assigned = $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), $request->input('expected_checkin', null), 'Checked out on asset creation', $request->input('name'), $location);
+                        if ($isInventoryView && ! $assigned) {
+                            $asset->throwValidationException();
+                        }
                     }
 
                     $successes[] = "<a href='".route('hardware.show', $asset)."' style='color: white;'>".e($asset->asset_tag).'</a>';
@@ -292,12 +371,23 @@ class AssetsController extends Controller
                     $failures[] = implode(',', $asset->getErrors()->all()); // TODO - this can probably go away soon
                 }
             }
+            if ($shipmentData !== null && $asset && $successes) {
+                $shipment = AssetShipments::create($asset, $shipmentRecipient, $request->user(), $shipmentData);
+            }
+
+            DB::commit();
         } catch (\Throwable $e) {
             \Log::debug('Caught exception in multi-create - rolling back: '.$e->getMessage());
             DB::rollBack();
+            if ($shipment) {
+                Storage::delete(FileStorage::AssetShipmentApprovals->privateStorageKey().$shipment->approval_key);
+            }
             throw $e;
         }
-        DB::commit();
+
+        if ($shipment) {
+            return redirect()->route('shipments.show', $shipment)->with('success', trans('asset-shipments.asset_and_shipment_saved'));
+        }
 
         if ($request->input('redirect_option') === 'back') {
             session()->put(['redirect_option' => 'index']);
@@ -329,6 +419,10 @@ class AssetsController extends Controller
 
             if ($checkoutSkippedForPermission) {
                 $response->with('warning', trans('admin/hardware/message.create.checkout_skipped_no_permission'));
+            }
+
+            if ($isInventoryView && $request->input('redirect_option') === 'index') {
+                $response->setTargetUrl(route('hardware.index', ['inventory_view' => $request->input('inventory_view')]));
             }
 
             return $response;
@@ -448,6 +542,7 @@ class AssetsController extends Controller
     {
 
         $this->authorize($asset);
+        $asset->forceFill(AssetReplacement::attributes($request, $asset));
 
         $asset->status_id = $request->input('status_id', null);
         $asset->warranty_months = $request->input('warranty_months', null);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\DuplicateAssignments;
 use App\Exceptions\MissingLogTarget;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
@@ -250,6 +251,10 @@ class LicenseSeatsController extends Controller
 
                         return;
                     }
+                }
+
+                if ($assignmentTouched && ! $is_checkin && $licenseSeat->asset_id === null) {
+                    DuplicateAssignments::confirm($request, $license, $target, ignoreSeat: $licenseSeat->id);
                 }
 
                 if (! $licenseSeat->save()) {

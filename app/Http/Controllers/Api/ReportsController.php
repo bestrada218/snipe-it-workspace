@@ -81,7 +81,7 @@ class ReportsController extends Controller
             $this->authorize('activity.view');
         }
 
-        $actionlogs = Actionlog::with('item', 'user', 'adminuser', 'target', 'location');
+        $actionlogs = Actionlog::forEnabledInventoryModules(! $request->routeIs('api.reports.inventory.activity'))->with('item', 'user', 'adminuser', 'target', 'location');
 
         if ($targetClasses && $request->filled('target_id')) {
             $actionlogs = $actionlogs->where('target_id', '=', $request->input('target_id'))

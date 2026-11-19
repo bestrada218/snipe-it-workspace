@@ -16,6 +16,7 @@ use App\Models\Location;
 use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\Supplier;
+use App\Services\DuplicateAssignments;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Gate;
@@ -24,12 +25,12 @@ use Illuminate\Support\Facades\Storage;
 
 class ActionlogsTransformer
 {
-    public function transformActionlogs(Collection $actionlogs, $total)
+    public function transformActionlogs(Collection $actionlogs, $total, bool $onlyViewableChanges = false)
     {
         $array = [];
         $settings = Setting::getSettings();
         foreach ($actionlogs as $actionlog) {
-            $array[] = self::transformActionlog($actionlog, $settings);
+            $array[] = self::transformActionlog($actionlog, $settings, $onlyViewableChanges);
         }
 
         return (new DatatablesTransformer)->transformDatatables($array, $total);
@@ -49,13 +50,24 @@ class ActionlogsTransformer
             return $this->clean_field($value->value);
         }
 
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
         return is_scalar($value) || is_null($value) ? e($value) : e(json_encode($value));
     }
 
-    public function transformActionlog(Actionlog $actionlog, $settings = null)
+    public function transformActionlog(Actionlog $actionlog, $settings = null, bool $onlyViewableChanges = false)
     {
 
-        $icon = $actionlog->present()->icon();
+        $presenter = $actionlog->present();
+        $icon = $presenter->icon();
+        $itemViewable = $actionlog->item && Gate::allows('view', $actionlog->item);
+        $includeDetails = ! $onlyViewableChanges || $itemViewable;
+        $hasFile = $actionlog->filename !== null && $actionlog->filename !== '';
+        $canViewFile = $hasFile && $includeDetails && $actionlog->item && Gate::allows('files', $actionlog->item);
+        $isDeletedUpload = $actionlog->action_type === ActionType::UploadDeleted->value;
+        $filePath = $hasFile ? $actionlog->uploads_file_path() : null;
 
         // File-type icon only wins for events that are inherently ABOUT
         // a file (`uploaded`). Other events that happen to carry a
@@ -75,7 +87,7 @@ class ActionlogsTransformer
 
         // This is necessary since we can't escape special characters within a JSON object
         $meta_array = null;
-        if (($actionlog->log_meta) && ($actionlog->log_meta != '')) {
+        if ($includeDetails && $actionlog->log_meta) {
             $meta_array = json_decode($actionlog->log_meta);
 
             $clean_meta = [];
@@ -84,8 +96,8 @@ class ActionlogsTransformer
 
                 foreach ($meta_array as $fieldname => $fieldata) {
 
-                    // Snapshot of audit-visible custom field values — handled separately below.
-                    if ($fieldname === '_audit_snapshot') {
+                    // Snapshots are displayed separately from field diffs.
+                    if (in_array($fieldname, ['_audit_snapshot', '_activity_previous_assignment', '_activity_assignment_target', '_duplicate_assignment_reason', '_duplicate_assignment_approval'], true)) {
                         continue;
                     }
 
@@ -100,8 +112,20 @@ class ActionlogsTransformer
                         continue;
                     }
 
-                    $clean_meta[$fieldname]['old'] = $this->clean_field($fieldata->old);
-                    $clean_meta[$fieldname]['new'] = $this->clean_field($fieldata->new);
+                    if (! property_exists($fieldata, 'old') && ! property_exists($fieldata, 'new')) {
+                        continue;
+                    }
+
+                    $clean_meta[$fieldname] = [
+                        'old' => $this->clean_field($fieldata->old ?? null),
+                        'new' => $this->clean_field($fieldata->new ?? null),
+                    ];
+
+                    foreach (['old', 'new'] as $side) {
+                        if (! property_exists($fieldata, $side)) {
+                            $clean_meta[$fieldname][$side.'_recorded'] = false;
+                        }
+                    }
 
                     // this is a custom field
                     if (str_starts_with($fieldname, '_snipeit_')) {
@@ -115,13 +139,13 @@ class ActionlogsTransformer
                                     // Unset these fields. We need to decrypt them, since even if the decrypted value
                                     // didn't change, their value in the DB will, so we have to compare the unencrypted version
                                     // to see if the values actually did change
-                                    unset($clean_meta[$fieldname]);
+                                    $recorded = array_intersect_key($clean_meta[$fieldname], array_flip(['old_recorded', 'new_recorded']));
                                     unset($clean_meta[$fieldname]);
 
                                     $enc_old = '';
                                     $enc_new = '';
 
-                                    if ($this->clean_field($fieldata->old != '')) {
+                                    if (isset($fieldata->old) && $fieldata->old !== '') {
                                         try {
                                             $enc_old = Crypt::decryptString($this->clean_field($fieldata->old));
                                         } catch (\Exception $e) {
@@ -129,7 +153,7 @@ class ActionlogsTransformer
                                         }
                                     }
 
-                                    if ($this->clean_field($fieldata->new != '')) {
+                                    if (isset($fieldata->new) && $fieldata->new !== '') {
                                         try {
                                             $enc_new = Crypt::decryptString($this->clean_field($fieldata->new));
                                         } catch (\Exception $e) {
@@ -138,6 +162,7 @@ class ActionlogsTransformer
                                     }
 
                                     if ($enc_old != $enc_new) {
+                                        $clean_meta[$fieldname] = $recorded;
                                         $clean_meta[$fieldname]['old'] = '************';
                                         $clean_meta[$fieldname]['new'] = '************';
 
@@ -167,8 +192,8 @@ class ActionlogsTransformer
             // The old / new pair in log_meta['serial'] on a license
             // edit would otherwise leak both the previous and new
             // key through the History tab and the activity report.
-            if ($actionlog->item instanceof License
-                && ! Gate::allows('viewKeys', $actionlog->item)
+            if ($actionlog->item_type === License::class
+                && (! $actionlog->item instanceof License || ! Gate::allows('viewKeys', $actionlog->item))
                 && isset($clean_meta['serial'])
                 && is_array($clean_meta['serial'])
             ) {
@@ -195,17 +220,27 @@ class ActionlogsTransformer
             }
         }
 
+        $approval = null;
+        $factsMeta = (array) $meta_array;
+        if (isset($factsMeta['_duplicate_assignment_reason']) && DuplicateAssignments::canViewApproval($actionlog)) {
+            $approval = (array) ($factsMeta['_duplicate_assignment_approval'] ?? []);
+        } else {
+            unset($factsMeta['_duplicate_assignment_reason']);
+        }
+
         $array = [
             'id' => (int) $actionlog->id,
             'icon' => $icon,
-            'file' => ($actionlog->filename != '')
+            'file' => $hasFile
                 ?
                 [
                     'url' => $actionlog->uploads_file_url(),
                     'filename' => $actionlog->filename,
-                    'inlineable' => StorageHelper::allowSafeInline($actionlog->uploads_file_path()),
-                    'exists_on_disk' => Storage::exists($actionlog->uploads_file_path()) ? true : false,
-                    'mediatype' => StorageHelper::getMediaType($actionlog->uploads_file_path()),
+                    'display_name' => $canViewFile ? $presenter->attachmentName() : null,
+                    'can_download' => $canViewFile && ! $isDeletedUpload,
+                    'inlineable' => $filePath !== null && StorageHelper::allowSafeInline($filePath),
+                    'exists_on_disk' => $filePath !== null && Storage::exists($filePath),
+                    'mediatype' => $filePath !== null ? StorageHelper::getMediaType($filePath) : null,
                 ] : null,
 
             'item' => ($actionlog->item) ? [
@@ -218,7 +253,7 @@ class ActionlogsTransformer
                 // cannot reach the show controller for this record.
                 // Without it, clicking through a scoped viewer's
                 // recent-activity row 403s on the target page.
-                'viewable' => Gate::allows('view', $actionlog->item),
+                'viewable' => $itemViewable,
             ] : null,
             'location' => ($actionlog->location) ? [
                 'id' => (int) $actionlog->location->id,
@@ -229,7 +264,21 @@ class ActionlogsTransformer
             'updated_at' => Helper::getFormattedDateObject($actionlog->updated_at, 'datetime'),
             'next_audit_date' => ($actionlog->itemType() == 'asset') ? Helper::getFormattedDateObject($actionlog->calcNextAuditDate(null, $actionlog->item), 'date') : null,
             'days_to_next_audit' => $actionlog->daysUntilNextAudit($settings->audit_interval, $actionlog->item),
-            'action_type' => $actionlog->present()->actionType(),
+            'action_type' => $presenter->actionType(),
+            'activity_title' => $approval !== null ? trans('duplicate-assignments.activity_action') : $presenter->activityTitle(),
+            'activity_facts' => $includeDetails ? $presenter->activityFacts($factsMeta) : [],
+            'shipment_url' => $includeDetails && isset($meta_array->_shipment->id)
+                ? route('shipments.show', (int) $meta_array->_shipment->id)
+                : null,
+            'duplicate_assignment_evidence' => $approval && DuplicateAssignments::evidencePath($approval) ? [
+                'filename' => $approval['filename'],
+                'url' => route('duplicate-assignments.evidence', $actionlog->id),
+            ] : null,
+            'activity_file_status' => $includeDetails ? match ($actionlog->action_type) {
+                ActionType::Uploaded->value => 'uploaded',
+                ActionType::UploadDeleted->value => 'deleted',
+                default => null,
+            } : null,
             'admin' => ($actionlog->adminuser) ? [
                 'id' => (int) $actionlog->adminuser->id,
                 'name' => e($actionlog->adminuser->display_name) ?? null,

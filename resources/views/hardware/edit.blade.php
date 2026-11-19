@@ -9,12 +9,15 @@
 {{-- Page content --}}
 @section('content')
 
-<x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
+@php
+    $canTrackShipment = ! $item->id && ! isset($inventoryView) && Gate::allows('checkout', \App\Models\Asset::class);
+    $trackShipment = $canTrackShipment && (bool) old('track_shipment', request()->boolean('shipment'));
+@endphp
+
+<x-container>
     <x-form :item="$item" :route="$item->id ? route('hardware.update', $item) : route('hardware.store')">
-        <x-box top_submit>
-            @if ($item->id)
-                <x-slot:header>{{ $item->display_name }}</x-slot:header>
-            @endif
+        <x-box top_submit class="workspace-asset-form">
+            <x-slot:header>{{ $item->id ? $item->display_name : trans('general.asset_information') }}</x-slot:header>
 
     <x-input.company-select
         :label="trans('general.company')"
@@ -49,7 +52,9 @@
           <div class="col-md-7 col-sm-12">
               <input class="form-control"
                      type="text" name="asset_tags[1]" id="asset_tag"
-                     value="{{ old('asset_tags.1', \App\Models\Asset::autoincrement_asset()) }}" required>
+                     value="{{ old('asset_tags.1', \App\Models\Asset::autoincrement_asset()) }}"
+                     aria-describedby="asset-tag-sequence-hint" required>
+              <x-form.asset-tag-help id="asset-tag-sequence-hint" />
               <x-form.error name="asset_tags.1" />
           </div>
           <div class="col-md-2 col-sm-12">
@@ -97,18 +102,30 @@
 
 
     @include ('partials.forms.edit.status', [ 'required' => 'true'])
-    @if (!$item->id)
-        
-                    @include ('partials.forms.checkout-selector', ['user_select' => 'true','asset_select' => 'true', 'location_select' => 'true', 'style' => 'display:none;', 'optional' => true])
-        <x-input.user-select
-            :label="trans('general.user')"
-            name="assigned_user"
-            :selected="old('assigned_user')"
-            style="display:none;"
+    @if (! $item->id && isset($inventoryView))
+        <input type="hidden" name="inventory_view" value="{{ $inventoryViewKey }}">
+        <input type="hidden" name="checkout_to_type" value="location">
+        <x-input.location-select
+            :label="trans('admin/settings/general.inventory_assigned_location')"
+            name="assigned_location"
+            :selected="old('assigned_location', $inventoryView['location_id'])"
+            :required="true"
         />
-        @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.asset'), 'fieldname' => 'assigned_asset', 'style' => 'display:none;', 'required' => 'false'])
-        @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'style' => 'display:none;', 'required' => 'false'])
+    @elseif (! $item->id)
+        <fieldset id="immediate-assignment-fields" @if ($trackShipment) hidden disabled @endif>
+            @include ('partials.forms.checkout-selector', ['user_select' => 'true','asset_select' => 'true', 'location_select' => 'true', 'style' => 'display:none;', 'optional' => true])
+            <x-input.user-select
+                :label="trans('general.user')"
+                name="assigned_user"
+                :selected="old('assigned_user')"
+                style="display:none;"
+            />
+            @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.asset'), 'fieldname' => 'assigned_asset', 'style' => 'display:none;', 'required' => 'false'])
+            @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'style' => 'display:none;', 'required' => 'false'])
+        </fieldset>
     @endif
+
+    <x-form.asset-replacement :$item />
 
     {{-- Notes --}}
     <x-form.row
@@ -264,13 +281,13 @@
     <div class="col-md-12 col-sm-12">
         <fieldset name="order-info">
             <x-form.legend>
-                <a id="order_info">
-                    <x-icon type="caret-right" class="fa-fw" id="order_info_icon" />
+                <button type="button" class="btn btn-link workspace-order-toggle" id="order_info" aria-controls="order_details" aria-expanded="{{ $canTrackShipment ? 'true' : 'false' }}">
+                    <x-icon :type="$canTrackShipment ? 'caret-down' : 'caret-right'" class="fa-fw" id="order_info_icon" />
                     {{ trans('admin/hardware/form.order_details') }}
-                </a>
+                </button>
             </x-form.legend>
 
-            <div id='order_details' class="col-md-12" style="display:none">
+            <div id="order_details" class="col-md-12" @if (! $canTrackShipment) style="display:none" @endif>
                 {{-- Order number --}}
                 <x-form.row
                     :label="trans('general.order_number')"
@@ -317,6 +334,30 @@
                     :item="$item"
                     :currencyType="$item->id && $item->location && $item->location->currency !== '' ? $item->location->currency : null"
                 />
+
+                @if ($canTrackShipment)
+                    <div class="form-group">
+                        <div class="col-md-3 control-label">{{ trans('asset-shipments.tracking_section') }}</div>
+                        <div class="col-md-8">
+                            <input type="hidden" name="track_shipment" value="0">
+                            <label class="workspace-shipment-toggle" for="track-shipment">
+                                <input type="checkbox" id="track-shipment" name="track_shipment" value="1" @checked($trackShipment) aria-controls="shipment-fields">
+                                <span>{{ trans('asset-shipments.track_on_create') }}</span>
+                            </label>
+                            <x-form.error name="track_shipment" />
+                            <x-form.error name="asset_tags" />
+                        </div>
+                    </div>
+                    <fieldset id="shipment-fields" class="workspace-shipment-form" @if (! $trackShipment) hidden disabled @endif>
+                        <legend class="sr-only">{{ trans('asset-shipments.tracking_section') }}</legend>
+                        <div class="form-group">
+                            <div class="col-md-8 col-md-offset-3">
+                                <p class="help-block">{{ trans('asset-shipments.track_on_create_help') }}</p>
+                            </div>
+                        </div>
+                        @include('asset-shipments.fields')
+                    </fieldset>
+                @endif
 
             </div> <!-- end order details -->
         </fieldset>
@@ -416,6 +457,26 @@
         }
     }
 
+    document.getElementById('track-shipment')?.addEventListener('change', function () {
+        const shipmentFields = document.getElementById('shipment-fields');
+        const assignmentFields = document.getElementById('immediate-assignment-fields');
+        const recipient = shipmentFields.querySelector('[name="recipient_id"]');
+        const assignmentType = assignmentFields.querySelector('[name="checkout_to_type"]:checked')?.value;
+        const assignee = assignmentFields.querySelector('[name="assigned_user"]').selectedOptions[0];
+
+        shipmentFields.hidden = shipmentFields.disabled = !this.checked;
+        assignmentFields.hidden = assignmentFields.disabled = this.checked;
+
+        if (this.checked && assignmentType === 'user' && assignee?.value && !recipient.value) {
+            const existingOption = Array.from(recipient.options).find(option => option.value === assignee.value);
+            if (!existingOption) {
+                recipient.add(new Option(assignee.text, assignee.value));
+            }
+            recipient.value = assignee.value;
+            $(recipient).trigger('change.select2');
+        }
+    });
+
     function user_add(status_id) {
 
         if (status_id != '') {
@@ -510,6 +571,7 @@
             $('#order_details').fadeToggle(100);
             $("#order_info_icon").toggleClass('fa-caret-right fa-caret-down');
             var order_info_open = $('#order_info_icon').hasClass('fa-caret-down');
+            $(this).attr('aria-expanded', String(order_info_open));
             document.cookie = "order_info_open="+order_info_open+'; path=/';
         });
 
@@ -522,7 +584,7 @@
                     $('#optional_info').trigger('click')
                 }
             }
-            if (trimmed_cookie.startsWith('order_info_open=')) {
+            if (trimmed_cookie.startsWith('order_info_open=') && $('#order_info').attr('aria-expanded') === 'false') {
                 elems = all_cookies[i].split('=', 2)
                 if (elems[1] == 'true') {
                     $('#order_info').trigger('click')

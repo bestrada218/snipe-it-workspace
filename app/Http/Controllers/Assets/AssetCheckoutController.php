@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Assets;
 
+use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Exceptions\CheckoutNotAllowed;
 use App\Helpers\Helper;
@@ -127,46 +128,6 @@ class AssetCheckoutController extends Controller
                 ]));
             }
 
-            $asset = $this->updateAssetLocation($asset, $target);
-
-            $checkout_at = date('Y-m-d H:i:s');
-            if (($request->filled('checkout_at')) && ($request->input('checkout_at') != date('Y-m-d'))) {
-                $checkout_at = $request->input('checkout_at');
-            }
-
-            $expected_checkin = '';
-            if ($request->filled('expected_checkin')) {
-                $expected_checkin = $request->input('expected_checkin');
-            }
-
-            if ($request->filled('status_id')) {
-                $asset->status_id = $request->input('status_id');
-            }
-
-            // Two-way toggle: checked = requestable, unchecked (or absent) =
-            // not. The form pre-populates the checkbox with the asset's current
-            // state so users can flip either direction (e.g. mark "no longer
-            // requestable" during checkout because the item is now assigned).
-            $asset->requestable = $request->boolean('requestable');
-
-            if (! empty($asset->licenseseats->all())) {
-                if (request('checkout_to_type') == 'user') {
-                    foreach ($asset->licenseseats as $seat) {
-                        $seat->assigned_to = $target->id;
-                        $seat->save();
-                    }
-                }
-            }
-
-            // Add any custom fields that should be included in the checkout
-            $asset->customFieldsForCheckinCheckout('display_checkout');
-
-            session()->put([
-                'redirect_option' => $request->input('redirect_option'),
-                'checkout_to_type' => $request->input('checkout_to_type'),
-                'sign_in_place' => $request->boolean('sign_in_place'),
-            ]);
-
             // Concurrency guard. availableForCheckout() above ran on an
             // unlocked read, so two simultaneous form submits can both
             // observe the asset as available and both proceed through
@@ -178,11 +139,54 @@ class AssetCheckoutController extends Controller
             // and then sees the asset as no longer available. Mirrors the
             // pattern in Api\AssetsController::checkout and
             // ConsumablesController::store (GHSA-x4g2-87xc-m5jm).
-            $checkedOut = DB::transaction(function () use ($asset, $target, $admin, $checkout_at, $expected_checkin, $request): bool {
+            $checkedOut = DB::transaction(function () use (&$asset, $target, $admin, $request): bool {
                 $locked = Asset::whereKey($asset->id)->lockForUpdate()->first();
                 if (! $locked || ! $locked->availableForCheckout()) {
                     return false;
                 }
+
+                DuplicateAssignments::confirm($request, $locked, $target);
+                $asset = $locked;
+
+                $asset = $this->updateAssetLocation($asset, $target);
+
+                $checkout_at = date('Y-m-d H:i:s');
+                if (($request->filled('checkout_at')) && ($request->input('checkout_at') != date('Y-m-d'))) {
+                    $checkout_at = $request->input('checkout_at');
+                }
+
+                $expected_checkin = '';
+                if ($request->filled('expected_checkin')) {
+                    $expected_checkin = $request->input('expected_checkin');
+                }
+
+                if ($request->filled('status_id')) {
+                    $asset->status_id = $request->input('status_id');
+                }
+
+                // Two-way toggle: checked = requestable, unchecked (or absent) =
+                // not. The form pre-populates the checkbox with the asset's current
+                // state so users can flip either direction (e.g. mark "no longer
+                // requestable" during checkout because the item is now assigned).
+                $asset->requestable = $request->boolean('requestable');
+
+                if (! empty($asset->licenseseats->all())) {
+                    if (request('checkout_to_type') == 'user') {
+                        foreach ($asset->licenseseats as $seat) {
+                            $seat->assigned_to = $target->id;
+                            $seat->save();
+                        }
+                    }
+                }
+
+                // Add any custom fields that should be included in the checkout
+                $asset->customFieldsForCheckinCheckout('display_checkout');
+
+                session()->put([
+                    'redirect_option' => $request->input('redirect_option'),
+                    'checkout_to_type' => $request->input('checkout_to_type'),
+                    'sign_in_place' => $request->boolean('sign_in_place'),
+                ]);
 
                 return (bool) $asset->checkOut($target, $admin, $checkout_at, $expected_checkin, $request->input('note'), $request->input('name'), null, $request->boolean('sign_in_place'));
             });

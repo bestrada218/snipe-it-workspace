@@ -123,7 +123,7 @@ class UserItemTransferController extends Controller
             }
 
             $this->checkInAsset($asset, $source, $note);
-            $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), null, $note, $asset->name);
+            $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), null, $note, $asset->name, transferredFrom: $source);
             $count++;
         }
 
@@ -148,7 +148,7 @@ class UserItemTransferController extends Controller
             }
 
             $this->checkInAccessory($checkout, $accessory, $note);
-            $this->checkOutAccessory($accessory, $target, $note);
+            $this->checkOutAccessory($accessory, $source, $target, $note);
             $count++;
         }
 
@@ -235,7 +235,7 @@ class UserItemTransferController extends Controller
         event(new CheckoutableCheckedIn($accessory, $source, auth()->user(), $note, date('Y-m-d H:i:s')));
     }
 
-    private function checkOutAccessory(Accessory $accessory, User $target, ?string $note): void
+    private function checkOutAccessory(Accessory $accessory, User $source, User $target, ?string $note): void
     {
         $newCheckout = new AccessoryCheckout([
             'accessory_id' => $accessory->id,
@@ -246,7 +246,9 @@ class UserItemTransferController extends Controller
         $newCheckout->created_by = auth()->id();
         $newCheckout->save();
 
-        event(new CheckoutableCheckedOut($accessory, $target, auth()->user(), $note, [], 1, false));
+        event(new CheckoutableCheckedOut($accessory, $target, auth()->user(), $note, [
+            '_activity_previous_assignment' => $source->display_name,
+        ]));
     }
 
     private function transferLicenseSeat(LicenseSeat $seat, User $source, User $target, ?string $note): void
@@ -264,6 +266,8 @@ class UserItemTransferController extends Controller
 
         $seat->assigned_to = $target->id;
         $seat->save();
-        event(new CheckoutableCheckedOut($seat, $target, auth()->user(), $note, [], 1, false));
+        event(new CheckoutableCheckedOut($seat, $target, auth()->user(), $note, [
+            '_activity_previous_assignment' => $source->display_name,
+        ]));
     }
 }

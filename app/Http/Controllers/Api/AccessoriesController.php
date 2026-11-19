@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\DuplicateAssignments;
 use App\Events\CheckoutableCheckedIn;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -686,6 +687,9 @@ class AccessoriesController extends Controller
         // pattern.
         DB::transaction(function () use ($accessory, $request, $target, &$payload, &$overAllocated): void {
             $locked = Accessory::whereKey($accessory->id)->lockForUpdate()->first();
+            if ($locked) {
+                DuplicateAssignments::confirm($request, $locked, $target, (int) $accessory->checkout_qty);
+            }
 
             if (! $locked || $locked->numRemaining() < $accessory->checkout_qty) {
                 $overAllocated = true;

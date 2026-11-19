@@ -194,7 +194,7 @@ class AssetsTransformer
             'bulk_selectable' => [
                 'edit' => ($asset->deleted_at == '' && Gate::allows('update', $asset)),
                 'maintenance' => ($asset->deleted_at == '' && Gate::allows('update', $asset)),
-                'checkout' => ($asset->deleted_at == '' && ! $asset->assigned_to && Gate::allows('checkout', $asset)),
+                'checkout' => $array['user_can_checkout'] && Gate::allows('checkout', $asset),
                 'checkin' => ($asset->deleted_at == '' && $asset->assigned_to && Gate::allows('checkin', $asset)),
                 'audit' => ($asset->deleted_at == '' && Gate::allows('audit', $asset)),
                 'delete' => ($asset->deleted_at == '' && ! $asset->assigned_to && Gate::allows('delete', $asset)),

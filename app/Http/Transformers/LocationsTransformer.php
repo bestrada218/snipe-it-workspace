@@ -13,11 +13,15 @@ use Illuminate\Support\Facades\Storage;
 
 class LocationsTransformer
 {
-    public function transformLocations(Collection $locations, $total)
+    public function transformLocations(Collection $locations, $total, array $hierarchyDepths = [])
     {
         $array = [];
         foreach ($locations as $location) {
-            $array[] = self::transformLocation($location);
+            $row = self::transformLocation($location);
+            if (isset($hierarchyDepths[$location->id])) {
+                $row['hierarchy_depth'] = $hierarchyDepths[$location->id];
+            }
+            $array[] = $row;
         }
 
         return (new DatatablesTransformer)->transformDatatables($array, $total);

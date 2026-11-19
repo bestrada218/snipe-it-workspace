@@ -20,6 +20,7 @@ use App\Models\Location;
 use App\Models\Maintenance;
 use App\Models\Manufacturer;
 use App\Models\PredefinedKit;
+use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\Supplier;
 use App\Models\User;
@@ -46,21 +47,26 @@ class BreadcrumbsServiceProvider extends ServiceProvider
          * Asset Breadcrumbs
          */
         $statusType = request()->status_type;
-        if (request()->is('hardware*') && is_string($statusType) && $statusType !== '') {
+        $inventoryView = request()->is('hardware', 'hardware/create') ? request()->query('inventory_view') : null;
+        if (is_string($inventoryView) && isset(Setting::inventoryLocationModules()[$inventoryView])) {
             Breadcrumbs::for('hardware.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.assets'), route('hardware.index'))
+                ->push(Setting::inventoryLocationModuleLabel(Setting::inventoryLocationModule($inventoryView)), route('hardware.index', ['inventory_view' => $inventoryView]))
+            );
+        } elseif (request()->is('hardware*') && is_string($statusType) && $statusType !== '') {
+            Breadcrumbs::for('hardware.index', fn (Trail $trail) => $trail->parent('home', route('home'))
+                ->push(Setting::inventoryModuleLabel('assets'), route('hardware.index'))
                 ->push(trans('general.'.strtolower(e($statusType))), route('hardware.index', ['status_type' => $statusType]))
             );
 
         } elseif (request()->is('hardware*') && request()->boolean('past_eol')) {
             Breadcrumbs::for('hardware.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.assets'), route('hardware.index'))
+                ->push(Setting::inventoryModuleLabel('assets'), route('hardware.index'))
                 ->push(trans('general.past_eol'), route('hardware.index', ['past_eol' => 1]))
             );
 
         } else {
             Breadcrumbs::for('hardware.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.assets'), route('hardware.index'))
+                ->push(Setting::inventoryModuleLabel('assets'), route('hardware.index'))
             );
         }
 
@@ -114,12 +120,12 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         $accessoriesStatus = request()->status;
         if (request()->is('accessories*') && in_array($accessoriesStatus, ['Archived', 'Deleted'], true)) {
             Breadcrumbs::for('accessories.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.accessories'), route('accessories.index'))
+                ->push(Setting::inventoryModuleLabel('accessories'), route('accessories.index'))
                 ->push(trans('general.'.strtolower($accessoriesStatus)), route('accessories.index', ['status' => $accessoriesStatus]))
             );
         } else {
             Breadcrumbs::for('accessories.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.accessories'), route('accessories.index'))
+                ->push(Setting::inventoryModuleLabel('accessories'), route('accessories.index'))
             );
         }
 
@@ -216,12 +222,12 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         $componentsStatus = request()->status;
         if (request()->is('components*') && in_array($componentsStatus, ['Archived', 'Deleted'], true)) {
             Breadcrumbs::for('components.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.components'), route('components.index'))
+                ->push(Setting::inventoryModuleLabel('components'), route('components.index'))
                 ->push(trans('general.'.strtolower($componentsStatus)), route('components.index', ['status' => $componentsStatus]))
             );
         } else {
             Breadcrumbs::for('components.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.components'), route('components.index'))
+                ->push(Setting::inventoryModuleLabel('components'), route('components.index'))
             );
         }
 
@@ -279,12 +285,12 @@ class BreadcrumbsServiceProvider extends ServiceProvider
         $consumablesStatus = request()->status;
         if (request()->is('consumables*') && in_array($consumablesStatus, ['Archived', 'Deleted'], true)) {
             Breadcrumbs::for('consumables.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.consumables'), route('consumables.index'))
+                ->push(Setting::inventoryModuleLabel('consumables'), route('consumables.index'))
                 ->push(trans('general.'.strtolower($consumablesStatus)), route('consumables.index', ['status' => $consumablesStatus]))
             );
         } else {
             Breadcrumbs::for('consumables.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.consumables'), route('consumables.index'))
+                ->push(Setting::inventoryModuleLabel('consumables'), route('consumables.index'))
             );
         }
 
@@ -421,17 +427,17 @@ class BreadcrumbsServiceProvider extends ServiceProvider
          */
         if ((request()->is('licenses*')) && (request()->status == 'inactive')) {
             Breadcrumbs::for('licenses.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.licenses'), route('licenses.index'))
+                ->push(Setting::inventoryModuleLabel('licenses'), route('licenses.index'))
                 ->push(trans('general.show_inactive'), route('licenses.index'))
             );
         } elseif ((request()->is('licenses*')) && (request()->status == 'expiring')) {
             Breadcrumbs::for('licenses.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.licenses'), route('licenses.index'))
+                ->push(Setting::inventoryModuleLabel('licenses'), route('licenses.index'))
                 ->push(trans('general.show_expiring'), route('licenses.index'))
             );
         } else {
             Breadcrumbs::for('licenses.index', fn (Trail $trail) => $trail->parent('home', route('home'))
-                ->push(trans('general.licenses'), route('licenses.index'))
+                ->push(Setting::inventoryModuleLabel('licenses'), route('licenses.index'))
             );
         }
 

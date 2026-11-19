@@ -30,6 +30,7 @@ class ComponentsTransformer
 
         $array = [
             'id' => (int) $component->id,
+            'asset_tag' => $component->asset_tag ? e($component->asset_tag) : null,
             'name' => e($component->name),
             'image' => ($component->image) ? Storage::disk('public')->url(FileStorage::Components->publicPath().e($component->image)) : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'components', 'id' => $component->id]),

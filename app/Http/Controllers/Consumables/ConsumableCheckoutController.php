@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Consumables;
 
+use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -135,8 +136,11 @@ class ConsumableCheckoutController extends Controller
         // License checkout locking pattern.
         $overAllocated = false;
 
-        DB::transaction(function () use ($consumable, $request, $admin_user, $quantity, &$overAllocated): void {
+        DB::transaction(function () use ($consumable, $request, $admin_user, $user, $quantity, &$overAllocated): void {
             $locked = Consumable::whereKey($consumable->id)->lockForUpdate()->first();
+            if ($locked) {
+                DuplicateAssignments::confirm($request, $locked, $user, $quantity);
+            }
 
             if (! $locked || $locked->numRemaining() < $quantity) {
                 $overAllocated = true;
@@ -152,6 +156,16 @@ class ConsumableCheckoutController extends Controller
                     'note' => $request->input('note'),
                 ]);
             }
+
+            event(new CheckoutableCheckedOut(
+                $consumable,
+                $user,
+                auth()->user(),
+                $request->input('note'),
+                [],
+                $consumable->checkout_qty,
+                $request->boolean('sign_in_place'),
+            ));
         });
 
         if ($overAllocated) {
@@ -160,16 +174,6 @@ class ConsumableCheckoutController extends Controller
                 'remaining' => $consumable->fresh()->numRemaining(),
             ]));
         }
-
-        event(new CheckoutableCheckedOut(
-            $consumable,
-            $user,
-            auth()->user(),
-            $request->input('note'),
-            [],
-            $consumable->checkout_qty,
-            $request->boolean('sign_in_place'),
-        ));
 
         $request->request->add(['checkout_to_type' => 'user']);
         $request->request->add(['assigned_user' => $user->id]);

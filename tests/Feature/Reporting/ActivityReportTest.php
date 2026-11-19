@@ -8,11 +8,62 @@ use App\Models\AssetModel;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 class ActivityReportTest extends TestCase
 {
+    public function test_activity_shows_original_attachment_name_after_upload_and_deletion(): void
+    {
+        Storage::fake();
+        $admin = User::factory()->superuser()->create();
+        $asset = Asset::factory()->create();
+        $filename = 'Manual de inventario.pdf';
+        $fileParams = ['object_type' => 'assets', 'id' => $asset->id];
+        $activityParams = ['item_type' => 'asset', 'item_id' => $asset->id];
+
+        $this->actingAsForApi($admin)
+            ->post(route('api.files.store', $fileParams), [
+                'file' => [UploadedFile::fake()->create($filename, 2, 'application/pdf')],
+            ])
+            ->assertOk();
+
+        $log = $asset->log()->where('action_type', 'uploaded')->sole();
+        $this->getJson(route('api.activity.index', $activityParams + ['action_type' => 'uploaded']))
+            ->assertOk()
+            ->assertJsonPath('rows.0.activity_title', trans('activity-log.actions.uploaded'))
+            ->assertJsonPath('rows.0.file.display_name', $filename)
+            ->assertJsonPath('rows.0.file.can_download', true);
+
+        $this->deleteJson(route('api.files.destroy', $fileParams + ['file_id' => $log->id]))->assertOk();
+
+        $this->getJson(route('api.activity.index', $activityParams + ['action_type' => 'upload deleted']))
+            ->assertOk()
+            ->assertJsonPath('rows.0.file.display_name', $filename)
+            ->assertJsonPath('rows.0.file.can_download', false);
+    }
+
+    public function test_checkout_activity_shows_both_recipients_during_transfer(): void
+    {
+        $this->actingAsForApi(User::factory()->superuser()->create());
+        $asset = Asset::factory()->create();
+        $previous = User::factory()->create();
+        $recipient = User::factory()->create();
+        $asset->logCheckout(null, $recipient, originalValues: [
+            '_activity_previous_assignment' => $previous->display_name,
+        ]);
+
+        $this->getJson(route('api.activity.index', [
+            'item_type' => 'asset',
+            'item_id' => $asset->id,
+            'action_type' => 'checkout',
+        ]))
+            ->assertOk()
+            ->assertJsonPath('rows.0.activity_facts.0.value', $previous->display_name)
+            ->assertJsonPath('rows.0.activity_facts.1.value', $recipient->display_name);
+    }
+
     public function test_requires_permission_to_view_activity()
     {
         $this->actingAsForApi(User::factory()->create())

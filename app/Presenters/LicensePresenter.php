@@ -34,6 +34,15 @@ class LicensePresenter extends Presenter
                 'title' => trans('general.id'),
                 'visible' => false,
             ],  [
+                'field' => 'asset_tag',
+                'scope' => 'col',
+                'searchable' => true,
+                'sortable' => false,
+                'switchable' => false,
+                'title' => trans('admin/hardware/table.asset_tag'),
+                'visible' => true,
+                'formatter' => 'licensesLinkFormatter',
+            ], [
                 'field' => 'name',
                 'scope' => 'col',
                 'searchable' => true,

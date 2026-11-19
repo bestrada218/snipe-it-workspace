@@ -3,6 +3,7 @@
 namespace Tests\Feature\Reporting;
 
 use App\Models\User;
+use App\Presenters\HistoryPresenter;
 use Tests\TestCase;
 
 /**
@@ -79,5 +80,43 @@ class ActivityReportPageAuthTest extends TestCase
             ->get(route('reports.activity'))
             ->assertOk()
             ->assertSee(route('reports.index').'"', false);
+    }
+
+    public function test_personal_activity_columns_can_be_saved_and_reset(): void
+    {
+        $user = User::factory()->canViewReports()->create();
+        $other = User::factory()->canViewReports()->create();
+        $columns = [
+            ['field' => 'log_meta', 'width' => 400, 'visible' => true],
+            ['field' => 'created_at', 'width' => 150, 'visible' => true],
+        ];
+
+        $this->actingAs($user)
+            ->putJson(route('profile.activity-report-columns.update'), ['columns' => $columns])
+            ->assertNoContent();
+        $this->get(route('reports.activity'))
+            ->assertOk()
+            ->assertSee(json_encode(HistoryPresenter::activityReportColumns($columns)));
+
+        $this->assertSame($columns, $user->fresh()->activity_report_columns);
+        $this->assertNull($other->fresh()->activity_report_columns);
+
+        $this->putJson(route('profile.activity-report-columns.update'), ['columns' => []])
+            ->assertNoContent();
+        $this->assertNull($user->fresh()->activity_report_columns);
+    }
+
+    public function test_invalid_activity_report_columns_are_rejected(): void
+    {
+        $user = User::factory()->viewComponents()->create();
+
+        $this->actingAs($user)
+            ->putJson(route('profile.activity-report-columns.update'), [
+                'columns' => [['field' => 'unknown', 'width' => 20, 'visible' => true]],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['columns.0.field', 'columns.0.width']);
+
+        $this->assertNull($user->fresh()->activity_report_columns);
     }
 }

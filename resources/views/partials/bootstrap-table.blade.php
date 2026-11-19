@@ -2696,6 +2696,15 @@
 
 
 
+    function locationHierarchyNameFormatter(value, row) {
+        const depth = Math.max(0, Number(row.hierarchy_depth) || 0);
+        const name = locationsLinkFormatter(value, row);
+
+        return depth > 0
+            ? '<span class="location-hierarchy-name" style="--location-depth:' + depth + '">' + name + '</span>'
+            : name;
+    }
+
     // This only works for model index pages because it uses the row's model ID
     function genericRowLinkFormatter(destination) {
         // camelCase entries in the formatters array whose URL segment
@@ -4006,36 +4015,128 @@
 
 
 
-    function changeLogFormatter(value) {
-
-        var result = '<div style="word-break: break-word;">';
-        var pretty_index = '';
-
-            for (var index in value) {
-
-
-                // Check if it's a custom field
-                if (index.startsWith('_snipeit_')) {
-                    pretty_index = index.replace("_snipeit_", "Custom:_");
-                } else {
-                    pretty_index = index;
-                }
-
-                extra_pretty_index = prettyLog(pretty_index);
-
-                result += extra_pretty_index + ': <del>' + value[index].old + '</del>  <x-icon type="long-arrow-right" /> ' + value[index].new + '<br>'
-            }
-
-        return result+'</div>';
-
+    function activityActionFormatter(value, row) {
+        return $('<span>', {class: 'activity-action-title'}).text(row.activity_title || value || '').prop('outerHTML');
     }
 
-    function prettyLog(str) {
-        let frags = str.split('_');
-        for (let i = 0; i < frags.length; i++) {
-            frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+    function activityAttachmentFormatter(value, row) {
+        if (!value && !row.activity_file_status) {
+            return '';
         }
-        return frags.join(' ');
+
+        const file = $('<span>', {class: 'activity-attachment'});
+        if (!value?.display_name) {
+            const message = value ? @json(trans('activity-log.file_restricted')) : @json(trans('activity-log.file_name_not_recorded'));
+            return file.append($('<em>').text(message)).prop('outerHTML');
+        }
+
+        if (value.can_download && value.exists_on_disk && value.url) {
+            file.append($('<a>', {href: value.url}).text(value.display_name));
+        } else {
+            file.text(value.display_name);
+            if (!value.exists_on_disk && row.activity_file_status !== 'deleted') {
+                file.append($('<span>', {class: 'activity-detail-muted'}).text(@json(trans('activity-log.file_unavailable'))));
+            }
+        }
+        return file.prop('outerHTML');
+    }
+
+    function activityDetailsFormatter(value, row) {
+        const details = $('<div>', {class: 'activity-event-details'});
+        const facts = $('<ul>', {class: 'activity-change-list'});
+        for (const {label, value: text} of row.activity_facts || []) {
+            $('<li>').append(
+                $('<strong>', {class: 'activity-change-field'}).text(label),
+                $('<span>').text(text),
+            ).appendTo(facts);
+        }
+
+        if (row.duplicate_assignment_evidence) {
+            const evidence = row.duplicate_assignment_evidence;
+            $('<li>').append(
+                $('<strong>', {class: 'activity-change-field'}).text(@json(trans('duplicate-assignments.evidence'))),
+                $('<a>', {href: evidence.url}).text(evidence.filename),
+            ).appendTo(facts);
+        }
+
+        if (row.shipment_url) {
+            $('<li>').append(
+                $('<a>', {href: row.shipment_url}).text(@json(trans('asset-shipments.view_link'))),
+            ).appendTo(facts);
+        }
+
+        const attachment = activityAttachmentFormatter(row.file, row);
+        if (attachment) {
+            $('<li>').append(
+                $('<strong>', {class: 'activity-change-field'}).text(@json(trans('activity-log.attachment'))),
+                attachment,
+            ).appendTo(facts);
+        }
+
+        if (facts.children().length) {
+            details.append(facts);
+        }
+        details.append(changeLogFormatter(value, row));
+        return details.children().length ? details.prop('outerHTML') : '';
+    }
+
+    function changeLogFormatter(value, row) {
+        const labels = {{ \Illuminate\Support\Js::from([
+            'name' => trans('general.name'),
+            'asset_tag' => trans('general.asset_tag'),
+            'serial' => trans('admin/hardware/table.serial'),
+            'notes' => trans('general.notes'),
+            'quantity' => trans('general.quantity'),
+            'purchase_date' => trans('general.purchase_date'),
+            'order_number' => trans('general.order_number'),
+            'first_name' => trans('general.first_name'),
+            'last_name' => trans('general.last_name'),
+            'email' => trans('general.email'),
+            'replacement_due_on' => trans('asset-replacement.deadline'),
+            'shipment_expected_on' => trans('asset-shipments.expected'),
+            'replacement_years' => trans('asset-replacement.years'),
+            'locale' => trans('general.language'),
+            'currency' => trans('general.importer.currency'),
+            'city' => trans('general.city'),
+            'country' => trans('general.country'),
+        ]) }};
+        const empty = @json(trans('activity-log.empty'));
+        const missing = {
+            old: @json(trans('activity-log.old_not_recorded')),
+            new: @json(trans('activity-log.new_not_recorded')),
+        };
+        const list = $('<ul>', {class: 'activity-change-list'});
+        const formatValue = (change, side) => {
+            if (change[side + '_recorded'] === false || !Object.hasOwn(change, side)) {
+                return $('<em>').text(missing[side]);
+            }
+            if (change[side] == null || change[side] === '') {
+                return $('<em>').text(empty);
+            }
+            // ActionlogsTransformer already escapes the value and applies its permission masks.
+            return $('<span>').html(change[side]);
+        };
+
+        for (const [field, change] of Object.entries(value || {})) {
+            if (!change || typeof change !== 'object' || (!Object.hasOwn(change, 'old') && !Object.hasOwn(change, 'new'))) {
+                continue;
+            }
+            const fallback = field.replace(/^_snipeit_|_\d+$/g, '').replaceAll('_', ' ');
+            const label = Object.hasOwn(labels, field) ? labels[field] : fallback.charAt(0).toUpperCase() + fallback.slice(1);
+            $('<li>').append(
+                $('<strong>', {class: 'activity-change-field'}).text(label),
+                $('<span>', {class: 'activity-change-before'}).append(formatValue(change, 'old')),
+                document.createTextNode(' → '),
+                formatValue(change, 'new'),
+            ).appendTo(list);
+        }
+
+        if (!list.children().length) {
+            return row.item?.viewable !== false && row.action_type === @json(mb_strtolower(trans('general.update')))
+                ? $('<em>').text(@json(trans('activity-log.no_details'))).prop('outerHTML')
+                : '';
+        }
+        return list.prop('outerHTML');
     }
 
     // Show the warning if below min qty
@@ -4337,7 +4438,7 @@
                 var inlinable = value.inlineable;
                 var exists_on_disk = value.exists_on_disk;
                 var download_url = value.url;
-            } else if (value.file) {
+            } else if (value.file && value.file.can_download !== false) {
                 var inlinable = value.file.inlineable;
                 var exists_on_disk = value.file.exists_on_disk;
                 var download_url = value.file.url;

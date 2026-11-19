@@ -2,14 +2,19 @@
 
 namespace Tests\Feature\Checkouts\Ui;
 
+use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedOut;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\CheckoutAcceptance;
 use App\Models\Company;
 use App\Models\LicenseSeat;
 use App\Models\Location;
+use App\Models\Setting;
 use App\Models\Statuslabel;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
@@ -23,6 +28,66 @@ class AssetCheckoutTest extends TestCase
         parent::setUp();
 
         Event::fake([CheckoutableCheckedOut::class]);
+    }
+
+    public function test_duplicate_asset_checkout_requires_and_keeps_the_approval(): void
+    {
+        $actor = User::factory()->superuser()->create();
+        $recipient = User::factory()->create();
+        $approver = User::factory()->create();
+        Setting::getSettings()->forceFill(['duplicate_assignment_approvers' => [$approver->id]])->save();
+        Storage::fake();
+        $model = AssetModel::factory()->create();
+        $firstAsset = Asset::factory()->for($model, 'model')->assignedToUser($recipient)->create();
+        $newAsset = Asset::factory()->for($model, 'model')->create();
+        $data = ['checkout_to_type' => 'user', 'assigned_user' => $recipient->id];
+
+        $this->actingAs($actor)
+            ->getJson(route('duplicate-assignments.preview', [
+                'type' => 'assets', 'id' => $newAsset->id, 'user' => $recipient->id, 'quantity' => 1,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('existing', 1)
+            ->assertJsonPath('duplicate', true);
+
+        $this->post(route('hardware.checkout.store', $newAsset), $data)
+            ->assertSessionHasErrors('duplicate_assignment_reason');
+        $this->assertNull($newAsset->fresh()->assigned_to);
+        Event::assertNotDispatched(CheckoutableCheckedOut::class);
+
+        $confirmed = $data + [
+            'duplicate_assignment_confirmed' => '1',
+            'duplicate_assignment_reason' => 'Approved backup equipment',
+        ];
+        $this->post(route('hardware.checkout.store', $newAsset), $confirmed + [
+            'duplicate_assignment_approver' => $recipient->id,
+        ])->assertSessionHasErrors(['duplicate_assignment_approver', 'duplicate_assignment_evidence']);
+        $this->assertNull($newAsset->fresh()->assigned_to);
+
+        Event::fakeExcept([CheckoutableCheckedOut::class]);
+        $this->post(route('hardware.checkout.store', $newAsset), $confirmed + [
+            'duplicate_assignment_approver' => $approver->id,
+            'duplicate_assignment_evidence' => UploadedFile::fake()->createWithContent('approval.pdf', "%PDF-1.4\n%%EOF\n"),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($recipient->id, $newAsset->fresh()->assigned_to);
+        $checkout = $newAsset->log()->where('action_type', 'checkout')->sole();
+        $meta = json_decode($checkout->log_meta, true);
+        $this->assertSame('Approved backup equipment', $meta['_duplicate_assignment_reason']);
+        $this->assertSame($approver->id, $meta['_duplicate_assignment_approval']['approver_id']);
+        Storage::assertExists(FileStorage::DuplicateApprovals->privateStorageKey().$meta['_duplicate_assignment_approval']['key']);
+
+        $this->get(route('duplicate-assignments.index'))
+            ->assertOk()
+            ->assertSee($recipient->display_name)
+            ->assertSee($firstAsset->asset_tag)
+            ->assertSee($newAsset->asset_tag)
+            ->assertSee('Approved backup equipment')
+            ->assertSee($approver->display_name)
+            ->assertSee('approval.pdf');
+        $this->get(route('duplicate-assignments.evidence', $checkout->id))->assertDownload('approval.pdf');
+        $this->actingAs(User::factory()->create())
+            ->get(route('duplicate-assignments.evidence', $checkout->id))->assertForbidden();
     }
 
     public function test_checking_out_asset_requires_correct_permission()

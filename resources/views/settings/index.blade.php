@@ -370,6 +370,7 @@
             </div>
             <div class="col-md-4">
               {{ config('version.app_version') }}  build {{ config('version.build_version') }} ({{ config('version.hash_version') }})
+              <div class="text-muted">{{ trans('admin/settings/general.updates_locked') }}</div>
             </div>
 
             <div class="col-md-2">

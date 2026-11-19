@@ -73,7 +73,28 @@ class Setting extends Model
         'manager_view_enabled',
     ];
 
+    public const INVENTORY_MODULES = [
+        'assets' => Asset::class,
+        'licenses' => License::class,
+        'accessories' => Accessory::class,
+        'consumables' => Consumable::class,
+        'components' => Component::class,
+    ];
+
+    private const INVENTORY_DEPENDENCIES = [
+        AssetModel::class => 'assets',
+        Maintenance::class => 'assets',
+        MaintenanceType::class => 'assets',
+        Statuslabel::class => 'assets',
+        LicenseSeat::class => 'licenses',
+    ];
+
     protected $casts = [
+        'disabled_inventory_modules' => 'array',
+        'duplicate_assignment_approvers' => 'array',
+        'purchase_approvers' => 'array',
+        'inventory_module_labels' => 'array',
+        'inventory_location_modules' => 'array',
         'label2_asset_logo' => 'boolean',
         'require_checkinout_notes' => 'boolean',
         'manager_view_enabled' => 'boolean',
@@ -137,6 +158,87 @@ class Setting extends Model
         }
 
         return self::$_cache;
+    }
+
+    public static function inventoryColumnVisible(string $field): bool
+    {
+        $module = match ($field) {
+            'assets_count', 'assigned_assets_count', 'rtd_assets_count', 'assets_assigned_count', 'assets_archived_count' => 'assets',
+            'licenses_count', 'autoassign_licenses' => 'licenses',
+            'accessories_count', 'assigned_accessories_count' => 'accessories',
+            'consumables_count' => 'consumables',
+            'components_count' => 'components',
+            default => null,
+        };
+
+        return $module === null || self::inventoryModuleEnabled($module);
+    }
+
+    public static function inventoryModuleLabel(string $module): string
+    {
+        return self::getSettings()?->inventory_module_labels[$module] ?? trans('general.'.$module);
+    }
+
+    public static function inventoryLocationModules(): array
+    {
+        return self::getSettings()?->inventory_location_modules ?? [
+            'fixed-assets' => ['name' => null, 'location_id' => null],
+        ];
+    }
+
+    public static function inventoryLocationModuleLabel(array $module): string
+    {
+        return $module['name'] ?? trans('admin/settings/general.fixed_assets');
+    }
+
+    public static function inventoryLocationModule(mixed $key): array
+    {
+        $module = is_string($key) ? (self::inventoryLocationModules()[$key] ?? null) : null;
+        abort_unless(self::inventoryModuleEnabled('assets') && $module !== null && ($module['enabled'] ?? true), 404);
+
+        return $module;
+    }
+
+    public static function inventoryModuleEnabled(string $module): bool
+    {
+        return ! in_array($module, self::getSettings()?->disabled_inventory_modules ?? [], true);
+    }
+
+    public static function disabledInventoryModelClasses(): array
+    {
+        $disabled = self::getSettings()?->disabled_inventory_modules ?? [];
+        $models = array_intersect_key(self::INVENTORY_MODULES, array_flip($disabled));
+        $dependencies = array_intersect(self::INVENTORY_DEPENDENCIES, $disabled);
+
+        return array_merge(array_values($models), array_keys($dependencies));
+    }
+
+    public static function hasEnabledInventoryModules(): bool
+    {
+        return array_diff(array_keys(self::INVENTORY_MODULES), self::getSettings()?->disabled_inventory_modules ?? []) !== [];
+    }
+
+    public static function inventoryImportEnabled(string $type): bool
+    {
+        $module = match ($type) {
+            'asset', 'assetHistory', 'assetModel' => 'assets',
+            'license' => 'licenses',
+            'accessory' => 'accessories',
+            'consumable' => 'consumables',
+            'component' => 'components',
+            default => null,
+        };
+
+        return $module === null || self::inventoryModuleEnabled($module);
+    }
+
+    public static function inventoryModelEnabled(mixed $model): bool
+    {
+        $type = is_object($model) ? $model::class : $model;
+        $module = self::INVENTORY_DEPENDENCIES[is_string($type) ? $type : '']
+            ?? array_search($type, self::INVENTORY_MODULES, true);
+
+        return $module === false || self::inventoryModuleEnabled($module);
     }
 
     /**

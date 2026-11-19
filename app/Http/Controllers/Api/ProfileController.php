@@ -60,6 +60,7 @@ class ProfileController extends Controller
         // just as done.
         $checkoutRequests = CheckoutRequest::where('user_id', '=', auth()->id())
             ->pending()
+            ->whereNotIn('requestable_type', Setting::disabledInventoryModelClasses())
             ->get();
 
         $results = [];

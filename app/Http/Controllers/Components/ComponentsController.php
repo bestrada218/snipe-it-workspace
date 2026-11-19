@@ -82,6 +82,7 @@ class ComponentsController extends Controller
         $this->authorize('create', Component::class);
         $component = new Component;
         $component->name = $request->input('name');
+        $component->asset_tag = request('asset_tag', $component->asset_tag);
         $component->category_id = $request->input('category_id');
         $component->manufacturer_id = $request->input('manufacturer_id');
         $component->model_number = $request->input('model_number');
@@ -169,6 +170,7 @@ class ComponentsController extends Controller
         // editable again (imperfect single-value semantics accepted for
         // the info-panel display).
         $component->name = $request->input('name');
+        $component->asset_tag = request('asset_tag', $component->asset_tag);
         $component->category_id = $request->input('category_id');
         $component->manufacturer_id = $request->input('manufacturer_id');
         $component->model_number = $request->input('model_number');

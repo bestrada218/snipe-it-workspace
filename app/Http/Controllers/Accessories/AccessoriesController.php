@@ -67,6 +67,7 @@ class AccessoriesController extends Controller
 
         // Update the accessory data
         $accessory->name = request('name');
+        $accessory->asset_tag = request('asset_tag', $accessory->asset_tag);
         $accessory->category_id = request('category_id');
         $accessory->location_id = request('location_id');
         $accessory->min_amt = request('min_amt');
@@ -199,6 +200,7 @@ class AccessoriesController extends Controller
             // supplier_id remains editable (imperfect single-value
             // semantics accepted for the info-panel display).
             $accessory->name = request('name');
+            $accessory->asset_tag = request('asset_tag', $accessory->asset_tag);
             $accessory->location_id = request('location_id');
             $accessory->min_amt = request('min_amt');
             $accessory->category_id = request('category_id');

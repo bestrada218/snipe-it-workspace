@@ -147,7 +147,7 @@
     </table>
 @endif
 
-@if ($assets->count() > 0)
+@if (\App\Models\Setting::inventoryModuleEnabled('assets') && $assets->count() > 0)
 <br><br>
 <table class="inventory">
     <thead>
@@ -199,7 +199,7 @@
 @endif
 
 @if ($assigned)
-    @if ($assignedAssets->count() > 0)
+    @if (\App\Models\Setting::inventoryModuleEnabled('assets') && $assignedAssets->count() > 0)
         <br><br>
         <table class="inventory">
             <thead>
@@ -251,7 +251,7 @@
     @endif
 @endif
 
-@if ($accessories->count() > 0)
+@if (\App\Models\Setting::inventoryModuleEnabled('accessories') && $accessories->count() > 0)
     <br><br>
     <table class="inventory">
         <thead>
@@ -290,7 +290,7 @@
 @endif
 
 @if ($assigned)
-    @if ($assignedAccessories->count() > 0)
+    @if (\App\Models\Setting::inventoryModuleEnabled('accessories') && $assignedAccessories->count() > 0)
         <br><br>
         <table class="inventory">
             <thead>
@@ -337,7 +337,7 @@
     @endif
 @endif
 
-@if ($consumables->count() > 0)
+@if (\App\Models\Setting::inventoryModuleEnabled('consumables') && $consumables->count() > 0)
     <br><br>
     <table class="inventory">
         <thead>
@@ -375,7 +375,7 @@
     </table>
 @endif
 
-@if ($components->count() > 0)
+@if (\App\Models\Setting::inventoryModuleEnabled('components') && $components->count() > 0)
     <br><br>
     <table class="inventory">
         <thead>

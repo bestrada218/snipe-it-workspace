@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\DuplicateAssignments;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
 use App\Http\Controllers\Consumables\BulkConsumablesController;
@@ -529,6 +530,9 @@ class ConsumablesController extends Controller
 
         DB::transaction(function () use ($consumable, $request, $user, &$errorResponse): void {
             $locked = Consumable::whereKey($consumable->id)->lockForUpdate()->first();
+            if ($locked) {
+                DuplicateAssignments::confirm($request, $locked, $user, (int) $consumable->checkout_qty);
+            }
 
             if (! $locked || $locked->numRemaining() < $consumable->checkout_qty) {
                 $errorResponse = response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/consumables/message.checkout.unavailable', [

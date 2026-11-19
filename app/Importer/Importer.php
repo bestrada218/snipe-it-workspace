@@ -720,6 +720,10 @@ abstract class Importer
             return false;
         }
 
+        if (Auth::hasUser() && ! Auth::user()->can('canEditAuthFields', new User)) {
+            return false;
+        }
+
         // No luck finding a user on username or first name, let's create one.
 
         // Floater-mode escalation guard (#19200). A side-effect of an asset

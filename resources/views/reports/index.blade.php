@@ -424,6 +424,8 @@ function ds(label, data, color, isPrev) {
 
 // series = [{ label, current, previous, color }, ...]
 function makeChartMulti(id, labels, series, prevPeriod) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return;
     if (charts[id]) { charts[id].destroy(); }
     var wrap = document.getElementById('wrap-' + id);
     if (wrap) wrap.style.width = labels.length > 60 ? (labels.length * 8) + 'px' : '';
@@ -432,7 +434,7 @@ function makeChartMulti(id, labels, series, prevPeriod) {
         datasets.push(ds(s.label, s.current, s.color, false));
         datasets.push(ds(s.label + ' (' + prevPeriod + ')', s.previous, hexToRgba(s.color, 0.5), true));
     });
-    charts[id] = new Chart(document.getElementById(id), {
+    charts[id] = new Chart(canvas, {
         type: 'line',
         data: {labels: labels, datasets: datasets},
         options: getLineOptions()

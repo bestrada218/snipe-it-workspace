@@ -61,6 +61,7 @@ class Component extends SnipeModel
      * Category validation rules
      */
     public $rules = [
+        'asset_tag' => 'nullable|string|max:255',
         'name' => 'required|max:191',
         'qty' => 'required|integer|min:1',
         'category_id' => 'required|integer|exists:categories,id',
@@ -119,6 +120,7 @@ class Component extends SnipeModel
     // default_supplier_id / default_purchase_cost are parent-level
     // "template" values that seed the adjust-quantity modal.
     protected $fillable = [
+        'asset_tag',
         'category_id',
         'company_id',
         'location_id',
@@ -143,6 +145,7 @@ class Component extends SnipeModel
      * @var array
      */
     protected $searchableAttributes = [
+        'asset_tag',
         'name',
         'serial',
         'notes',

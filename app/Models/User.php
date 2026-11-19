@@ -87,6 +87,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'persist_code',
         'two_factor_secret',
         'activation_code',
+        'activity_report_columns',
     ];
 
     protected $table = 'users';
@@ -135,6 +136,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     ];
 
     protected $casts = [
+        'activity_report_columns' => 'array',
         'manager_id' => 'integer',
         'location_id' => 'integer',
         'legacy_company_id' => 'integer',
@@ -152,7 +154,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
         'first_name' => 'required|string|max:191',
         'last_name' => 'nullable|string|max:191',
         'display_name' => 'nullable|string|max:191',
-        'username' => 'required|string|min:1|unique_undeleted|max:191',
+        'username' => 'nullable|required_if:activated,1|string|min:1|unique_undeleted|max:191',
         'email' => 'email|nullable|max:191',
         'password' => 'required|min:8',
         'locale' => 'max:10|nullable',

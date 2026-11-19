@@ -1,0 +1,32 @@
+<?php
+
+return [
+    'title' => 'Mandatory replacement',
+    'required' => 'This asset requires mandatory replacement',
+    'mode' => 'How to set the deadline',
+    'years_mode' => 'Term in years',
+    'date_mode' => 'Exact date',
+    'years' => 'Years from registration',
+    'registration_hint' => 'Registration date: :date.',
+    'deadline' => 'Replacement deadline',
+    'future_date' => 'Choose a future replacement date.',
+    'calculated' => 'Calculated date: :date.',
+    'remaining' => 'Time remaining: :duration.',
+    'alerts' => 'Mandatory replacement alerts',
+    'alert_hint' => 'Each asset appears once, in its closest deadline window.',
+    'view_schedule' => 'View replacement schedule',
+    'filter' => 'Due window',
+    'days_remaining' => 'Days remaining',
+    'days_until_due' => ':count day|:count days',
+    'due_today' => 'Due today',
+    'days_overdue' => ':count day overdue|:count days overdue',
+    'all_scheduled' => 'All scheduled replacements',
+    'empty' => 'No assets match this filter.',
+    'windows' => [
+        'overdue' => 'Overdue',
+        'one_day' => 'Today or tomorrow',
+        'fifteen_days' => 'Within 15 days',
+        'one_month' => 'Within 1 month',
+        'three_months' => 'Within 3 months',
+    ],
+];

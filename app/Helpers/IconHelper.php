@@ -124,6 +124,8 @@ class IconHelper
                 return 'fa-regular fa-circle';
             case 'circle-solid':
                 return 'fa-solid fa-circle';
+            case 'shipment':
+                return 'fa-solid fa-truck';
             case 'due':
                 return 'fas fa-history';
             case 'import':

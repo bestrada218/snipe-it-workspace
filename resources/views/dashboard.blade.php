@@ -33,13 +33,20 @@
          widget component already gates itself with @can and Companyable-
          scopes its queries. --}}
     @if (auth()->user()->hasAccess('admin'))
-        <x-dashboard.top-boxes :counts="$counts" />
+        <x-dashboard.top-boxes :counts="$counts" :fixed-asset-metric="$fixedAssetMetric ?? null" />
+    @endif
+
+    @include('asset-shipments.due-alert')
+
+    @if (! empty($replacementCounts))
+        <x-dashboard.replacement-alerts :$replacementCounts />
     @endif
 
     {{-- Empty-inventory shortcut is also admin-only. Non-admins take
          the @else branch below and see the widget section, whose
          queries Companyable-scope to what the caller can see. --}}
-    @if (auth()->user()->hasAccess('admin') && $counts['grand_total'] == 0)
+    @if (auth()->user()->hasAccess('admin') && $counts['grand_total'] == 0
+        && \App\Models\Setting::hasEnabledInventoryModules())
         <x-dashboard.empty-inventory-shortcut />
     @else
         <x-dashboard.index />
@@ -164,62 +171,42 @@
     // ---------------------------
     // - ASSET STATUS CHART -
     // ---------------------------
-      var pieChartCanvas = $("#statusPieChart").get(0).getContext("2d");
-      var pieChart = new Chart(pieChartCanvas);
-      var ctx = document.getElementById("statusPieChart");
-      var pieOptions = {
-              // `responsive` + `maintainAspectRatio` are top-level
-              // chart options in Chart.js, not legend options. Before
-              // this fix they were nested under `legend`, which
-              // Chart.js silently ignored, so the pie stayed at its
-              // canvas height="260" attribute and didn't fill its
-              // container. Setting maintainAspectRatio: false lets the
-              // pie fill both dimensions of the .chart-responsive
-              // wrapper the dashboard puts it in.
-              responsive: true,
-              maintainAspectRatio: false,
-              legend: {
-                  position: 'top',
-              },
-              tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        counts = data.datasets[0].data;
-                        total = 0;
-                        for(var i in counts) {
-                            total += counts[i];
-                        }
-                        prefix = data.labels[tooltipItem.index] || '';
-                        return prefix+" "+Math.round(counts[tooltipItem.index]/total*100)+"%";
-                    }
-                }
-              }
-          };
+    (() => {
+        const canvas = document.getElementById('statusPieChart');
+        if (!canvas) {
+            return;
+        }
 
-      $.ajax({
-          type: 'GET',
-          url: '{{ (\App\Models\Setting::getSettings()->dash_chart_type == 'name') ? route('api.statuslabels.assets.byname') : route('api.statuslabels.assets.bytype') }}',
-          headers: {
-              "X-Requested-With": 'XMLHttpRequest',
-              "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
-          },
-          dataType: 'json',
-          success: function (data) {
-              var myPieChart = new Chart(ctx,{
-                  type   : 'pie',
-                  data   : data,
-                  options: pieOptions
-              });
-          },
-          error: function (data) {
-              // window.location.reload(true);
-          },
-      });
-        var last = document.getElementById('statusPieChart').clientWidth;
-        addEventListener('resize', function() {
-        var current = document.getElementById('statusPieChart').clientWidth;
-        if (current != last) location.reload();
-        last = current;
-    });
+        $.ajax({
+            type: 'GET',
+            url: '{{ (\App\Models\Setting::getSettings()->dash_chart_type == 'name') ? route('api.statuslabels.assets.byname') : route('api.statuslabels.assets.bytype') }}',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            },
+            dataType: 'json',
+            success: function (data) {
+                new Chart(canvas, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { position: 'top' },
+                        tooltips: {
+                            callbacks: {
+                                label: function (item, chartData) {
+                                    const counts = chartData.datasets[0].data;
+                                    const total = counts.reduce((sum, count) => sum + Number(count), 0);
+                                    const percentage = total ? Math.round(counts[item.index] / total * 100) : 0;
+                                    return (chartData.labels[item.index] || '') + ' ' + percentage + '%';
+                                },
+                            },
+                        },
+                    },
+                });
+            },
+        });
+    })();
 </script>
 @endpush

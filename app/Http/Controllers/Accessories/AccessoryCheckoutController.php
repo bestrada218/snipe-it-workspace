@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accessories;
 
+use App\Services\DuplicateAssignments;
 use App\Actions\Acceptances\CreateCheckoutAcceptanceAction;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -117,6 +118,9 @@ class AccessoryCheckoutController extends Controller
 
         DB::transaction(function () use ($accessory, $request, $target, &$overAllocated): void {
             $locked = Accessory::whereKey($accessory->id)->lockForUpdate()->first();
+            if ($locked) {
+                DuplicateAssignments::confirm($request, $locked, $target, (int) $accessory->checkout_qty);
+            }
 
             if (! $locked || $locked->numRemaining() < $accessory->checkout_qty) {
                 $overAllocated = true;
@@ -137,21 +141,21 @@ class AccessoryCheckoutController extends Controller
                 $accessory_checkout->created_by = auth()->id();
                 $accessory_checkout->save();
             }
+
+            event(new CheckoutableCheckedOut(
+                $accessory,
+                $target,
+                auth()->user(),
+                $request->input('note'),
+                [],
+                $accessory->checkout_qty,
+                $request->boolean('sign_in_place'),
+            ));
         });
 
         if ($overAllocated) {
             return redirect()->back()->with('error', trans('admin/accessories/message.checkout.unavailable'));
         }
-
-        event(new CheckoutableCheckedOut(
-            $accessory,
-            $target,
-            auth()->user(),
-            $request->input('note'),
-            [],
-            $accessory->checkout_qty,
-            $request->boolean('sign_in_place'),
-        ));
 
         $request->request->add(['checkout_to_type' => request('checkout_to_type')]);
         $request->request->add(['assigned_to' => $target->id]);

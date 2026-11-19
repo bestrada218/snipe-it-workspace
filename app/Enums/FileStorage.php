@@ -27,6 +27,7 @@ enum FileStorage: string
 {
     case Accessories = 'accessories';
     case Assets = 'assets';
+    case AssetShipmentApprovals = 'asset-shipment-approvals';
     case Audits = 'audits';
     case Avatars = 'avatars';
     case Backups = 'backups';
@@ -36,6 +37,7 @@ enum FileStorage: string
     case Components = 'components';
     case Consumables = 'consumables';
     case Departments = 'departments';
+    case DuplicateApprovals = 'duplicate-approvals';
     case EulaPdfs = 'eula-pdfs';
     case Imports = 'imports';
     case Licenses = 'licenses';
@@ -100,7 +102,9 @@ enum FileStorage: string
      */
     private const NON_MODEL_PRIVATE_CASES = [
         'audits',
+        'asset-shipment-approvals',
         'backups',
+        'duplicate-approvals',
         'eula-pdfs',
         'imports',
         'signatures',

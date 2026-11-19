@@ -26,8 +26,7 @@
                 {{-- Standalone filter row above the table (not wired via
                      bs-table's data-toolbar) so the filters don't share
                      a row with the search / columns / export / refresh
-                     controls on narrow viewports. nowrap keeps the
-                     filters on one line. No overflow property, because
+                     controls on narrow viewports. No overflow property, because
                      overflow on either axis creates a clipping region
                      that eats the datepicker popup when it opens below
                      the input. --}}
@@ -58,8 +57,8 @@
                         margin: 0;
                     }
                 </style>
-                <div id="activityReportToolbar" style="padding: 5px 0 10px; display: flex; gap: 8px; align-items: flex-start; flex-wrap: nowrap;">
-                    <div style="flex: 0 0 auto; width: 240px;">
+                <div id="activityReportToolbar" style="padding: 5px 0 10px; display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex: 1 1 160px; min-width: 0;">
                         <select
                             id="activityReportItemTypeFilter"
                             class="js-select2-checkboxes form-control" data-badges-container="#activityReportFilterBadges"
@@ -77,7 +76,7 @@
                         </select>
                     </div>
 
-                    <div style="flex: 0 0 auto; width: 240px;">
+                    <div style="flex: 1 1 160px; min-width: 0;">
                         <select
                             id="activityReportTargetTypeFilter"
                             class="js-select2-checkboxes form-control" data-badges-container="#activityReportFilterBadges"
@@ -95,7 +94,7 @@
                         </select>
                     </div>
 
-                    <div style="flex: 0 0 auto; width: 240px;">
+                    <div style="flex: 1 1 160px; min-width: 0;">
                         <select
                             id="activityReportActionTypeFilter"
                             class="js-select2-checkboxes form-control" data-badges-container="#activityReportFilterBadges"
@@ -119,7 +118,7 @@
                          Company::scopeCompanyables). The initial-load
                          JS reads created_by from the URL and hydrates
                          chips for each matching user. --}}
-                    <div style="flex: 0 0 auto; width: 340px;">
+                    <div style="flex: 1 1 170px; min-width: 0;">
                         <select
                             id="activityReportCreatedByFilter"
                             class="js-select2-checkboxes" data-badges-container="#activityReportFilterBadges"
@@ -132,14 +131,14 @@
                         </select>
                     </div>
 
-                    <div style="flex: 0 0 auto; width: 150px;">
+                    <div style="flex: 1 1 135px; min-width: 0;">
                         <x-input.datepicker
                             id="activityReportCreatedAtFrom"
                             name="created_at_from"
                             :placeholder="trans('general.date_from')"
                         />
                     </div>
-                    <div style="flex: 0 0 auto; width: 150px;">
+                    <div style="flex: 1 1 135px; min-width: 0;">
                         <x-input.datepicker
                             id="activityReportCreatedAtTo"
                             name="created_at_to"
@@ -148,17 +147,25 @@
                     </div>
                 </div>
                 <div id="activityReportFilterBadges" aria-live="polite"></div>
+                <div id="activityReportColumnControls" class="activity-layout-tools">
+                    <p id="activityColumnInstructions">{{ trans('activity-log.drag_instructions') }}</p>
+                    <button type="button" class="btn btn-link" id="resetActivityColumns">{{ trans('activity-log.reset_columns') }}</button>
+                    <span id="activityColumnsStatus" role="status"></span>
+                    <button type="button" class="btn btn-link" id="retryActivityColumns" hidden>{{ trans('activity-log.retry_columns') }}</button>
+                </div>
                 <table
-                    data-columns="{{ \App\Presenters\HistoryPresenter::dataTableLayout() }}"
-                        data-cookie-id-table="activityReport"
+                    data-columns="{{ json_encode(\App\Presenters\HistoryPresenter::activityReportColumns(auth()->user()->activity_report_columns ?? [])) }}"
+                        data-cookie-id-table="activityReport-{{ auth()->id() }}"
+                        data-cookies-enabled='["bs.table.pageList", "bs.table.pageNumber", "bs.table.sortOrder", "bs.table.sortName", "bs.table.searchText"]'
                         data-id-table="activityReport"
                         data-side-pagination="server"
                         data-advanced-search="false"
+                        data-mobile-responsive="false"
                         data-sort-order="desc"
                         data-sort-name="created_at"
                         id="activityReport"
-                    data-url="{{ $canManageReports ? route('api.activity.index') : route('api.dashboard.activity') }}"
-                    class="table table-striped snipe-table snipe-table--sticky-right-1"
+                    data-url="{{ $canManageReports ? route('api.reports.inventory.activity') : route('api.dashboard.activity') }}"
+                    class="table table-striped snipe-table"
                         data-export-options='{
                         "fileName": "activity-report-{{ date('Y-m-d') }}",
                         "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
@@ -173,6 +180,257 @@
 @include ('partials.bootstrap-table', ['exportFile' => 'activity-export', 'search' => true])
 
 <script nonce="{{ csrf_token() }}">
+    const $activityTable = $('#activityReport');
+    const activityTable = $activityTable[0];
+    const $columnsStatus = $('#activityColumnsStatus');
+    const $retryColumns = $('#retryActivityColumns');
+    const columnsUrl = @json(route('profile.activity-report-columns.update'));
+    const defaultColumns = {{ \Illuminate\Support\Js::from(\App\Presenters\HistoryPresenter::activityReportColumns()) }};
+    const handleLabels = {
+        move: @json(trans('activity-log.move_column')),
+        resize: @json(trans('activity-log.resize_column')),
+    };
+    const getActivityColumns = () => $activityTable.bootstrapTable('getOptions').columns[0];
+    const getActivityHeaders = () => Array.from(activityTable.querySelectorAll('thead th[data-field]'));
+    const clampColumnWidth = width => Math.min(1600, Math.max(48, Math.round(width)));
+
+    let gesture = null;
+    let pendingLayout = null;
+    let failedLayout = null;
+    let savingLayout = false;
+
+    function setActivityTableWidth(columns) {
+        const width = columns.reduce((total, column) => total + (column.visible ? Number(column.width) : 0), 0);
+        $activityTable.css('min-width', width);
+    }
+
+    function addActivityHandles() {
+        const columns = getActivityColumns();
+        setActivityTableWidth(columns);
+
+        const titles = new Map(columns.map(column => [column.field, column.title]));
+        for (const header of getActivityHeaders()) {
+            if (header.querySelector('.activity-column-handle')) {
+                continue;
+            }
+            for (const kind of ['move', 'resize']) {
+                const handle = document.createElement('button');
+                const label = handleLabels[kind] + ' · ' + titles.get(header.dataset.field);
+                handle.type = 'button';
+                handle.className = 'activity-column-handle activity-column-' + kind;
+                handle.dataset.columnHandle = kind;
+                handle.title = label;
+                handle.setAttribute('aria-label', label);
+                handle.setAttribute('aria-describedby', 'activityColumnInstructions');
+                header.append(handle);
+            }
+        }
+    }
+
+    function saveActivityLayout() {
+        if (savingLayout || pendingLayout === null) {
+            return;
+        }
+
+        const layout = pendingLayout;
+        pendingLayout = null;
+        failedLayout = null;
+        savingLayout = true;
+        $retryColumns.prop('hidden', true);
+        $columnsStatus.text(@json(trans('activity-log.columns_saving')));
+
+        $.ajax({
+            url: columnsUrl,
+            method: 'PUT',
+            contentType: 'application/json',
+            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            data: JSON.stringify({columns: layout}),
+        }).done(function () {
+            $columnsStatus.text(layout.length ? @json(trans('activity-log.columns_saved')) : @json(trans('activity-log.columns_reset')));
+        }).fail(function () {
+            failedLayout = layout;
+            $columnsStatus.text(@json(trans('activity-log.columns_error')));
+            $retryColumns.prop('hidden', false);
+        }).always(function () {
+            savingLayout = false;
+            saveActivityLayout();
+        });
+    }
+
+    function queueActivityLayout(columns) {
+        pendingLayout = columns.map(({field, width, visible}) => ({field, width, visible}));
+        saveActivityLayout();
+    }
+
+    function applyActivityLayout(columns, reset = false) {
+        const scrollLeft = activityTable.parentElement.scrollLeft;
+        $activityTable.bootstrapTable('refreshOptions', {columns: [columns]});
+        activityTable.parentElement.scrollLeft = scrollLeft;
+        queueActivityLayout(reset ? [] : columns);
+    }
+
+    function moveActivityColumn(field, target, side) {
+        if (!target || target === field) {
+            return;
+        }
+
+        const columns = getActivityColumns();
+        const from = columns.findIndex(column => column.field === field);
+        const [column] = columns.splice(from, 1);
+        const to = columns.findIndex(column => column.field === target) + (side === 'after' ? 1 : 0);
+        if (from !== to) {
+            columns.splice(to, 0, column);
+            applyActivityLayout(columns);
+        }
+    }
+
+    function updateDropTarget() {
+        const state = gesture;
+        const body = activityTable.parentElement;
+        const {left, right} = body.getBoundingClientRect();
+        const x = Math.max(left + 1, Math.min(right - 1, state.x));
+        if (x < left + 24) {
+            body.scrollLeft -= 10;
+        } else if (x > right - 24) {
+            body.scrollLeft += 10;
+        }
+
+        state.target?.removeAttribute('data-activity-drop');
+        state.target = getActivityHeaders().find(header => {
+            const box = header.getBoundingClientRect();
+            return box.left <= x && box.right > x;
+        });
+        if (state.target && state.target !== state.header) {
+            const box = state.target.getBoundingClientRect();
+            state.side = (x < (box.left + box.right) / 2) === (state.direction === 1) ? 'before' : 'after';
+            state.target.dataset.activityDrop = state.side;
+        }
+    }
+
+    function trackDropTarget() {
+        updateDropTarget();
+        gesture.frame = requestAnimationFrame(trackDropTarget);
+    }
+
+    function previewColumnWidth(state, x) {
+        const columns = getActivityColumns();
+        const column = columns.find(column => column.field === state.field);
+        const width = clampColumnWidth(column.width + (x - state.startX) * state.direction);
+        state.header.style.width = width + 'px';
+        column.width = width;
+        setActivityTableWidth(columns);
+        return columns;
+    }
+
+    $activityTable.on('post-header.bs.table', addActivityHandles);
+    $activityTable.on('column-switch.bs.table column-switch-all.bs.table', function () {
+        addActivityHandles();
+        queueActivityLayout(getActivityColumns());
+    });
+
+    activityTable.addEventListener('pointerdown', function (event) {
+        const handle = event.target.closest('.activity-column-handle');
+        if (!handle || event.button !== 0 || gesture) {
+            return;
+        }
+
+        const header = handle.closest('th');
+        gesture = {
+            header,
+            field: header.dataset.field,
+            kind: handle.dataset.columnHandle,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            x: event.clientX,
+            direction: getComputedStyle(activityTable).direction === 'rtl' ? -1 : 1,
+        };
+        activityTable.setPointerCapture(event.pointerId);
+    });
+
+    activityTable.addEventListener('pointermove', function (event) {
+        const state = gesture;
+        if (!state || event.pointerId !== state.pointerId) {
+            return;
+        }
+
+        state.x = event.clientX;
+        if (!state.active && Math.abs(state.x - state.startX) < 4) {
+            return;
+        }
+
+        state.active = true;
+        activityTable.dataset.columnGesture = state.kind;
+        state.header.classList.add('activity-column-active');
+        if (state.kind === 'resize') {
+            previewColumnWidth(state, state.x);
+        } else if (!state.frame) {
+            trackDropTarget();
+        }
+    });
+
+    function finishActivityGesture(event) {
+        if (!gesture || event.pointerId !== gesture.pointerId) {
+            return;
+        }
+
+        const state = gesture;
+        gesture = null;
+        cancelAnimationFrame(state.frame);
+        state.target?.removeAttribute('data-activity-drop');
+        state.header.classList.remove('activity-column-active');
+        delete activityTable.dataset.columnGesture;
+        if (!state.active) {
+            return;
+        }
+
+        if (event.type !== 'pointerup') {
+            const columns = getActivityColumns();
+            state.header.style.width = columns.find(column => column.field === state.field).width + 'px';
+            setActivityTableWidth(columns);
+        } else if (state.kind === 'resize') {
+            applyActivityLayout(previewColumnWidth(state, event.clientX));
+        } else {
+            moveActivityColumn(state.field, state.target?.dataset.field, state.side);
+        }
+    }
+
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+        activityTable.addEventListener(type, finishActivityGesture);
+    }
+
+    $activityTable.on('keydown', '.activity-column-handle', function (event) {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+            return;
+        }
+
+        event.preventDefault();
+        const direction = getComputedStyle(activityTable).direction === 'rtl' ? -1 : 1;
+        const step = (event.key === 'ArrowLeft' ? -1 : 1) * direction;
+        const field = this.closest('th').dataset.field;
+        const kind = this.dataset.columnHandle;
+        if (kind === 'resize') {
+            const columns = getActivityColumns();
+            const column = columns.find(column => column.field === field);
+            column.width = clampColumnWidth(column.width + step * 16);
+            applyActivityLayout(columns);
+        } else {
+            const headers = getActivityHeaders();
+            const index = headers.findIndex(header => header.dataset.field === field);
+            moveActivityColumn(field, headers[index + step]?.dataset.field, step < 0 ? 'before' : 'after');
+        }
+        getActivityHeaders().find(header => header.dataset.field === field)
+            ?.querySelector('[data-column-handle="' + kind + '"]')?.focus();
+    });
+
+    $('#resetActivityColumns').on('click', function () {
+        applyActivityLayout(defaultColumns.map(column => ({...column})), true);
+    });
+
+    $retryColumns.on('click', function () {
+        pendingLayout = failedLayout;
+        saveActivityLayout();
+    });
+
     // Activity report toolbar. Six filters all round-trip through the
     // browser URL so the view is shareable, bookmarkable, and
     // back/forward restores the prior filter state.
@@ -191,7 +449,7 @@
     // does not depend on each select being present / wrapped at bind
     // time.
     $(function () {
-        var baseUrl = @json($canManageReports ? route('api.activity.index') : route('api.dashboard.activity'));
+        var baseUrl = @json($canManageReports ? route('api.reports.inventory.activity') : route('api.dashboard.activity'));
         var userLookupUrl = @json(route('api.users.selectlist'));
 
         var $itemFilter = $('#activityReportItemTypeFilter');

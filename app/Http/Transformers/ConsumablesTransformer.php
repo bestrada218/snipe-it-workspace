@@ -28,6 +28,7 @@ class ConsumablesTransformer
 
         $array = [
             'id' => (int) $consumable->id,
+            'asset_tag' => $consumable->asset_tag ? e($consumable->asset_tag) : null,
             'name' => e($consumable->name),
             'image' => ($consumable->getImageUrl()) ? ($consumable->getImageUrl()) : null,
             'qr_code_url' => route('qr_code/common', ['object_type' => 'consumables', 'id' => $consumable->id]),

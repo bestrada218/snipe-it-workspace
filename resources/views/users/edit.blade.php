@@ -33,7 +33,9 @@
             <x-tabs>
                 <x-slot:tabnav>
                     <x-tabs.nav-item name="info" class="active" :label="trans('general.information')"/>
-                    <x-tabs.nav-item name="permissions" :label="trans('general.permissions')"/>
+                    @can('canEditAuthFields', $user)
+                        <x-tabs.nav-item name="permissions" :label="trans('general.permissions')"/>
+                    @endcan
                 </x-slot:tabnav>
 
                 <x-slot:tabpanes>
@@ -52,6 +54,7 @@
                             :item="$user"
                         />
 
+                @can('canEditAuthFields', $user)
                 <!-- Username -->
                         <x-form.row :label="trans('admin/users/table.username')" name="username" :item="$user">
                             <x-slot:input>
@@ -225,6 +228,8 @@
                             </x-form.row>
                 @endif
 
+                @endcan
+
                   <!-- Email -->
                         <x-form.row :label="trans('admin/users/table.email')" name="email" :item="$user">
                             <x-slot:input>
@@ -251,7 +256,7 @@
                              below. When app.lock_passwords is on we don't render
                              that attribute, so the checkbox stays permanently
                              disabled. --}}
-                        @if (!$user->id)
+                        @if (! $user->id && Gate::allows('canEditAuthFields', $user))
                             <x-form.checkbox-row
                                 name="send_welcome"
                                 :label="trans('general.send_welcome_email_to_users')"
@@ -665,6 +670,7 @@
 
                     </x-tabs.pane>
 
+                    @can('canEditAuthFields', $user)
                     <x-tabs.pane name="permissions">
 
                         <x-form.legend help_text="{{ trans('permissions.use_groups') }}"/>
@@ -690,6 +696,7 @@
               @endif
 
                     </x-tabs.pane>
+                    @endcan
                 </x-slot:tabpanes>
 
                 <x-slot:footer>

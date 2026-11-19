@@ -5,6 +5,7 @@ namespace App\Models\Traits;
 use App\Models\Company;
 use App\Models\CompanyableScope;
 use App\Models\Location;
+use App\Models\LocationGroupScope;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,8 @@ trait CompanyableTrait
     public static function bootCompanyableTrait()
     {
         static::addGlobalScope(new CompanyableScope);
+        static::addGlobalScope(new LocationGroupScope);
+        static::saving(LocationGroupScope::validateSave(...));
     }
 
     /**
@@ -49,6 +52,10 @@ trait CompanyableTrait
      */
     public function canCheckoutTo(Model $target): bool
     {
+        if (! LocationGroupScope::allows(LocationGroupScope::currentUser(), $target)) {
+            return false;
+        }
+
         $settings = Setting::getSettings();
 
         if (! $settings->full_multiple_companies_support) {

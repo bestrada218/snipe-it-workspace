@@ -19,7 +19,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class SelectlistTransformer
 {
-    public function transformSelectlist(LengthAwarePaginator $select_items)
+    public function transformSelectlist(LengthAwarePaginator $select_items, array $extraFields = [])
     {
         $items_array = [];
 
@@ -36,6 +36,10 @@ class SelectlistTransformer
             // Used to enforce hierarchy / membership constraints up-front.
             if (! empty($select_item->use_disabled)) {
                 $row['disabled'] = true;
+            }
+
+            foreach ($extraFields as $field) {
+                $row[$field] = $select_item->{$field};
             }
 
             $items_array[] = $row;

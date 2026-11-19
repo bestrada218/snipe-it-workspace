@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ItemImportRequest;
 use App\Http\Transformers\ImportsTransformer;
 use App\Models\Import;
+use App\Models\Setting;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
@@ -279,6 +280,10 @@ class ImportController extends Controller
     public function process(ItemImportRequest $request, $import_id): JsonResponse
     {
         $this->authorize('import');
+        abort_unless(Setting::inventoryImportEnabled($request->string('import-type')->toString()), 404);
+        if ($request->input('import-type') === 'user') {
+            $this->authorize('canEditAuthFields', new \App\Models\User);
+        }
 
         // Demo mode: uploads stay blocked at store(), but superadmins can
         // still process the seeded sample imports so the demo shows off

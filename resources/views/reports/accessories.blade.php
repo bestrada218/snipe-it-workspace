@@ -21,7 +21,7 @@
                                 id="accessoriesReport"
                                 data-advanced-search="false"
                                 class="table table-striped snipe-table"
-                                data-url="{{ route('api.accessories.index') }}"
+                                data-url="{{ route('api.reports.inventory.accessories') }}"
                                 data-export-options='{
                         "fileName": "accessory-report-{{ date('Y-m-d') }}",
                         "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]

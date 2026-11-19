@@ -23,6 +23,13 @@ class AssetQueryBuilder extends Builder
         return $this->where('physical', '=', '1');
     }
 
+    public function inInventoryLocationModule(?int $locationId): self
+    {
+        return $this->where('assets.assigned_type', Location::class)
+            ->whereNotNull('assets.assigned_to')
+            ->when($locationId !== null, fn (self $query) => $query->where('assets.assigned_to', $locationId));
+    }
+
     public function pending(): self
     {
         // Pluck IDs then whereIn. Do NOT replace with whereHas. whereHas
@@ -59,6 +66,7 @@ class AssetQueryBuilder extends Builder
         $ids = Statuslabel::idsFor('deployable');
 
         return $this->whereNull('assets.assigned_to')
+            ->whereDoesntHave('shipments', fn ($shipments) => $shipments->open())
             ->whereIn('assets.status_id', $ids->isEmpty() ? [0] : $ids);
     }
 

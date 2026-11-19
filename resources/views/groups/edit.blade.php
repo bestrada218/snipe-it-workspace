@@ -41,6 +41,22 @@
 
 
 <fieldset>
+    <x-form.legend>{{ trans('admin/groups/titles.location_scope') }}</x-form.legend>
+    <x-input.location-select
+        :label="trans('admin/groups/titles.location_scope')"
+        name="scope_location_id"
+        :selected="old('scope_location_id', $group->scope_location_id)"
+        :helpText="trans('admin/groups/titles.location_scope_help')"
+        :hideNewButton="true"
+    />
+    <div class="form-group">
+        <div class="col-md-8 col-md-offset-3">
+            <p class="help-block">{{ trans('admin/groups/titles.profile_only_help') }}</p>
+        </div>
+    </div>
+</fieldset>
+
+<fieldset>
     <x-form.legend icon="warning" help_text="{{ trans('general.add_users_to_group_help') }}">
        {{ trans('general.add_users_to_group') }}
     </x-form.legend>

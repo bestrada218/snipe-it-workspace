@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\DB;
 use App\Enums\FileStorage;
 use App\Events\CheckoutableCheckedOut;
 use App\Exceptions\CheckoutNotAllowed;
@@ -129,6 +130,8 @@ class Asset extends Depreciable
         'rtd_company_id' => 'integer',
         'supplier_id' => 'integer',
         'created_at' => 'datetime',
+        'replacement_due_on' => 'date',
+        'replacement_years' => 'integer',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
@@ -634,11 +637,16 @@ class Asset extends Depreciable
      *
      * @return bool
      */
+    public function shipments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AssetShipment::class);
+    }
+
     public function availableForCheckout()
     {
 
         // This asset is not currently assigned to anyone and is not deleted...
-        if ((! $this->assigned_to) && (! $this->deleted_at)) {
+        if ((! $this->assigned_to) && (! $this->deleted_at) && ! $this->shipments()->open()->exists()) {
 
             // The asset status is not archived and is deployable
             if (($this->status) && ($this->status->archived == '0')
@@ -688,58 +696,67 @@ class Asset extends Depreciable
      *
      * @return bool
      */
-    public function checkOut($target, $admin = null, $checkout_at = null, $expected_checkin = null, $note = null, $name = null, $location = null, bool $signInPlace = false)
+    public function checkOut($target, $admin = null, $checkout_at = null, $expected_checkin = null, $note = null, $name = null, $location = null, bool $signInPlace = false, ?User $transferredFrom = null)
     {
-        if (! $target) {
-            return false;
-        }
-        if ($this->is($target)) {
-            throw new CheckoutNotAllowed('You cannot check an asset out to itself.');
-        }
-
-        if ($expected_checkin) {
-            $this->expected_checkin = $expected_checkin;
-        }
-
-        $this->last_checkout = $checkout_at;
-        $this->name = $name;
-
-        $this->assignedTo()->associate($target);
-
-        if ($location != null) {
-            $this->location_id = $location;
-        } else {
-            if (isset($target->location)) {
-                $this->location_id = $target->location->id;
+        return DB::transaction(function () use ($target, $admin, $checkout_at, $expected_checkin, $note, $name, $location, $signInPlace, $transferredFrom): bool {
+            if (! self::whereKey($this->id)->lockForUpdate()->first() || $this->shipments()->open()->lockForUpdate()->first()) {
+                return false;
             }
-            if ($target instanceof Location) {
-                $this->location_id = $target->id;
+            if (! $target) {
+                return false;
             }
-        }
+            if ($this->is($target)) {
+                throw new CheckoutNotAllowed('You cannot check an asset out to itself.');
+            }
 
-        $originalValues = $this->getRawOriginal();
+            if ($expected_checkin) {
+                $this->expected_checkin = $expected_checkin;
+            }
 
-        // attempt to detect change in value if different from today's date
-        if ($checkout_at && strpos($checkout_at, date('Y-m-d')) === false) {
-            $originalValues['action_date'] = date('Y-m-d H:i:s');
-        }
+            $previousAssignee = $transferredFrom ?? ($this->assigned_to ? $this->assignedTo()->getResults() : null);
+            $this->last_checkout = $checkout_at;
+            $this->name = $name;
 
-        if ($this->save()) {
-            if (is_int($admin)) {
-                $checkedOutBy = User::findOrFail($admin);
-            } elseif ($admin && get_class($admin) === User::class) {
-                $checkedOutBy = $admin;
+            $this->assignedTo()->associate($target);
+
+            if ($location != null) {
+                $this->location_id = $location;
             } else {
-                $checkedOutBy = auth()->user();
+                if (isset($target->location)) {
+                    $this->location_id = $target->location->id;
+                }
+                if ($target instanceof Location) {
+                    $this->location_id = $target->id;
+                }
             }
-            event(new CheckoutableCheckedOut($this, $target, $checkedOutBy, $note, $originalValues, 1, $signInPlace));
 
-            $this->increment('checkout_counter', 1);
+            $originalValues = $this->getRawOriginal();
+            if ($previousAssignee || empty($originalValues['assigned_to'])) {
+                $originalValues['_activity_previous_assignment'] = $previousAssignee?->display_name;
+            }
 
-            return true;
-        }
+            // attempt to detect change in value if different from today's date
+            if ($checkout_at && strpos($checkout_at, date('Y-m-d')) === false) {
+                $originalValues['action_date'] = date('Y-m-d H:i:s');
+            }
 
-        return false;
+            if ($this->save()) {
+                if (is_int($admin)) {
+                    $checkedOutBy = User::findOrFail($admin);
+                } elseif ($admin && get_class($admin) === User::class) {
+                    $checkedOutBy = $admin;
+                } else {
+                    $checkedOutBy = auth()->user();
+                }
+                event(new CheckoutableCheckedOut($this, $target, $checkedOutBy, $note, $originalValues, 1, $signInPlace));
+
+                $this->increment('checkout_counter', 1);
+
+                return true;
+            }
+
+            return false;
+        });
     }
 
     /**

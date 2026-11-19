@@ -20,7 +20,7 @@
                             data-side-pagination="server"
                             data-sort-order="asc"
                             id="auditReport"
-                            data-url="{{ route('api.activity.index', ['action_type' => 'audit']) }}"
+                            data-url="{{ route('api.reports.inventory.activity', ['action_type' => 'audit']) }}"
                             class="table table-striped snipe-table snipe-table--sticky-right-1"
                             data-advanced-search="false"
                             data-export-options='{

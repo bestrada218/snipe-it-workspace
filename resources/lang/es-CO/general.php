@@ -542,6 +542,8 @@ return [
     'dashboard_info' => 'Este es su panel de control. Hay muchos similares, pero este es suyo.',
     '60_percent_warning' => '60% completo (advertencia)',
     'dashboard_empty' => 'Parece que aún no ha añadido nada, así que no tenemos nada impresionante que mostrar. ¡Comience añadiendo algunos activos, accesorios, consumibles o licencias ahora!',
+    'dashboard_empty_title' => 'Tu inventario está vacío',
+    'dashboard_empty_description' => 'Usa los accesos de abajo para registrar los primeros elementos de tu inventario.',
     'new_asset' => 'Nuevo activo',
     'new_license' => 'Nueva licencia',
     'new_accessory' => 'Nuevo accesorio',

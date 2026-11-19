@@ -29,6 +29,7 @@ class Group extends SnipeModel
         'name',
         'permissions',
         'notes',
+        'scope_location_id',
     ];
 
     /**

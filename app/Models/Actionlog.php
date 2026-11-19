@@ -31,6 +31,22 @@ class Actionlog extends SnipeModel
     use CompanyableTrait;
     use HasFactory;
 
+    public function scopeForEnabledInventoryModules(Builder $query, bool $filterModules = true): Builder
+    {
+        $disabled = $filterModules ? Setting::disabledInventoryModelClasses() : [];
+        $locations = LocationGroupScope::allowedIds(LocationGroupScope::currentUser());
+
+        if ($locations !== null) {
+            $query->whereIntegerInRaw('action_logs.location_id', $locations);
+        }
+
+        return $query->when($disabled !== [], function (Builder $query) use ($disabled) {
+            foreach (['item_type', 'target_type'] as $column) {
+                $query->where(fn (Builder $types) => $types->whereNull($column)->orWhereNotIn($column, $disabled));
+            }
+        });
+    }
+
     // This is to manually set the source (via setActionSource()) for determineActionSource()
     protected ?string $source = null;
 
@@ -713,6 +729,7 @@ class Actionlog extends SnipeModel
         $log->created_by = auth()->id();
         $log->target_id = null;
         $log->filename = $filename;
+        $log->original_filename = $this->original_filename;
         $log->created_at = date('Y-m-d H:i:s');
         $log->logaction('upload deleted');
 

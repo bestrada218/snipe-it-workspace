@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckColorSettings;
 use App\Http\Middleware\CheckForDebug;
 use App\Http\Middleware\CheckForSetup;
 use App\Http\Middleware\CheckForTwoFactor;
+use App\Http\Middleware\CheckInventoryModule;
 use App\Http\Middleware\CheckLocale;
 use App\Http\Middleware\CheckPermissions;
 use App\Http\Middleware\CheckUserIsActivated;
@@ -80,6 +81,7 @@ class Kernel extends HttpKernel
             IssueFreshApiTokenIfTwoFactorComplete::class,
             CheckColorSettings::class,
             AuthenticateSession::class,
+            CheckInventoryModule::class,
             SubstituteBindings::class,
         ],
 
@@ -95,6 +97,7 @@ class Kernel extends HttpKernel
             CheckLocale::class,
             LogAuthedUserHeader::class,
             SetPaginationDefaults::class,
+            CheckInventoryModule::class,
             SubstituteBindings::class,
         ],
 

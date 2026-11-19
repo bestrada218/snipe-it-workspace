@@ -18,6 +18,11 @@
     <x-container columns="2">
         <x-page-column class="col-md-7">
 
+            <p>
+                <a class="btn btn-default" href="{{ route('shipments.create', $asset) }}">
+                    {{ trans('asset-shipments.create') }}
+                </a>
+            </p>
             <x-form id="checkout_form" route="{{ url()->current() }}">
 
                 <x-box header="{{ trans('admin/hardware/form.tag') }} {{ $asset->asset_tag }}">
@@ -83,6 +88,7 @@
                         :companyId="$asset->company_id"
                         :style="(session('checkout_to_type') ?: 'user') == 'user' ? null : 'display: none;'"
                     />
+                    <x-checkout.duplicate-assignment type="assets" :item="$asset" />
                     <!-- unselect keeps the asset being checked out from being pre-selected in this picker -->
                     @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.select_asset'), 'fieldname' => 'assigned_asset', 'company_id' => $asset->company_id, 'unselect' => 'true', 'exclude_id' => $asset->id, 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
                     @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'company_id' => $asset->company_id, 'style' => session('checkout_to_type') == 'location' ? '' : 'display: none;'])

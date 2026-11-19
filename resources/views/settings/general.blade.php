@@ -30,6 +30,136 @@
                         <div class="col-md-12">
 
                             <fieldset>
+                                <x-form.legend>{{ trans('duplicate-assignments.approval_settings') }}</x-form.legend>
+                                <div class="form-group">
+                                    <label for="duplicate_assignment_approvers" class="col-md-3 control-label">{{ trans('duplicate-assignments.approvers') }}</label>
+                                    <div class="col-md-9">
+                                        <input type="hidden" name="duplicate_approvers_configured" value="1">
+                                        @php($selectedApprovers = array_map('intval', (array) old('duplicate_assignment_approvers', $setting->duplicate_assignment_approvers ?? [])))
+                                        <select class="form-control select2" name="duplicate_assignment_approvers[]" id="duplicate_assignment_approvers" multiple style="width: 100%;" aria-describedby="duplicate-approvers-help">
+                                            @foreach ($approvalCandidates as $candidate)
+                                                <option value="{{ $candidate->id }}" @selected(in_array($candidate->id, $selectedApprovers, true))>
+                                                    {{ $candidate->display_name }}{{ $candidate->username ? ' ('.$candidate->username.')' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="help-block" id="duplicate-approvers-help">{{ trans('duplicate-assignments.approvers_help') }}</p>
+                                        <x-form.error name="duplicate_assignment_approvers" />
+                                        <x-form.error name="duplicate_assignment_approvers.*" />
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            @can('superadmin')
+                                <fieldset>
+                                    <x-form.legend>{{ trans('asset-shipments.purchase_settings') }}</x-form.legend>
+                                    <div class="form-group">
+                                        <label for="purchase_approvers" class="col-md-3 control-label">{{ trans('asset-shipments.purchase_approvers') }}</label>
+                                        <div class="col-md-9">
+                                            <input type="hidden" name="purchase_approvers_configured" value="1">
+                                            @php($selectedPurchaseApprovers = array_map('intval', (array) old('purchase_approvers', $setting->purchase_approvers ?? [])))
+                                            <select class="form-control select2" name="purchase_approvers[]" id="purchase_approvers" multiple style="width: 100%;" aria-describedby="purchase-approvers-help">
+                                                @foreach ($approvalCandidates as $candidate)
+                                                    <option value="{{ $candidate->id }}" @selected(in_array($candidate->id, $selectedPurchaseApprovers, true))>
+                                                        {{ $candidate->display_name }}{{ $candidate->username ? ' ('.$candidate->username.')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <p class="help-block" id="purchase-approvers-help">{{ trans('asset-shipments.purchase_approvers_help') }}</p>
+                                            <x-form.error name="purchase_approvers" />
+                                            <x-form.error name="purchase_approvers.*" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            @endcan
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.inventory_modules') }}
+                                </x-form.legend>
+
+                                <div class="form-group">
+                                    <div class="col-md-9 col-md-offset-3">
+                                        <p class="help-block">{{ trans('admin/settings/general.inventory_modules_help') }}</p>
+                                        @foreach (array_keys(\App\Models\Setting::INVENTORY_MODULES) as $module)
+                                            <input type="hidden" name="inventory_modules[{{ $module }}]" value="0">
+                                            <div class="inventory-module-settings-row">
+                                                <label class="inventory-module-option">
+                                                    <x-input.checkbox
+                                                        :name="'inventory_modules['.$module.']'"
+                                                        :checked="old('inventory_modules.'.$module, \App\Models\Setting::inventoryModuleEnabled($module))"
+                                                    />
+                                                    <span>{{ \App\Models\Setting::inventoryModuleLabel($module) }}</span>
+                                                </label>
+                                                <x-form.inventory-module-name
+                                                    :name="'inventory_module_labels['.$module.']'"
+                                                    :key-path="'inventory_module_labels.'.$module"
+                                                    :label="\App\Models\Setting::inventoryModuleLabel($module)"
+                                                    :stored="$setting->inventory_module_labels[$module] ?? null"
+                                                    :placeholder="trans('general.'.$module)"
+                                                />
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset>
+                                <x-form.legend>{{ trans('admin/settings/general.inventory_location_modules') }}</x-form.legend>
+                                <div class="form-group">
+                                    <div class="col-md-9 col-md-offset-3">
+                                        <p class="help-block">{{ trans('admin/settings/general.inventory_location_help') }}</p>
+                                        @foreach ([...\App\Models\Setting::inventoryLocationModules(), 'new' => ['name' => null, 'location_id' => null]] as $key => $module)
+                                            @if ($key === 'new')
+                                                <details class="inventory-location-module inventory-location-add" @if (old('inventory_location_modules.new.name') || $errors->has('inventory_location_modules.new.name') || $errors->has('inventory_location_modules.new.location_id')) open @endif>
+                                                    <summary><x-icon type="plus" /> {{ trans('admin/settings/general.inventory_location_add') }}</summary>
+                                                    <label for="inventory-location-name-new">{{ trans('general.name') }}</label>
+                                                    <input id="inventory-location-name-new" class="form-control" type="text"
+                                                        name="inventory_location_modules[new][name]"
+                                                        value="{{ old('inventory_location_modules.new.name') }}" maxlength="60">
+                                                    <x-form.error name="inventory_location_modules.new.name" />
+                                            @else
+                                                <div class="inventory-location-module">
+                                                    <div class="inventory-module-settings-row">
+                                                        <span class="inventory-location-title">{{ \App\Models\Setting::inventoryLocationModuleLabel($module) }}</span>
+                                                        <x-form.inventory-module-name
+                                                            :name="'inventory_location_modules['.$key.'][name]'"
+                                                            :key-path="'inventory_location_modules.'.$key.'.name'"
+                                                            :label="\App\Models\Setting::inventoryLocationModuleLabel($module)"
+                                                            :stored="$module['name']"
+                                                            :placeholder="\App\Models\Setting::inventoryLocationModuleLabel($module)"
+                                                        />
+                                                    </div>
+                                            @endif
+                                                <label for="inventory-location-{{ $key }}">{{ trans('general.location') }}</label>
+                                                <select class="form-control" id="inventory-location-{{ $key }}" name="inventory_location_modules[{{ $key }}][location_id]">
+                                                    <option value="">{{ trans('admin/settings/general.inventory_location_all') }}</option>
+                                                    @foreach ($inventoryLocations as $locationId => $locationName)
+                                                        <option value="{{ $locationId }}" @selected((string) old('inventory_location_modules.'.$key.'.location_id', $module['location_id']) === (string) $locationId)>{{ $locationName }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <x-form.error :name="'inventory_location_modules.'.$key.'.location_id'" />
+                                                @if ($key !== 'new')
+                                                    <input type="hidden" name="inventory_location_modules[{{ $key }}][enabled]" value="0">
+                                                    <label class="inventory-module-option">
+                                                        <x-input.checkbox
+                                                            :name="'inventory_location_modules['.$key.'][enabled]'"
+                                                            :checked="old('inventory_location_modules.'.$key.'.enabled', $module['enabled'] ?? true)"
+                                                        />
+                                                        <span>{{ trans('admin/settings/general.inventory_location_show') }}</span>
+                                                    </label>
+                                                @endif
+                                            @if ($key === 'new')
+                                                </details>
+                                            @else
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <fieldset>
                                 <x-form.legend>
                                     {{ trans('admin/settings/general.legends.scoping') }}
                                 </x-form.legend>

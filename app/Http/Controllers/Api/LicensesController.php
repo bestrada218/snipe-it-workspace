@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\DuplicateAssignments;
 use App\Events\CheckoutableCheckedIn;
 use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
@@ -338,7 +339,7 @@ class LicensesController extends Controller
         $updatedSeat = null;
         $target = null;
 
-        DB::transaction(function () use ($license, $validated, &$errorResponse, &$updatedSeat, &$target): void {
+        DB::transaction(function () use ($request, $license, $validated, &$errorResponse, &$updatedSeat, &$target): void {
             $seatId = $validated['seat_id'] ?? null;
 
             $licenseSeat = $seatId
@@ -410,6 +411,7 @@ class LicensesController extends Controller
                     return;
                 }
 
+                DuplicateAssignments::confirm($request, $license, $target, ignoreSeat: $licenseSeat->id);
                 $licenseSeat->assigned_to = $target->id;
                 $licenseSeat->asset_id = null;
             } else {
