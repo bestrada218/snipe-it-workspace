@@ -204,7 +204,9 @@ enum FileStorage: string
      * assets, signatures / EULAs ride on acceptance records, imports are
      * admin-queued uploads not owned by a model, Backups is Spatie
      * output). Barcodes also returns null because that directory stores
-     * generated label PNGs rather than user uploads.
+     * generated label PNGs rather than user uploads. AssetShipmentApprovals
+     * and DuplicateApprovals hold approval evidence referenced from
+     * asset_shipments and action_logs metadata, not from a model's uploads.
      *
      * Closes the loop with `HasImageUpload`, which declares the inverse
      * (model -> FileStorage case) via `static::fileStorage()`.
@@ -231,7 +233,8 @@ enum FileStorage: string
             self::Manufacturers => \App\Models\Manufacturer::class,
             self::Models => \App\Models\AssetModel::class,
             self::Suppliers => \App\Models\Supplier::class,
-            self::Audits, self::Backups, self::Barcodes, self::EulaPdfs, self::Imports, self::Signatures => null,
+            self::AssetShipmentApprovals, self::Audits, self::Backups, self::Barcodes,
+            self::DuplicateApprovals, self::EulaPdfs, self::Imports, self::Signatures => null,
         };
     }
 
