@@ -48,6 +48,22 @@
                                         <x-form.error name="duplicate_assignment_approvers.*" />
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                    <label for="duplicate_approval_categories" class="col-md-3 control-label">{{ trans('duplicate-assignments.approval_categories') }}</label>
+                                    <div class="col-md-9">
+                                        @php($selectedApprovalCategories = array_map('intval', (array) old('duplicate_approval_categories', $setting->duplicate_approval_categories ?? [])))
+                                        <select class="form-control select2" name="duplicate_approval_categories[]" id="duplicate_approval_categories" multiple style="width: 100%;" aria-describedby="duplicate-approval-categories-help">
+                                            @foreach ($approvalCategories as $category)
+                                                <option value="{{ $category->id }}" @selected(in_array($category->id, $selectedApprovalCategories, true))>
+                                                    {{ $category->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="help-block" id="duplicate-approval-categories-help">{{ trans('duplicate-assignments.approval_categories_help') }}</p>
+                                        <x-form.error name="duplicate_approval_categories" />
+                                        <x-form.error name="duplicate_approval_categories.*" />
+                                    </div>
+                                </div>
                             </fieldset>
 
                             @can('superadmin')

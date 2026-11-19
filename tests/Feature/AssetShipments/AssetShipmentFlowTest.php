@@ -123,7 +123,7 @@ class AssetShipmentFlowTest extends TestCase
         $shipment = AssetShipment::factory()->create();
 
         $this->actingAs(User::factory()->create())
-            ->post(route('shipments.receive', $shipment), ['receipt_note' => 'Llamada'])
+            ->post(route('shipments.receive', $shipment), ['receipt_note' => 'Confirmed by phone'])
             ->assertForbidden();
 
         $this->assertNull($shipment->fresh()->received_at);
@@ -134,7 +134,7 @@ class AssetShipmentFlowTest extends TestCase
         $shipment = AssetShipment::factory()->create();
 
         $this->actingAs(User::factory()->viewAssets()->checkoutAssets()->create())
-            ->post(route('shipments.cancel', $shipment), ['reason' => 'Pedido devuelto'])
+            ->post(route('shipments.cancel', $shipment), ['reason' => 'Order returned'])
             ->assertRedirect();
 
         $this->assertNotNull($shipment->fresh()->cancelled_at);
@@ -157,7 +157,7 @@ class AssetShipmentFlowTest extends TestCase
         $shipment = AssetShipment::factory()->create();
 
         $this->actingAs($shipment->recipient)
-            ->post(route('shipments.cancel', $shipment), ['reason' => 'Ya no lo necesito'])
+            ->post(route('shipments.cancel', $shipment), ['reason' => 'No longer needed'])
             ->assertForbidden();
 
         $this->assertNull($shipment->fresh()->cancelled_at);
@@ -175,8 +175,8 @@ class AssetShipmentFlowTest extends TestCase
             'tracking_number' => '9988776655',
             'expected_on' => now()->addWeek()->toDateString(),
             'purchase_approver_id' => $this->approver->id,
-            'approval_reference' => 'Aprobado por correo el 18 de noviembre',
-            'approval' => UploadedFile::fake()->create('aprobacion.pdf', 20, 'application/pdf'),
+            'approval_reference' => 'Approved by email on Nov 18',
+            'approval' => UploadedFile::fake()->create('approval.pdf', 20, 'application/pdf'),
         ];
     }
 }

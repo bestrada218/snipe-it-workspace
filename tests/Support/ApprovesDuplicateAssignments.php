@@ -24,9 +24,9 @@ trait ApprovesDuplicateAssignments
 
         return [
             'duplicate_assignment_confirmed' => 1,
-            'duplicate_assignment_reason' => 'Aprobado para pruebas',
+            'duplicate_assignment_reason' => 'Approved for testing',
             'duplicate_assignment_approver' => $approver->id,
-            'duplicate_assignment_evidence' => UploadedFile::fake()->create('aprobacion.pdf', 10, 'application/pdf'),
+            'duplicate_assignment_evidence' => UploadedFile::fake()->create('approval.pdf', 10, 'application/pdf'),
         ];
     }
 }

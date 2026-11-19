@@ -21,6 +21,8 @@
         <label for="duplicate-assignment-motive">{{ trans('duplicate-assignments.reason') }}</label>
         <textarea id="duplicate-assignment-motive" class="form-control" rows="3" maxlength="1000"
             placeholder="{{ trans('duplicate-assignments.reason_placeholder') }}">{{ old('duplicate_assignment_reason') }}</textarea>
+        <p class="help-block" data-duplicate-requirement></p>
+        <div data-duplicate-approval hidden>
         <label for="duplicate-assignment-approver">{{ trans('duplicate-assignments.approved_by') }}</label>
         <select id="duplicate-assignment-approver" name="duplicate_assignment_approver" class="form-control" aria-required="true">
             <option value="">{{ trans('duplicate-assignments.select_approver') }}</option>
@@ -37,9 +39,10 @@
         <input id="duplicate-assignment-evidence" name="duplicate_assignment_evidence" type="file" class="form-control"
             accept=".pdf,.jpg,.jpeg,.png,.webp" aria-required="true" aria-describedby="duplicate-evidence-help">
         <p class="help-block" id="duplicate-evidence-help">{{ trans('duplicate-assignments.evidence_help') }}</p>
+        </div>
         <div class="workspace-duplicate-actions">
             <button type="button" data-duplicate-cancel class="btn btn-default">{{ trans('duplicate-assignments.cancel') }}</button>
-            <button type="button" data-duplicate-confirm class="btn btn-theme" @disabled($availableApprovers->isEmpty())>{{ trans('duplicate-assignments.confirm') }}</button>
+            <button type="button" data-duplicate-confirm class="btn btn-theme" data-no-approvers="{{ $availableApprovers->isEmpty() ? '1' : '0' }}">{{ trans('duplicate-assignments.confirm') }}</button>
         </div>
     </dialog>
 </div>
@@ -59,13 +62,29 @@
                     const submittedReason = panel.querySelector('[name="duplicate_assignment_reason"]');
                     const messages = {
                         warning: @json(trans('duplicate-assignments.warning')),
+                        multiWarning: @json(trans('duplicate-assignments.multi_warning')),
                         assigned: @json(trans('duplicate-assignments.warning_title')),
                         multiple: @json(trans('duplicate-assignments.multi_title')),
                         failed: @json(trans('duplicate-assignments.check_failed')),
                         reason: @json(trans('duplicate-assignments.reason')),
                         approver: @json(trans('duplicate-assignments.select_approver')),
                         evidence: @json(trans('duplicate-assignments.evidence_help')),
+                        justificationOnly: @json(trans('duplicate-assignments.justification_only')),
+                        approvalRequired: @json(trans('duplicate-assignments.approval_required')),
                     };
+                    const approvalFields = dialog.querySelector('[data-duplicate-approval]');
+                    const requirement = dialog.querySelector('[data-duplicate-requirement]');
+                    const confirmButton = panel.querySelector('[data-duplicate-confirm]');
+                    let requiresApproval = false;
+
+                    // Laptops and desktops (the categories chosen in settings) need an
+                    // approver and evidence; every other duplicate only needs a justification.
+                    function applyRequirement(data) {
+                        requiresApproval = Boolean(data?.requires_approval);
+                        approvalFields.hidden = !requiresApproval;
+                        requirement.textContent = requiresApproval ? messages.approvalRequired : messages.justificationOnly;
+                        confirmButton.disabled = requiresApproval && confirmButton.dataset.noApprovers === '1';
+                    }
                     let pending;
                     let approved = false;
                     let savedSubmitter;
@@ -85,7 +104,7 @@
                             return '';
                         }
 
-                        const text = messages.warning.replace(/:(existing|category|total)\b/g, (_, key) => ({
+                        const text = (data.existing ? messages.warning : messages.multiWarning).replace(/:(existing|category|total)\b/g, (_, key) => ({
                             existing: data.existing,
                             category: data.category,
                             total: data.existing + data.incoming,
@@ -162,6 +181,7 @@
                         }
 
                         if (result?.duplicate) {
+                            applyRequirement(result);
                             dialog.querySelector('[data-duplicate-dialog-message]').textContent = display(result);
                             dialog.showModal();
                             reason.focus();
@@ -193,17 +213,21 @@
                             return;
                         }
 
-                        if (!approver.value) {
+                        if (requiresApproval && !approver.value) {
                             approver.setCustomValidity(messages.approver);
                             approver.reportValidity();
                             return;
                         }
-                        if (!evidence.files.length) {
+                        if (requiresApproval && !evidence.files.length) {
                             evidence.setCustomValidity(messages.evidence);
                             evidence.reportValidity();
                             return;
                         }
 
+                        if (!requiresApproval) {
+                            approver.value = '';
+                            evidence.value = '';
+                        }
                         confirmed.value = '1';
                         submittedReason.value = reason.value.trim();
                         dialog.close();

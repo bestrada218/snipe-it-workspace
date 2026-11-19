@@ -7,6 +7,12 @@
         <dt>{{ trans('duplicate-assignments.reason') }}</dt>
         <dd>{{ $meta['_duplicate_assignment_reason'] ?? '' }}</dd>
     </div>
+    @if ($approval === [])
+    <div>
+        <dt>{{ trans('duplicate-assignments.approved_by') }}</dt>
+        <dd class="text-muted">{{ trans('duplicate-assignments.justification_only') }}</dd>
+    </div>
+    @else
     <div>
         <dt>{{ trans('duplicate-assignments.approved_by') }}</dt>
         <dd>{{ $approval['approver_name'] ?? trans('activity-log.target_not_recorded') }}</dd>
@@ -23,4 +29,5 @@
             @endif
         </dd>
     </div>
+    @endif
 </dl>

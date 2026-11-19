@@ -7,6 +7,7 @@ use App\Helpers\Helper;
 use App\Models\Accessory;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\Category;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\LicenseSeat;
@@ -35,6 +36,16 @@ final class DuplicateAssignments
     {
         return User::whereKey(Setting::getSettings()?->duplicate_assignment_approvers ?? [])
             ->orderBy('first_name')->orderBy('last_name')->get();
+    }
+
+    /**
+     * Only the categories chosen in settings (laptops and desktops) need an
+     * approver and evidence. Every duplicate still needs a justification.
+     */
+    public static function requiresApproval(?Category $category): bool
+    {
+        return $category !== null
+            && in_array((int) $category->id, array_map('intval', Setting::getSettings()?->duplicate_approval_categories ?? []), true);
     }
 
     public static function canViewAlerts(): bool
@@ -83,7 +94,7 @@ final class DuplicateAssignments
     }
 
     /**
-     * @return array{category: ?string, existing: int, incoming: int, duplicate: bool}
+     * @return array{category: ?string, existing: int, incoming: int, duplicate: bool, requires_approval: bool}
      */
     public static function inspect(Asset|Accessory|Consumable|License $item, User $person, int $incoming, ?int $ignoreSeat = null): array
     {
@@ -95,6 +106,7 @@ final class DuplicateAssignments
             'existing' => $existing,
             'incoming' => $incoming,
             'duplicate' => $category !== null && $existing + $incoming > 1,
+            'requires_approval' => self::requiresApproval($category),
         ];
     }
 
@@ -135,6 +147,15 @@ final class DuplicateAssignments
             throw ValidationException::withMessages([
                 'duplicate_assignment_reason' => trans('duplicate-assignments.confirm_required', ['category' => $category->name]),
             ]);
+        }
+
+        if (! self::requiresApproval($category)) {
+            request()->attributes->set(self::approvalKey($item::class, $item->id, $target->id), [
+                'reason' => $reason,
+                'category_id' => $category->id,
+            ]);
+
+            return;
         }
 
         $approvers = self::approvers()->keyBy('id');
@@ -182,6 +203,10 @@ final class DuplicateAssignments
         }
 
         $attributes->remove($approvalKey);
+        if (! isset($approval['file'])) {
+            return ['_duplicate_assignment_reason' => $approval['reason']];
+        }
+
         $file = $approval['file'];
         $key = Str::uuid().'.'.$file->guessExtension();
         $folder = FileStorage::DuplicateApprovals->privateStorageKey();

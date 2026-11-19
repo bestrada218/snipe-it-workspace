@@ -42,7 +42,7 @@
                             @csrf
                             <p>{{ trans('asset-shipments.confirm_on_behalf', ['name' => $shipment->recipient?->display_name]) }}</p>
                             <label for="shipment-receipt-note">{{ trans('asset-shipments.receipt_note') }}</label>
-                            <textarea class="form-control" name="receipt_note" id="shipment-receipt-note" rows="3" maxlength="1000" required>{{ old('receipt_note') }}</textarea>
+                            <textarea class="form-control" name="receipt_note" id="shipment-receipt-note" rows="3" maxlength="1000" placeholder="{{ trans('asset-shipments.receipt_note_placeholder') }}" required>{{ old('receipt_note') }}</textarea>
                             <x-form.error name="receipt_note" />
                             <button class="btn btn-theme" type="submit">{{ trans('asset-shipments.save_receipt') }}</button>
                         </form>
@@ -57,7 +57,7 @@
                             <input class="form-control" type="date" id="shipment-date" name="expected_on" value="{{ old('expected_on') }}" min="{{ today()->toDateString() }}" required>
                             <x-form.error name="expected_on" />
                             <label for="shipment-reschedule-reason">{{ trans('asset-shipments.reason') }}</label>
-                            <input class="form-control" type="text" id="shipment-reschedule-reason" name="reason" maxlength="1000" required>
+                            <input class="form-control" type="text" id="shipment-reschedule-reason" name="reason" maxlength="1000" placeholder="{{ trans('asset-shipments.reschedule_reason_placeholder') }}" required>
                             <x-form.error name="reason" />
                             <button class="btn btn-theme" type="submit">{{ trans('asset-shipments.save_date') }}</button>
                         </form>
@@ -69,7 +69,7 @@
                         <form method="POST" action="{{ route('shipments.cancel', $shipment) }}">
                             @csrf
                             <label for="shipment-cancel-reason">{{ trans('asset-shipments.reason') }}</label>
-                            <input class="form-control" type="text" id="shipment-cancel-reason" name="reason" maxlength="1000" required>
+                            <input class="form-control" type="text" id="shipment-cancel-reason" name="reason" maxlength="1000" placeholder="{{ trans('asset-shipments.cancel_reason_placeholder') }}" required>
                             <button class="btn btn-danger" type="submit">{{ trans('asset-shipments.cancel') }}</button>
                         </form>
                     </details>
@@ -81,7 +81,8 @@
                         <p>{{ trans('asset-shipments.duplicate_hint') }}</p>
                         <input type="hidden" name="duplicate_assignment_confirmed" value="1">
                         <label for="shipment-duplicate-reason">{{ trans('duplicate-assignments.reason') }}</label>
-                        <textarea class="form-control" id="shipment-duplicate-reason" name="duplicate_assignment_reason" maxlength="1000" rows="3" required>{{ old('duplicate_assignment_reason') }}</textarea>
+                        <textarea class="form-control" id="shipment-duplicate-reason" name="duplicate_assignment_reason" maxlength="1000" rows="3" placeholder="{{ trans('asset-shipments.duplicate_reason_placeholder') }}" required>{{ old('duplicate_assignment_reason') }}</textarea>
+                        @if ($duplicateNeedsApproval)
                         <label for="shipment-duplicate-approver">{{ trans('duplicate-assignments.approved_by') }}</label>
                         <select class="form-control" id="shipment-duplicate-approver" name="duplicate_assignment_approver" required>
                             <option value="">{{ trans('duplicate-assignments.select_approver') }}</option>
@@ -93,6 +94,7 @@
                         </select>
                         <label for="shipment-duplicate-evidence">{{ trans('duplicate-assignments.evidence') }}</label>
                         <input class="form-control" type="file" name="duplicate_assignment_evidence" id="shipment-duplicate-evidence" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                        @endif
                     @endif
                     <x-form.error name="duplicate_assignment_reason" />
                     <x-form.error name="duplicate_assignment_approver" />

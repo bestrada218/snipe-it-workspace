@@ -14,6 +14,7 @@ use App\Http\Requests\StoreNotificationSettings;
 use App\Http\Requests\StoreSecuritySettings;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\Category;
 use App\Models\CustomField;
 use App\Models\Group;
 use App\Models\Labels\CustomUserLabel;
@@ -95,8 +96,9 @@ class SettingsController extends Controller
         $inventoryLocations = Location::orderBy('name')->pluck('name', 'id');
 
         $approvalCandidates = User::orderBy('first_name')->orderBy('last_name')->get();
+        $approvalCategories = Category::orderBy('name')->get(['id', 'name', 'category_type']);
 
-        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates'));
+        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates', 'approvalCategories'));
     }
 
     /**
@@ -134,9 +136,12 @@ class SettingsController extends Controller
             $approvalSettings = $request->validate([
                 'duplicate_assignment_approvers' => ['sometimes', 'array', 'list'],
                 'duplicate_assignment_approvers.*' => ['required', 'integer', 'distinct', Rule::exists('users', 'id')->whereNull('deleted_at')],
+                'duplicate_approval_categories' => ['sometimes', 'array', 'list'],
+                'duplicate_approval_categories.*' => ['required', 'integer', 'distinct', Rule::exists('categories', 'id')->whereNull('deleted_at')],
             ]);
 
             $setting->duplicate_assignment_approvers = array_map('intval', $approvalSettings['duplicate_assignment_approvers'] ?? []);
+            $setting->duplicate_approval_categories = array_map('intval', $approvalSettings['duplicate_approval_categories'] ?? []);
         }
 
         if ($request->boolean('purchase_approvers_configured')) {

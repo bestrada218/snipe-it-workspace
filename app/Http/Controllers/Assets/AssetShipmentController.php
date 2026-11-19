@@ -61,10 +61,13 @@ class AssetShipmentController extends Controller
         $shipment->load('recipient');
         $canManage = $request->user()->can('checkout', $shipment->asset);
         $canViewApproval = $this->canViewApproval($request, $shipment);
-        $duplicate = $canManage && $shipment->isOpen() && $shipment->received_at && $shipment->recipient
-            && DuplicateAssignments::inspect($shipment->asset, $shipment->recipient, 1)['duplicate'];
+        $duplicateCheck = $canManage && $shipment->isOpen() && $shipment->received_at && $shipment->recipient
+            ? DuplicateAssignments::inspect($shipment->asset, $shipment->recipient, 1)
+            : null;
+        $duplicate = (bool) ($duplicateCheck['duplicate'] ?? false);
+        $duplicateNeedsApproval = $duplicate && $duplicateCheck['requires_approval'];
 
-        return view('asset-shipments.show', compact('shipment', 'canManage', 'canViewApproval', 'duplicate'));
+        return view('asset-shipments.show', compact('shipment', 'canManage', 'canViewApproval', 'duplicate', 'duplicateNeedsApproval'));
     }
 
     public function receive(Request $request, AssetShipment $shipment): RedirectResponse

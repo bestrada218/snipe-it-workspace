@@ -20,10 +20,11 @@
                     @endforelse
                 </select>
             @elseif ($field === 'approval_reference')
-                <textarea class="form-control" name="{{ $field }}" id="{{ $field }}" rows="3" maxlength="1500" required>{{ old($field) }}</textarea>
+                <textarea class="form-control" name="{{ $field }}" id="{{ $field }}" rows="3" maxlength="1500" placeholder="{{ trans('asset-shipments.approval_reference_placeholder') }}" required>{{ old($field) }}</textarea>
             @else
                 <input class="form-control" type="{{ $type }}" name="{{ $field }}" id="{{ $field }}"
                     @if ($field === 'approval') accept=".pdf,.jpg,.jpeg,.png,.webp" aria-describedby="shipment-approval-help" @else value="{{ old($field) }}" @endif
+                    @if (in_array($field, ['platform', 'carrier'], true)) placeholder="{{ trans('asset-shipments.'.$field.'_placeholder') }}" @endif
                     @required($field !== 'carrier')>
             @endif
             @if ($field === 'approval')

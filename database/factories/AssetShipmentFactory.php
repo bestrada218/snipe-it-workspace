@@ -31,9 +31,9 @@ class AssetShipmentFactory extends Factory
             'carrier' => $this->faker->company(),
             'tracking_number' => (string) $this->faker->unique()->numerify('##########'),
             'purchase_approver_name' => $this->faker->name(),
-            'approval_reference' => 'Aprobación por correo',
+            'approval_reference' => 'Approved by email',
             'approval_key' => $this->faker->uuid().'.pdf',
-            'approval_filename' => 'aprobacion.pdf',
+            'approval_filename' => 'approval.pdf',
             'expected_on' => now()->addWeek()->toDateString(),
         ];
     }

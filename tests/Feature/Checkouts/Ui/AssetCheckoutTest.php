@@ -35,9 +35,12 @@ class AssetCheckoutTest extends TestCase
         $actor = User::factory()->superuser()->create();
         $recipient = User::factory()->create();
         $approver = User::factory()->create();
-        Setting::getSettings()->forceFill(['duplicate_assignment_approvers' => [$approver->id]])->save();
         Storage::fake();
         $model = AssetModel::factory()->create();
+        Setting::getSettings()->forceFill([
+            'duplicate_assignment_approvers' => [$approver->id],
+            'duplicate_approval_categories' => [$model->category_id],
+        ])->save();
         $firstAsset = Asset::factory()->for($model, 'model')->assignedToUser($recipient)->create();
         $newAsset = Asset::factory()->for($model, 'model')->create();
         $data = ['checkout_to_type' => 'user', 'assigned_user' => $recipient->id];
@@ -48,7 +51,8 @@ class AssetCheckoutTest extends TestCase
             ]))
             ->assertOk()
             ->assertJsonPath('existing', 1)
-            ->assertJsonPath('duplicate', true);
+            ->assertJsonPath('duplicate', true)
+            ->assertJsonPath('requires_approval', true);
 
         $this->post(route('hardware.checkout.store', $newAsset), $data)
             ->assertSessionHasErrors('duplicate_assignment_reason');
