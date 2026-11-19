@@ -625,11 +625,35 @@ class Asset extends Depreciable
         return $this->belongsTo(Company::class, 'company_id');
     }
 
+    public function shipments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AssetShipment::class);
+    }
+
+    /**
+     * Whether a shipment for this asset is still open (neither assigned nor cancelled).
+     *
+     * List queries can preload the answer with
+     * `withExists(['shipments as has_open_shipment' => fn ($query) => $query->open()])`
+     * so rendering a page of assets does not run one query per row.
+     */
+    public function hasOpenShipment(): bool
+    {
+        if (array_key_exists('has_open_shipment', $this->attributes)) {
+            return (bool) $this->attributes['has_open_shipment'];
+        }
+
+        return $this->shipments()->open()->exists();
+    }
+
     /**
      * Determines if an asset is available for checkout.
      * This checks to see if it's checked out to an invalid (deleted) user
      * OR if the assigned_to and deleted_at fields on the asset are empty AND
-     * that the status is deployable
+     * that the status is deployable AND that no shipment is still open.
+     *
+     * The shipment lookup runs last because it is the only check that may
+     * need a query.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      *
@@ -637,29 +661,18 @@ class Asset extends Depreciable
      *
      * @return bool
      */
-    public function shipments(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(AssetShipment::class);
-    }
-
     public function availableForCheckout()
     {
-
-        // This asset is not currently assigned to anyone and is not deleted...
-        if ((! $this->assigned_to) && (! $this->deleted_at) && ! $this->shipments()->open()->exists()) {
-
-            // The asset status is not archived and is deployable
-            if (($this->status) && ($this->status->archived == '0')
-                && ($this->status->deployable == '1')
-            ) {
-                return true;
-
-            }
-
+        if ($this->assigned_to || $this->deleted_at) {
             return false;
         }
 
-        return false;
+        // The asset status is not archived and is deployable
+        if (! $this->status || $this->status->archived != '0' || $this->status->deployable != '1') {
+            return false;
+        }
+
+        return ! $this->hasOpenShipment();
     }
 
     public function availableForCheckIn()

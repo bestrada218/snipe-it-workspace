@@ -523,6 +523,7 @@ class AssetsController extends Controller
                 ->withTrashed()
                 ->whereIn('assets.id', $ids)
                 ->setEagerLoads($assets->getEagerLoads())
+                ->withExists(['shipments as has_open_shipment' => fn ($shipments) => $shipments->open()])
                 ->get()
                 ->sortBy(fn ($model) => $order[$model->getKey()] ?? PHP_INT_MAX)
                 ->values();

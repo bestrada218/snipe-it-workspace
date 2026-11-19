@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssetShipment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'recipient_id', 'created_by', 'platform', 'carrier', 'tracking_number',
         'approval_reference', 'approval_key', 'approval_filename', 'expected_on',
