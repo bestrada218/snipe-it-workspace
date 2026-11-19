@@ -216,6 +216,29 @@
         border-block-end: 1px solid var(--workspace-muted);
     }
 
+    .checkout-asset-tag .control-label {
+        padding-top: 14px;
+    }
+
+    .checkout-asset-tag-value {
+        display: inline-block;
+        padding: 4px 12px;
+        border: 1px solid var(--workspace-border);
+        border-radius: 6px;
+        background: var(--workspace-tint);
+        color: var(--workspace-ink);
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+
+    .checkout-asset-tag-name {
+        margin: 2px 0 0;
+        color: var(--workspace-muted);
+        font-weight: 600;
+    }
+
     .workspace-ui .main-footer {
         --main-footer-bg-color: var(--workspace-background);
         --main-footer-top-border-color: var(--workspace-border);

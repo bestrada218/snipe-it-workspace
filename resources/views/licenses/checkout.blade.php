@@ -20,9 +20,12 @@
 
             <x-form id="checkout_form" route="{{ url()->current() }}">
 
-                <x-box header="{{ $license->name }} ({{ trans('admin/licenses/message.seats_available', ['seat_count' => $license->availCount()->count()]) }})">
+                <x-box header="{{ $license->asset_tag ?: $license->name }}">
+
+                    <x-checkout.asset-tag :tag="$license->asset_tag" />
 
                     <x-form.static :label="trans('admin/hardware/form.name')">{{ $license->name }}</x-form.static>
+                    <x-form.static :label="trans('admin/licenses/form.remaining_seats')">{{ $license->availCount()->count() }}</x-form.static>
 
                     @if ($license->company)
                         <x-form.static :label="trans('general.company')">{!! $license->company->present()->formattedNameLink !!}</x-form.static>

@@ -743,7 +743,8 @@ class AssetsController extends Controller
         // they may not have a ->name value but we want to display something anyway
         foreach ($assets as $asset) {
 
-            $asset->use_text = $asset->present()->fullName;
+            // Tag first: it is what people check when picking a unit to assign.
+            $asset->use_text = collect([$asset->asset_tag, $asset->name, $asset->model?->name])->filter()->unique()->implode(' · ');
 
             if (($asset->checkedOutToUser()) && ($asset->assigned)) {
                 $asset->use_text .= ' → '.$asset->assigned->display_name;

@@ -27,6 +27,8 @@
 
                 <x-box header="{{ trans('admin/hardware/form.tag') }} {{ $asset->asset_tag }}">
 
+                    <x-checkout.asset-tag :tag="$asset->asset_tag" :name="collect([$asset->name, $asset->model?->name])->filter()->unique()->implode(' · ')" />
+
                     @if ($asset->company)
                         <x-form.static :label="trans('general.company')">{!! $asset->company->present()->formattedNameLink !!}</x-form.static>
                     @endif

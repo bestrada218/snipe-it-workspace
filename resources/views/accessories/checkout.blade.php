@@ -18,7 +18,9 @@
 
         <x-form route="{{ url()->current() }}" id="checkout_form">
 
-            <x-box header="{{ $accessory->name }}">
+            <x-box header="{{ $accessory->asset_tag ?: $accessory->name }}">
+
+            <x-checkout.asset-tag :tag="$accessory->asset_tag" />
 
             @if ($accessory->name)
                 <x-form.static :label="trans('admin/accessories/general.accessory_name')">{{ $accessory->name }}</x-form.static>
@@ -48,16 +50,11 @@
             @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.asset'), 'asset_selector_div_id' => 'assigned_asset', 'company_id' => $accessory->company_id, 'fieldname' => 'assigned_asset', 'unselect' => 'true', 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
             @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'company_id' => $accessory->company_id, 'style' => session('checkout_to_type') == 'location' ? '' : 'display: none;'])
 
-            <!-- Checkout quantity -->
-            <div class="form-group {{ $errors->has('checkout_qty') ? 'error' : '' }}">
-                <label for="checkout_qty" class="col-md-3 control-label">{{ trans('general.qty') }}</label>
-                <div class="col-md-7 col-sm-12 required">
-                    <div class="col-md-2" style="padding-left: 0">
-                        <input class="form-control" type="number" name="checkout_qty" id="checkout_qty" value="{{ old('checkout_qty', 1) }}" min="1" max="{{ $accessory->numRemaining() }}" aria-label="{{ trans('general.qty') }}" />
-                    </div>
-                </div>
-                <div class="col-md-8 col-md-offset-3"><x-form.error name="checkout_qty" /></div>
-            </div>
+            {{-- Each accessory is picked by its own tag, so a checkout is always one unit. --}}
+            <input type="hidden" name="checkout_qty" value="1">
+            @error('checkout_qty')
+                <div class="form-group"><div class="col-md-8 col-md-offset-3"><x-form.error name="checkout_qty" /></div></div>
+            @enderror
 
             <x-checkout.checkout-notification-callout :item="$accessory" :category="$accessory->category" />
 

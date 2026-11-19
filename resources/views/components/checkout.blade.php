@@ -14,7 +14,9 @@
 
         <x-form route="{{ route('components.checkout.store', $snipe_component->id) }}" id="checkout_form">
 
-            <x-box header="{{ $snipe_component->name }} ({{ $snipe_component->numRemaining() }} {{ trans('admin/components/general.remaining') }})">
+            <x-box header="{{ $snipe_component->asset_tag ?: $snipe_component->name }}">
+
+            <x-checkout.asset-tag :tag="$snipe_component->asset_tag" :name="$snipe_component->name" />
 
 
             @if ($snipe_component->company)
@@ -42,13 +44,11 @@
                 'assigned_to' => $requestingUserId ?? null,
             ])
 
-            <x-input.quantity
-                name="assigned_qty"
-                :value="1"
-                :min="1"
-                :max="$snipe_component->numRemaining()"
-                :label="trans('general.qty')"
-            />
+            {{-- One unit per checkout: the component is chosen individually. --}}
+            <input type="hidden" name="assigned_qty" value="1">
+            @error('assigned_qty')
+                <div class="form-group"><div class="col-md-8 col-md-offset-3"><x-form.error name="assigned_qty" /></div></div>
+            @enderror
 
             @if ($snipe_component->requireAcceptance() || $snipe_component->getEula() || ($snipeSettings->webhook_endpoint != ''))
                 <div class="form-group notification-callout">

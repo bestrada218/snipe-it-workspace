@@ -14,7 +14,9 @@
 
         <x-form route="{{ url()->current() }}" id="checkout_form">
 
-            <x-box header="{{ $consumable->name }}">
+            <x-box header="{{ $consumable->asset_tag ?: $consumable->name }}">
+
+            <x-checkout.asset-tag :tag="$consumable->asset_tag" />
 
             @if ($consumable->name)
                 <x-form.static :label="trans('admin/consumables/general.consumable_name')">{{ $consumable->name }}</x-form.static>
@@ -43,16 +45,11 @@
 
             <x-checkout.checkout-notification-callout :item="$consumable" :category="$consumable->category" />
 
-            <!-- Checkout quantity -->
-            <div class="form-group {{ $errors->has('qty') ? 'has-error' : '' }}">
-                <label for="checkout_qty" class="col-md-3 control-label">{{ trans('general.qty') }}</label>
-                <div class="col-md-7 col-sm-12">
-                    <div class="col-md-2" style="padding-left: 0">
-                        <input class="form-control" type="number" name="checkout_qty" id="checkout_qty" value="{{ old('checkout_qty', 1) }}" min="1" max="{{ $consumable->numRemaining() }}" aria-label="{{ trans('general.qty') }}" />
-                    </div>
-                </div>
-                <div class="col-md-8 col-md-offset-3"><x-form.error name="qty" /></div>
-            </div>
+            {{-- One unit per checkout: the item is chosen individually. --}}
+            <input type="hidden" name="checkout_qty" value="1">
+            @error('qty')
+                <div class="form-group"><div class="col-md-8 col-md-offset-3"><x-form.error name="qty" /></div></div>
+            @enderror
 
             <x-form.row
                 :label="trans('admin/hardware/form.notes')"

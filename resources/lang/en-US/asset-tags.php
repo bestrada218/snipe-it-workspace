@@ -21,4 +21,5 @@ return [
     'desktop_example' => 'Linux desktop in New York.',
     'accessory_example' => 'Headset in New York, with no suffix.',
     'storage' => 'Enter the code in the Asset Tag field of each inventory module.',
+    'missing_on_item' => 'This item has no asset tag yet. Add it before assigning it.',
 ];

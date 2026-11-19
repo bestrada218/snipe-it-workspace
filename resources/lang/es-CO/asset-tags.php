@@ -21,4 +21,5 @@ return [
     'desktop_example' => 'Equipo de escritorio con Linux en Nueva York.',
     'accessory_example' => 'Diadema en Nueva York, sin sufijo.',
     'storage' => 'Registra el código en el campo Placa del activo de cada módulo de inventario.',
+    'missing_on_item' => 'Este elemento no tiene placa registrada. Agrégala antes de asignarlo.',
 ];
