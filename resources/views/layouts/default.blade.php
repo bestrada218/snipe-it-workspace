@@ -125,46 +125,46 @@
 
                             </li>
 
-                            @can('index', \App\Models\Asset::class)
+                            @canBrowse('index', \App\Models\Asset::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('hardware*')]) @if (request()->is('hardware*')) aria-current="page" @endif>
                                     <a href="{{ url('hardware') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=1" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ \App\Models\Setting::inventoryModuleLabel('assets') }}">
                                         <x-icon type="assets" class="fa-fw" />
                                         <span class="sr-only">{{ \App\Models\Setting::inventoryModuleLabel('assets') }}</span>
                                     </a>
                                 </li>
-                            @endcan
-                            @can('view', \App\Models\License::class)
+                            @endcanBrowse
+                            @canBrowse('view', \App\Models\License::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('licenses*')]) @if (request()->is('licenses*')) aria-current="page" @endif>
                                     <a href="{{ route('licenses.index') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=2" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ \App\Models\Setting::inventoryModuleLabel('licenses') }}">
                                         <x-icon type="licenses" class="fa-fw" />
                                         <span class="sr-only">{{ \App\Models\Setting::inventoryModuleLabel('licenses') }}</span>
                                     </a>
                                 </li>
-                            @endcan
-                            @can('index', \App\Models\Accessory::class)
+                            @endcanBrowse
+                            @canBrowse('index', \App\Models\Accessory::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('accessories*')]) @if (request()->is('accessories*')) aria-current="page" @endif>
                                     <a href="{{ route('accessories.index') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=3" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ \App\Models\Setting::inventoryModuleLabel('accessories') }}">
                                         <x-icon type="accessories" class="fa-fw" />
                                         <span class="sr-only">{{ \App\Models\Setting::inventoryModuleLabel('accessories') }}</span>
                                     </a>
                                 </li>
-                            @endcan
-                            @can('index', \App\Models\Consumable::class)
+                            @endcanBrowse
+                            @canBrowse('index', \App\Models\Consumable::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('consumables*')]) @if (request()->is('consumables*')) aria-current="page" @endif>
                                     <a href="{{ url('consumables') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=4" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ \App\Models\Setting::inventoryModuleLabel('consumables') }}">
                                         <x-icon type="consumables" class="fa-fw" />
                                         <span class="sr-only">{{ \App\Models\Setting::inventoryModuleLabel('consumables') }}</span>
                                     </a>
                                 </li>
-                            @endcan
-                            @can('view', \App\Models\Component::class)
+                            @endcanBrowse
+                            @canBrowse('view', \App\Models\Component::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('components*')]) @if (request()->is('components*')) aria-current="page" @endif>
                                     <a href="{{ route('components.index') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=5" : ''}} tabindex="-1" data-tooltip="true" data-placement="bottom" data-title="{{ \App\Models\Setting::inventoryModuleLabel('components') }}">
                                         <x-icon type="components" class="fa-fw" />
                                         <span class="sr-only">{{ \App\Models\Setting::inventoryModuleLabel('components') }}</span>
                                     </a>
                                 </li>
-                            @endcan
+                            @endcanBrowse
 
                             @can('index', \App\Models\User::class)
                                 <li aria-hidden="true" @class(['workspace-header-shortcut', 'active' => request()->is('users*')]) @if (request()->is('users*')) aria-current="page" @endif>
@@ -175,7 +175,7 @@
                                 </li>
                             @endcan
 
-                            @can('index', \App\Models\Asset::class)
+                            @canBrowse('index', \App\Models\Asset::class)
                                 <li>
                                     <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('findbytag/hardware') }}" method="get">
 
@@ -193,7 +193,7 @@
 
                                     </form>
                                 </li>
-                            @endcan
+                            @endcanBrowse
 
                             @can('admin')
                                 <li class="dropdown user-menu" aria-hidden="true">
@@ -412,7 +412,7 @@
                                 </a>
                             </li>
                         @endauth
-                        @can('index', \App\Models\Asset::class)
+                        @canBrowse('index', \App\Models\Asset::class)
                                 <li class="treeview{{ ((request()->is('statuslabels/*') || request()->is('hardware*')) && ! request()->query('inventory_view') && ! request()->routeIs('hardware.replacement-alerts') || request()->routeIs('duplicate-assignments.index', 'shipments.*') ? ' active' : '') }}">
                                 <a href="#">
                                     <x-icon type="assets" class="fa-fw" />
@@ -572,13 +572,13 @@
 
                                 </ul>
                                 </li>
-                            @endcan
+                            @endcanBrowse
                             {{-- Dedicated Maintenances section. Treeview parent
                                  so "list all" and Maintenance Types share one
                                  visual home. The @if guard OR's the two
                                  governing permissions so a user with either
                                  can see the parent. --}}
-                            @if (Gate::allows('view', \App\Models\Asset::class) || Gate::allows('index', \App\Models\MaintenanceType::class))
+                            @if (\App\Models\Setting::inventoryModuleEnabled('assets') && (Gate::allows('view', \App\Models\Asset::class) || Gate::allows('index', \App\Models\MaintenanceType::class)))
                                 <li class="treeview{{ (request()->is('maintenances*') || request()->is('maintenance-types*')) ? ' active' : '' }}">
                                     <a href="#">
                                         <x-icon type="maintenances" class="fa-fw"/>
@@ -607,7 +607,7 @@
                             @endif
 
 
-                        @can('index', \App\Models\Asset::class)
+                        @canBrowse('index', \App\Models\Asset::class)
                             @foreach (\App\Models\Setting::inventoryLocationModules() as $key => $locationModule)
                                 @continue(! ($locationModule['enabled'] ?? true))
                                 <li @class(['active' => request()->query('inventory_view') === $key])>
@@ -617,48 +617,48 @@
                                     </a>
                                 </li>
                             @endforeach
-                        @endcan
-                        @can('view', \App\Models\License::class)
+                        @endcanBrowse
+                        @canBrowse('view', \App\Models\License::class)
                             <li{!! (request()->is('licenses*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('licenses.index') }}">
                                     <x-icon type="licenses" class="fa-fw"/>
                                     <span>{{ \App\Models\Setting::inventoryModuleLabel('licenses') }}</span>
                                 </a>
                             </li>
-                        @endcan
-                        @can('index', \App\Models\Accessory::class)
+                        @endcanBrowse
+                        @canBrowse('index', \App\Models\Accessory::class)
                             <li id="accessories-sidenav-option"{!! (request()->is('accessories*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('accessories.index') }}">
                                     <x-icon type="accessories" class="fa-fw" />
                                     <span>{{ \App\Models\Setting::inventoryModuleLabel('accessories') }}</span>
                                 </a>
                             </li>
-                        @endcan
-                        @can('view', \App\Models\Consumable::class)
+                        @endcanBrowse
+                        @canBrowse('view', \App\Models\Consumable::class)
                             <li id="consumables-sidenav-option"{!! (request()->is('consumables*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ url('consumables') }}">
                                     <x-icon type="consumables" class="fa-fw" />
                                     <span>{{ \App\Models\Setting::inventoryModuleLabel('consumables') }}</span>
                                 </a>
                             </li>
-                        @endcan
-                        @can('view', \App\Models\Component::class)
+                        @endcanBrowse
+                        @canBrowse('view', \App\Models\Component::class)
                             <li id="components-sidenav-option"{!! (request()->is('components*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('components.index') }}">
                                     <x-icon type="components" class="fa-fw" />
                                     <span>{{ \App\Models\Setting::inventoryModuleLabel('components') }}</span>
                                 </a>
                             </li>
-                        @endcan
-                        @can('index', \App\Models\Asset::class)
+                        @endcanBrowse
+                        @canBrowse('index', \App\Models\Asset::class)
                             <li @class(['active' => request()->routeIs('hardware.replacement-alerts')])>
                                 <a class="workspace-replacement-nav" href="{{ route('hardware.replacement-alerts') }}" @if (request()->routeIs('hardware.replacement-alerts')) aria-current="page" @endif>
                                     <x-icon type="due" class="fa-fw" />
                                     <span>{{ trans('asset-replacement.alerts') }}</span>
                                 </a>
                             </li>
-                        @endcan
-                        @if (Gate::denies('index', \App\Models\Asset::class) && \App\Services\DuplicateAssignments::canViewAlerts())
+                        @endcanBrowse
+                        @if (! (Gate::allows('index', \App\Models\Asset::class) && \App\Models\Setting::inventoryModuleEnabled('assets')) && \App\Services\DuplicateAssignments::canViewAlerts())
                             <li @class(['active' => request()->routeIs('duplicate-assignments.index')])>
                                 <a class="workspace-replacement-nav" href="{{ route('duplicate-assignments.index') }}" @if (request()->routeIs('duplicate-assignments.index')) aria-current="page" @endif>
                                     <x-icon type="warning" class="fa-fw" />
@@ -763,21 +763,21 @@
                                         </li>
                                     @endif
 
-                                    @can('view', \App\Models\Statuslabel::class)
+                                    @canBrowse('view', \App\Models\Statuslabel::class)
                                         <li {!! (request()->is('statuslabels*') ? ' class="active" aria-current="page"' : '') !!}>
                                             <a href="{{ route('statuslabels.index') }}">
                                                 {{ trans('general.status_labels') }}
                                             </a>
                                         </li>
-                                    @endcan
+                                    @endcanBrowse
 
-                                    @can('view', \App\Models\AssetModel::class)
+                                    @canBrowse('view', \App\Models\AssetModel::class)
                                         <li {!! (request()->is('models*') ? ' class="active" aria-current="page"' : '') !!}>
                                             <a href="{{ route('models.index') }}">
                                                 {{ trans('general.asset_models') }}
                                             </a>
                                         </li>
-                                    @endcan
+                                    @endcanBrowse
 
                                     @can('view', \App\Models\Category::class)
                                         <li {!! (request()->is('categories*') ? ' class="active" aria-current="page"' : '') !!}>
