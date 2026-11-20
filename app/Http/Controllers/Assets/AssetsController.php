@@ -76,7 +76,45 @@ class AssetsController extends Controller
         $inventoryViewKey = $request->query('inventory_view');
         $inventoryView = $inventoryViewKey === null ? null : Setting::inventoryLocationModule($request->input('inventory_view'));
 
-        return view('hardware/index', compact('company', 'inventoryViewKey', 'inventoryView'));
+        $statusFilters = $inventoryView === null ? $this->statusFilters($request) : [];
+
+        return view('hardware/index', compact('company', 'inventoryViewKey', 'inventoryView', 'statusFilters'));
+    }
+
+    /**
+     * Status filters shown as chips above the asset list (they used to live
+     * in the side menu, where their counts ran on every page).
+     *
+     * @return list<array{label: string, url: string, count: ?int, active: bool, tone: ?string}>
+     */
+    private function statusFilters(Request $request): array
+    {
+        $current = $request->query('status_type');
+        $pastEol = $request->boolean('past_eol');
+        $statusId = $request->query('status_id');
+        $chip = fn (string $label, string $url, ?int $count, bool $active, ?string $tone = null): array => compact('label', 'url', 'count', 'active', 'tone');
+
+        $filters = [
+            $chip(trans('navigation.chip_all'), route('hardware.index'), Asset::AssetsForShow()->count(), ! $current && ! $pastEol && ! $statusId),
+            $chip(trans('general.deployed'), route('hardware.index', ['status_type' => 'Deployed']), Asset::Deployed()->count(), $current === 'Deployed', 'info'),
+            $chip(trans('general.ready_to_deploy'), route('hardware.index', ['status_type' => 'RTD']), Asset::RTD()->count(), $current === 'RTD', 'ok'),
+            $chip(trans('general.pending'), route('hardware.index', ['status_type' => 'Pending']), Asset::Pending()->count(), $current === 'Pending', 'warn'),
+            $chip(trans('general.undeployable'), route('hardware.index', ['status_type' => 'Undeployable']), Asset::Undeployable()->count(), $current === 'Undeployable', 'crit'),
+            $chip(trans('general.byod'), route('hardware.index', ['status_type' => 'byod']), Asset::where('byod', 1)->count(), $current === 'byod'),
+            $chip(trans('admin/hardware/general.archived'), route('hardware.index', ['status_type' => 'Archived']), Asset::Archived()->count(), $current === 'Archived'),
+            $chip(trans('admin/hardware/general.requestable'), route('hardware.index', ['status_type' => 'Requestable']), null, $current === 'Requestable'),
+            $chip(trans('general.past_eol'), route('hardware.index', ['past_eol' => 1]), null, $pastEol, 'warn'),
+        ];
+
+        foreach (Statuslabel::where('show_in_nav', 1)->withCount('assets')->orderBy('name')->get() as $label) {
+            $filters[] = $chip($label->name, route('statuslabels.show', $label), $label->assets_count, false);
+        }
+
+        if (Gate::allows('create', Asset::class)) {
+            $filters[] = $chip(trans('general.deleted'), route('hardware.index', ['status_type' => 'Deleted']), null, $current === 'Deleted', 'crit');
+        }
+
+        return $filters;
     }
 
     /**

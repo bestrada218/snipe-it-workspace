@@ -34,6 +34,7 @@ use App\Http\Controllers\Reports\CustomComponentReportController;
 use App\Http\Controllers\Reports\CustomConsumableReportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ReportTemplatesController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StatuslabelsController;
@@ -1090,6 +1091,11 @@ Route::middleware(['auth'])->get(
 )->name('home')
     ->breadcrumbs(fn (Trail $trail) => $trail->push('Home', route('home'))
     );
+
+Route::get('/search', [SearchController::class, 'index'])->middleware('auth')
+    ->name('search')
+    ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
+        ->push(trans('navigation.search_results'), route('search')));
 
 Route::view('/guide/asset-tags', 'guide.asset-tags')->middleware('auth')
     ->name('guide.asset-tags')

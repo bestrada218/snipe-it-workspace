@@ -68,6 +68,18 @@
 {{-- Page content --}}
 @section('content')
     <x-container>
+        @if ($statusFilters !== [])
+            <nav class="asset-status-chips" aria-label="{{ trans('navigation.status_filters') }}">
+                @foreach ($statusFilters as $filter)
+                    <a href="{{ $filter['url'] }}" @class(['asset-status-chip', 'is-active' => $filter['active'], 'tone-'.$filter['tone'] => $filter['tone']]) @if ($filter['active']) aria-current="page" @endif>
+                        <span>{{ $filter['label'] }}</span>
+                        @if ($filter['count'] !== null)
+                            <span class="asset-status-chip-count">{{ $filter['count'] }}</span>
+                        @endif
+                    </a>
+                @endforeach
+            </nav>
+        @endif
         <x-box name="assets" sr_only_title>
             <x-table.assets
                 :route="route('api.assets.index', array(

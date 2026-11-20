@@ -1338,3 +1338,156 @@
 .workspace-ui .login-box button[type="submit"] {
     min-height: 40px;
 }
+
+/* ------------------------------------------------------------------
+ * Side menu sections and counts.
+ * ------------------------------------------------------------------ */
+.workspace-ui .sidebar-menu > li.header.nav-section {
+    padding: 18px 16px 6px;
+    background: var(--workspace-sidebar) !important;
+    color: #8e989f;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.workspace-ui .sidebar-menu > li.header.nav-section:first-child {
+    padding-top: 10px;
+}
+
+.sidebar-mini.sidebar-collapse .sidebar-menu > li.header.nav-section {
+    display: none !important;
+}
+
+.workspace-ui .sidebar-menu .nav-count {
+    min-width: 22px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--workspace-sidebar-hover);
+    color: var(--workspace-sidebar-ink);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.workspace-ui .sidebar-menu .nav-count-warn {
+    background: #e6a54c;
+    color: #231a08;
+}
+
+.workspace-ui .sidebar-menu li.active > a .nav-count {
+    background: rgba(255, 255, 255, .18);
+    color: #ffffff;
+}
+
+.workspace-ui .sidebar-menu li.active > a .nav-count-warn {
+    background: #e6a54c;
+    color: #231a08;
+}
+
+/* ------------------------------------------------------------------
+ * Asset status filters (chips above the asset list).
+ * ------------------------------------------------------------------ */
+.asset-status-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.workspace-ui .asset-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 999px;
+    background: var(--workspace-surface);
+    color: var(--workspace-ink) !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.workspace-ui .asset-status-chip::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--workspace-border);
+}
+
+.workspace-ui .asset-status-chip.tone-ok::before { background: var(--workspace-success); }
+.workspace-ui .asset-status-chip.tone-warn::before { background: var(--workspace-warning); }
+.workspace-ui .asset-status-chip.tone-crit::before { background: var(--workspace-danger); }
+.workspace-ui .asset-status-chip.tone-info::before { background: var(--workspace-info); }
+
+.workspace-ui .asset-status-chip:hover {
+    border-color: var(--workspace-muted);
+    background: var(--workspace-tint);
+}
+
+.workspace-ui .asset-status-chip.is-active {
+    border-color: var(--workspace-primary);
+    background: var(--workspace-primary);
+    color: var(--workspace-on-primary) !important;
+}
+
+.workspace-ui .asset-status-chip.is-active::before {
+    background: var(--workspace-on-primary);
+}
+
+.asset-status-chip-count {
+    color: var(--workspace-muted);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.workspace-ui .asset-status-chip.is-active .asset-status-chip-count {
+    color: inherit;
+    opacity: .85;
+}
+
+/* ------------------------------------------------------------------
+ * Global search: header box and results page (tag first and strong).
+ * ------------------------------------------------------------------ */
+.workspace-ui .main-header #tagSearch {
+    width: 260px;
+}
+
+.search-page-form {
+    display: flex;
+    gap: 8px;
+    max-width: 640px;
+    margin-bottom: 18px;
+}
+
+.search-page-form .form-control {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+}
+
+.search-page-form .btn {
+    height: 38px;
+}
+
+.workspace-ui .search-tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+.search-mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+}
+
+@media (max-width: 991px) {
+    .workspace-ui .main-header #tagSearch {
+        width: 180px;
+    }
+}

@@ -175,25 +175,19 @@
                                 </li>
                             @endcan
 
-                            @canBrowse('index', \App\Models\Asset::class)
+                            @if ((\App\Models\Setting::inventoryModuleEnabled('assets') && Gate::allows('index', \App\Models\Asset::class)) || Gate::allows('view', \App\Models\User::class))
                                 <li>
-                                    <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('findbytag/hardware') }}" method="get">
-
-                                                <div class="input-group col-xs-12" style="border: 0 !important;">
-                                                    <label class="sr-only" for="tagSearch">
-                                                        {{ trans('general.lookup_by_tag') }}
-                                                    </label>
-                                                    <input type="text" class="form-control" id="tagSearch" name="assetTag" placeholder="{{ trans('general.lookup_by_tag') }}">
-                                                    <span class="input-group-btn">
-                                                        <button type="submit" id="topSearchButton" class="btn btn-sm btn-theme" style="padding: 7px 10px 7px 10px; "><x-icon type="search" class="fa-fw" /><div class="sr-only">{{ trans('general.search') }}</div></button>
-                                                    </span>
-                                                </div>
-
-                                        <input type="hidden" name="topsearch" value="true" id="search">
-
+                                    <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('search') }}" method="get">
+                                        <div class="input-group col-xs-12" style="border: 0 !important;">
+                                            <label class="sr-only" for="tagSearch">{{ trans('navigation.search_label') }}</label>
+                                            <input type="search" class="form-control" id="tagSearch" name="q" placeholder="{{ trans('navigation.search_placeholder') }}">
+                                            <span class="input-group-btn">
+                                                <button type="submit" id="topSearchButton" class="btn btn-sm btn-theme" style="padding: 7px 10px 7px 10px; "><x-icon type="search" class="fa-fw" /><div class="sr-only">{{ trans('general.search') }}</div></button>
+                                            </span>
+                                        </div>
                                     </form>
                                 </li>
-                            @endcanBrowse
+                            @endif
 
                             @can('admin')
                                 <li class="dropdown user-menu" aria-hidden="true">
@@ -404,209 +398,39 @@
                                 </a>
                             </li>
                         @endcan
-                        @auth
-                            <li @class(['active' => request()->routeIs('guide.asset-tags')])>
-                                <a href="{{ route('guide.asset-tags') }}" @if (request()->routeIs('guide.asset-tags')) aria-current="page" @endif>
-                                    <x-icon type="info" class="fa-fw" />
-                                    <span>{{ trans('asset-tags.title') }}</span>
-                                </a>
-                            </li>
-                        @endauth
+                        <x-nav.group :label="trans('navigation.inventory')">
                         @canBrowse('index', \App\Models\Asset::class)
-                                <li class="treeview{{ ((request()->is('statuslabels/*') || request()->is('hardware*')) && ! request()->query('inventory_view') && ! request()->routeIs('hardware.replacement-alerts') || request()->routeIs('duplicate-assignments.index', 'shipments.*') ? ' active' : '') }}">
+                            <li class="treeview{{ (request()->is('hardware*') || request()->is('statuslabels/*')) && ! request()->query('inventory_view') && ! request()->routeIs('hardware.replacement-alerts', 'assets.audit.due', 'assets.checkins.due') ? ' active' : '' }}">
                                 <a href="#">
                                     <x-icon type="assets" class="fa-fw" />
                                     <span>{{ \App\Models\Setting::inventoryModuleLabel('assets') }}</span>
                                     <x-icon type="angle-left" class="pull-right fa-fw"/>
                                 </a>
                                 <ul class="treeview-menu">
-                                    <li {!! (!request()->query('status_type') && (request()->is('hardware')) ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('hardware') }}">
-                                            <x-icon type="circle" class="text-grey fa-fw"/>
-                                            {{ trans('general.list_all') }}
-                                            <span class="badge">
-                                                {{ (isset($total_assets)) ? $total_assets : '' }}
-                                            </span>
+                                    <li @class(['active' => request()->routeIs('hardware.index') && ! request()->query('inventory_view')])>
+                                        <a href="{{ route('hardware.index') }}">
+                                            {{ trans('navigation.all_assets') }}
+                                            <x-nav.count :value="$total_assets ?? null" />
                                         </a>
                                     </li>
-
-                                    <?php $status_navs = \App\Models\Statuslabel::where('show_in_nav', '=', 1)->withCount('assets as asset_count')->get(); ?>
-                                    @if (count($status_navs) > 0)
-                                        @foreach ($status_navs as $status_nav)
-                                            <li{!! (request()->is('statuslabels/'.$status_nav->id) ? ' class="active" aria-current="page"' : '') !!}>
-                                                <a href="{{ route('statuslabels.show', ['statuslabel' => $status_nav->id]) }}">
-                                                    <i class="fas fa-circle text-grey fa-fw"
-                                                       aria-hidden="true"{!! ($status_nav->color != '' ? ' style="color: '.e($status_nav->color).'"' : '') !!}></i>
-                                                    {{ $status_nav->name }}
-                                                    <span class="badge badge-secondary">{{ $status_nav->asset_count }}</span></a></li>
-                                        @endforeach
-                                    @endif
-
-
-                                    <li id="deployed-sidenav-option" {!! (request()->query('status_type') == 'Deployed' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('hardware?status_type=Deployed') }}">
-                                            <x-icon type="circle" class="text-blue fa-fw" />
-                                            {{ trans('general.deployed') }}
-                                            <span class="badge">{{ (isset($total_deployed_sidebar)) ? $total_deployed_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="rtd-sidenav-option"{!! (request()->query('status_type') == 'RTD' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('hardware?status_type=RTD') }}">
-                                            <x-icon type="circle" class="text-green fa-fw" />
-                                            {{ trans('general.ready_to_deploy') }}
-                                            <span class="badge">{{ (isset($total_rtd_sidebar)) ? $total_rtd_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="pending-sidenav-option"{!! (request()->query('status_type') == 'Pending' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('hardware?status_type=Pending') }}">
-                                            <x-icon type="circle" class="text-orange fa-fw" />
-                                            {{ trans('general.pending') }}
-                                            <span class="badge">{{ (isset($total_pending_sidebar)) ? $total_pending_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="undeployable-sidenav-option"{!! (request()->query('status_type') == 'Undeployable' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('hardware?status_type=Undeployable') }}">
-                                            <x-icon type="x" class="text-red fa-fw" />
-                                            {{ trans('general.undeployable') }}
-                                            <span class="badge">{{ (isset($total_undeployable_sidebar)) ? $total_undeployable_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="byod-sidenav-option"{!! (request()->query('status_type') == 'byod' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a
-                                            href="{{ url('hardware?status_type=byod') }}">
-                                            <x-icon type="x" class="text-red fa-fw" />
-                                            {{ trans('general.byod') }}
-                                            <span class="badge">{{ (isset($total_byod_sidebar)) ? $total_byod_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="archived-sidenav-option"{!! (request()->query('status_type') == 'Archived' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a
-                                            href="{{ url('hardware?status_type=Archived') }}">
-                                            <x-icon type="x" class="text-red fa-fw" />
-                                            {{ trans('admin/hardware/general.archived') }}
-                                            <span class="badge">{{ (isset($total_archived_sidebar)) ? $total_archived_sidebar : '' }}</span>
-                                        </a>
-                                    </li>
-                                    <li id="requestable-sidenav-option"{!! (request()->query('status_type') == 'Requestable' ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a
-                                            href="{{ url('hardware?status_type=Requestable') }}">
-                                            <x-icon type="checkmark" class="text-blue fa-fw" />
-                                            {{ trans('admin/hardware/general.requestable') }}
-                                        </a>
-                                    </li>
-
-                                    @can('audit', \App\Models\Asset::class)
-                                        <li id="audit-due-sidenav-option"{!! (request()->is('hardware/audit/due') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('assets.audit.due') }}">
-                                                <x-icon type="audit" class="text-yellow fa-fw"/>
-                                                {{ trans('general.audit_due') }}
-                                                <span class="badge">{{ (isset($total_due_and_overdue_for_audit)) ? $total_due_and_overdue_for_audit : '' }}</span>
-                                            </a>
-                                        </li>
-                                    @endcan
-
                                     @can('checkin', \App\Models\Asset::class)
-                                    <li id="checkin-due-sidenav-option"{!! (request()->is('hardware/checkins/due') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('assets.checkins.due') }}">
-                                            <x-icon type="due" class="text-orange fa-fw"/>
-                                            {{ trans('general.checkin_due') }}
-                                            <span class="badge">{{ (isset($total_due_and_overdue_for_checkin)) ? $total_due_and_overdue_for_checkin : '' }}</span>
-                                        </a>
-                                    </li>
-                                    @endcan
-
-                                    <li @class(['active' => request()->routeIs('shipments.*')])>
-                                        <a href="{{ route('shipments.index') }}" @if (request()->routeIs('shipments.*')) aria-current="page" @endif>
-                                            <x-icon type="shipment" class="fa-fw" />
-                                            {{ trans('asset-shipments.title') }}
-                                        </a>
-                                    </li>
-
-                                    @if (\App\Services\DuplicateAssignments::canViewAlerts())
-                                        <li @class(['active' => request()->routeIs('duplicate-assignments.index')])>
-                                            <a class="workspace-replacement-nav" href="{{ route('duplicate-assignments.index') }}" @if (request()->routeIs('duplicate-assignments.index')) aria-current="page" @endif>
-                                                <x-icon type="warning" class="fa-fw" />
-                                                <span>{{ trans('duplicate-assignments.title') }}</span>
-                                            </a>
-                                        </li>
-                                    @endif
-
-                                    <li id="past-eol-sidenav-option"{!! (request()->is('hardware') && request()->boolean('past_eol') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('hardware.index', ['past_eol' => 1]) }}">
-                                            <x-icon type="due" class="text-orange fa-fw"/>
-                                            {{ trans('general.past_eol') }}
-                                        </a>
-                                    </li>
-
-                                    <li class="divider">&nbsp;</li>
-                                    @can('checkin', \App\Models\Asset::class)
-                                        <li{!! (request()->is('hardware/quickscancheckin') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('hardware/quickscancheckin') }}">
-                                                {{ trans('general.quickscan_checkin') }}
-                                            </a>
+                                        <li @class(['active' => request()->is('hardware/quickscancheckin')])>
+                                            <a href="{{ route('hardware/quickscancheckin') }}">{{ trans('general.quickscan_checkin') }}</a>
                                         </li>
                                     @endcan
-
                                     @can('checkout', \App\Models\Asset::class)
-                                        <li{!! (request()->is('hardware/bulkcheckout') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('hardware.bulkcheckout.show') }}">
-                                                {{ trans('general.bulk_checkout') }}
-                                            </a>
-                                        </li>
-                                    @endcan
-
-                                    @can('create', \App\Models\Asset::class)
-                                        <li{!! (request()->query('status_type') == 'Deleted' ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ url('hardware?status_type=Deleted') }}">
-                                                {{ trans('general.deleted') }}
-                                            </a>
+                                        <li @class(['active' => request()->is('hardware/bulkcheckout')])>
+                                            <a href="{{ route('hardware.bulkcheckout.show') }}">{{ trans('general.bulk_checkout') }}</a>
                                         </li>
                                     @endcan
                                     @can('audit', \App\Models\Asset::class)
-                                        <li id="bulk-audit-sidenav-option" {!! (request()->is('hardware/bulkaudit') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('assets.bulkaudit') }}">
-                                                {{ trans('general.bulkaudit') }}
-                                            </a>
-                                        </li>
-                                    @endcan
-
-                                </ul>
-                                </li>
-                            @endcanBrowse
-                            {{-- Dedicated Maintenances section. Treeview parent
-                                 so "list all" and Maintenance Types share one
-                                 visual home. The @if guard OR's the two
-                                 governing permissions so a user with either
-                                 can see the parent. --}}
-                            @if (\App\Models\Setting::inventoryModuleEnabled('assets') && (Gate::allows('view', \App\Models\Asset::class) || Gate::allows('index', \App\Models\MaintenanceType::class)))
-                                <li class="treeview{{ (request()->is('maintenances*') || request()->is('maintenance-types*')) ? ' active' : '' }}">
-                                    <a href="#">
-                                        <x-icon type="maintenances" class="fa-fw"/>
-                                        <span>{{ trans('general.maintenances') }}</span>
-                                        <x-icon type="angle-left" class="pull-right fa-fw"/>
-                                    </a>
-                                    <ul class="treeview-menu">
-                                        @can('view', \App\Models\Asset::class)
-                                            <li{!! (request()->is('maintenances') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('maintenances.index') }}">
-                                                <x-icon type="circle" class="text-grey fa-fw"/>
-                                                {{ trans('general.list_all') }}
-                                            </a>
-                                        </li>
-                                    @endcan
-                                        @can('index', \App\Models\MaintenanceType::class)
-                                            <li{!! (request()->is('maintenance-types*') ? ' class="active" aria-current="page"' : '') !!}>
-                                                <a href="{{ route('maintenance-types.index') }}">
-                                                    <x-icon type="circle" class="text-grey fa-fw"/>
-                                                    {{ trans('admin/maintenance_types/general.maintenance_types') }}
-                                            </a>
+                                        <li id="bulk-audit-sidenav-option" @class(['active' => request()->is('hardware/bulkaudit')])>
+                                            <a href="{{ route('assets.bulkaudit') }}">{{ trans('general.bulkaudit') }}</a>
                                         </li>
                                     @endcan
                                 </ul>
-                                </li>
-                            @endif
-
-
+                            </li>
+                        @endcanBrowse
                         @canBrowse('index', \App\Models\Asset::class)
                             @foreach (\App\Models\Setting::inventoryLocationModules() as $key => $locationModule)
                                 @continue(! ($locationModule['enabled'] ?? true))
@@ -650,22 +474,6 @@
                                 </a>
                             </li>
                         @endcanBrowse
-                        @canBrowse('index', \App\Models\Asset::class)
-                            <li @class(['active' => request()->routeIs('hardware.replacement-alerts')])>
-                                <a class="workspace-replacement-nav" href="{{ route('hardware.replacement-alerts') }}" @if (request()->routeIs('hardware.replacement-alerts')) aria-current="page" @endif>
-                                    <x-icon type="due" class="fa-fw" />
-                                    <span>{{ trans('asset-replacement.alerts') }}</span>
-                                </a>
-                            </li>
-                        @endcanBrowse
-                        @if (! (Gate::allows('index', \App\Models\Asset::class) && \App\Models\Setting::inventoryModuleEnabled('assets')) && \App\Services\DuplicateAssignments::canViewAlerts())
-                            <li @class(['active' => request()->routeIs('duplicate-assignments.index')])>
-                                <a class="workspace-replacement-nav" href="{{ route('duplicate-assignments.index') }}" @if (request()->routeIs('duplicate-assignments.index')) aria-current="page" @endif>
-                                    <x-icon type="warning" class="fa-fw" />
-                                    <span>{{ trans('duplicate-assignments.title') }}</span>
-                                </a>
-                            </li>
-                        @endif
                         @can('view', \App\Models\PredefinedKit::class)
                             <li id="kits-sidenav-option"{!! (request()->is('kits') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('kits.index') }}">
@@ -674,7 +482,106 @@
                                 </a>
                             </li>
                         @endcan
-
+                        </x-nav.group>
+                        <x-nav.group :label="trans('navigation.tracking')">
+                        @canBrowse('index', \App\Models\Asset::class)
+                            <li @class(['active' => request()->routeIs('shipments.*')])>
+                                <a href="{{ route('shipments.index') }}" @if (request()->routeIs('shipments.*')) aria-current="page" @endif>
+                                    <x-icon type="shipment" class="fa-fw" />
+                                    <span>{{ trans('asset-shipments.title') }}</span>
+                                    <x-nav.count :value="($nav_open_shipments ?? 0) ?: null" :tone="($nav_due_shipments ?? 0) > 0 ? 'warn' : null" />
+                                </a>
+                            </li>
+                            <li @class(['active' => request()->routeIs('hardware.replacement-alerts')])>
+                                <a class="workspace-replacement-nav" href="{{ route('hardware.replacement-alerts') }}" @if (request()->routeIs('hardware.replacement-alerts')) aria-current="page" @endif>
+                                    <x-icon type="due" class="fa-fw" />
+                                    <span>{{ trans('asset-replacement.alerts') }}</span>
+                                    <x-nav.count :value="($nav_replacement_due ?? 0) ?: null" tone="warn" />
+                                </a>
+                            </li>
+                            @can('audit', \App\Models\Asset::class)
+                                <li id="audit-due-sidenav-option" @class(['active' => request()->is('hardware/audit/due')])>
+                                    <a href="{{ route('assets.audit.due') }}">
+                                        <x-icon type="audit" class="fa-fw"/>
+                                        <span>{{ trans('general.audit_due') }}</span>
+                                        <x-nav.count :value="($total_due_and_overdue_for_audit ?? 0) ?: null" />
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('checkin', \App\Models\Asset::class)
+                                <li id="checkin-due-sidenav-option" @class(['active' => request()->is('hardware/checkins/due')])>
+                                    <a href="{{ route('assets.checkins.due') }}">
+                                        <x-icon type="due" class="fa-fw"/>
+                                        <span>{{ trans('general.checkin_due') }}</span>
+                                        <x-nav.count :value="($total_due_and_overdue_for_checkin ?? 0) ?: null" />
+                                    </a>
+                                </li>
+                            @endcan
+                        @endcanBrowse
+                        @if (\App\Services\DuplicateAssignments::canViewAlerts())
+                            <li @class(['active' => request()->routeIs('duplicate-assignments.index')])>
+                                <a class="workspace-replacement-nav" href="{{ route('duplicate-assignments.index') }}" @if (request()->routeIs('duplicate-assignments.index')) aria-current="page" @endif>
+                                    <x-icon type="warning" class="fa-fw" />
+                                    <span>{{ trans('duplicate-assignments.title') }}</span>
+                                </a>
+                            </li>
+                        @endif
+                            {{-- Dedicated Maintenances section. Treeview parent
+                                 so "list all" and Maintenance Types share one
+                                 visual home. The @if guard OR's the two
+                                 governing permissions so a user with either
+                                 can see the parent. --}}
+                            @if (\App\Models\Setting::inventoryModuleEnabled('assets') && (Gate::allows('view', \App\Models\Asset::class) || Gate::allows('index', \App\Models\MaintenanceType::class)))
+                                <li class="treeview{{ (request()->is('maintenances*') || request()->is('maintenance-types*')) ? ' active' : '' }}">
+                                    <a href="#">
+                                        <x-icon type="maintenances" class="fa-fw"/>
+                                        <span>{{ trans('general.maintenances') }}</span>
+                                        <x-icon type="angle-left" class="pull-right fa-fw"/>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        @can('view', \App\Models\Asset::class)
+                                            <li{!! (request()->is('maintenances') ? ' class="active" aria-current="page"' : '') !!}>
+                                            <a href="{{ route('maintenances.index') }}">
+                                                <x-icon type="circle" class="text-grey fa-fw"/>
+                                                {{ trans('general.list_all') }}
+                                            </a>
+                                        </li>
+                                    @endcan
+                                        @can('index', \App\Models\MaintenanceType::class)
+                                            <li{!! (request()->is('maintenance-types*') ? ' class="active" aria-current="page"' : '') !!}>
+                                                <a href="{{ route('maintenance-types.index') }}">
+                                                    <x-icon type="circle" class="text-grey fa-fw"/>
+                                                    {{ trans('admin/maintenance_types/general.maintenance_types') }}
+                                            </a>
+                                        </li>
+                                    @endcan
+                                </ul>
+                                </li>
+                            @endif
+                            @can('canCheckoutAtLeastOneItemType')
+                                <li{!! (request()->is('requests.index') ? ' class="active" aria-current="page"' : '') !!}>
+                                    <a href="{{ route('requests.index') }}">
+                                        <x-icon type="pending-requests" class="fa-fw"/>
+                                        <span>{{ trans('general.pending_requests') }}</span>
+                                    </a>
+                                </li>
+                                <li{!! (request()->is('unaccepted-acceptances') ? ' class="active" aria-current="page"' : '') !!}>
+                                    <a href="{{ route('unaccepted-acceptances.index') }}">
+                                        <x-icon type="signature" class="fa-fw"/>
+                                        <span>{{ trans('general.unaccepted_asset_report') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('canViewUsersAndCheckoutables')
+                                <li{!! (request()->routeIs('calendar.index') ? ' class="active" aria-current="page"' : '') !!}>
+                                    <a href="{{ route('calendar.index') }}">
+                                        <x-icon type="calendar" class="fa-fw"/>
+                                        <span>{{ trans('general.calendar') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
+                        </x-nav.group>
+                        <x-nav.group :label="trans('navigation.people')">
                         @can('view', \App\Models\User::class)
                                 <li class="treeview{{ (request()->is('users*') ? ' active' : '') }}" id="users-sidenav-option">
                                     <a href="#" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=6" : ''}}>
@@ -729,14 +636,72 @@
                                     </ul>
                                 </li>
                         @endcan
-                            @can('canViewUsersAndCheckoutables')
-                                <li{!! (request()->routeIs('calendar.index') ? ' class="active" aria-current="page"' : '') !!}>
-                                    <a href="{{ route('calendar.index') }}">
-                                        <x-icon type="calendar" class="fa-fw"/>
-                                        <span>{{ trans('general.calendar') }}</span>
-                                    </a>
-                                </li>
-                            @endcan
+                        </x-nav.group>
+                        <x-nav.group :label="trans('navigation.reports')">
+                        @can('reports.view')
+                            <li class="treeview{{ (request()->is('reports*') ? ' active' : '') }}">
+
+                                <a href="#" class="dropdown-toggle">
+                                    <x-icon type="reports" class="fa-fw" />
+                                    <span>{{ trans('general.reports') }}</span>
+                                    <x-icon type="angle-left" class="pull-right"/>
+                                </a>
+
+                                <ul class="treeview-menu">
+                                    <li {!! (request()->is('reports') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('reports.index') }}">
+                                            {{ trans('general.list_all') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->is('reports/activity') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('reports.activity') }}">
+                                            {{ trans('general.activity_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->is('reports/custom') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ url('reports/custom') }}">
+                                            {{ trans('general.custom_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->routeIs('reports.custom.component') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('reports.custom.component') }}">
+                                            {{ trans('general.custom_component_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->routeIs('reports.custom.consumable') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('reports.custom.consumable') }}">
+                                            {{ trans('general.custom_consumable_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->is('reports/audit') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('reports.audit') }}">
+                                            {{ trans('general.audit_report') }}</a>
+                                    </li>
+                                    <li {!! (request()->is('reports/depreciation') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ url('reports/depreciation') }}">
+                                            {{ trans('general.depreciation_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->is('reports/licenses') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ url('reports/licenses') }}">
+                                            {{ trans('general.license_report') }}
+                                        </a>
+                                    </li>
+                                    <li {!! (request()->routeIs('ui.reports.maintenances') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ route('ui.reports.maintenances') }}">
+                                            {{ trans('general.asset_maintenance_report') }}
+                                        </a>
+                                    </li>
+                                    <li  {!! (request()->is('reports/accessories') ? ' class="active" aria-current="page"' : '') !!}>
+                                        <a href="{{ url('reports/accessories') }}">
+                                            {{ trans('general.accessory_report') }}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endcan
+                        </x-nav.group>
+                        <x-nav.group :label="trans('navigation.administration')">
                         @can('import')
                             <li id="import-sidenav-option"{!! (request()->is('import*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('imports.index') }}">
@@ -745,7 +710,6 @@
                                 </a>
                             </li>
                         @endcan
-
                         @can('backend.interact')
                             <li id="settings-sidenav-option" class="treeview {!! (request()->is(App\Helpers\Helper::SettingUrls()) ? ' active' : '') !!}">
                                 <a href="#" id="settings">
@@ -837,84 +801,16 @@
                                 </ul>
                             </li>
                         @endcan
-
-                        @can('reports.view')
-                            <li class="treeview{{ (request()->is('reports*') ? ' active' : '') }}">
-
-                                <a href="#" class="dropdown-toggle">
-                                    <x-icon type="reports" class="fa-fw" />
-                                    <span>{{ trans('general.reports') }}</span>
-                                    <x-icon type="angle-left" class="pull-right"/>
+                        </x-nav.group>
+                        <x-nav.group :label="trans('navigation.help')">
+                        @auth
+                            <li @class(['active' => request()->routeIs('guide.asset-tags')])>
+                                <a href="{{ route('guide.asset-tags') }}" @if (request()->routeIs('guide.asset-tags')) aria-current="page" @endif>
+                                    <x-icon type="info" class="fa-fw" />
+                                    <span>{{ trans('asset-tags.title') }}</span>
                                 </a>
-
-                                <ul class="treeview-menu">
-                                    <li {!! (request()->is('reports') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('reports.index') }}">
-                                            {{ trans('general.list_all') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->is('reports/activity') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('reports.activity') }}">
-                                            {{ trans('general.activity_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->is('reports/custom') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('reports/custom') }}">
-                                            {{ trans('general.custom_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->routeIs('reports.custom.component') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('reports.custom.component') }}">
-                                            {{ trans('general.custom_component_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->routeIs('reports.custom.consumable') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('reports.custom.consumable') }}">
-                                            {{ trans('general.custom_consumable_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->is('reports/audit') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('reports.audit') }}">
-                                            {{ trans('general.audit_report') }}</a>
-                                    </li>
-                                    <li {!! (request()->is('reports/depreciation') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('reports/depreciation') }}">
-                                            {{ trans('general.depreciation_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->is('reports/licenses') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('reports/licenses') }}">
-                                            {{ trans('general.license_report') }}
-                                        </a>
-                                    </li>
-                                    <li {!! (request()->routeIs('ui.reports.maintenances') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ route('ui.reports.maintenances') }}">
-                                            {{ trans('general.asset_maintenance_report') }}
-                                        </a>
-                                    </li>
-                                    <li  {!! (request()->is('reports/accessories') ? ' class="active" aria-current="page"' : '') !!}>
-                                        <a href="{{ url('reports/accessories') }}">
-                                            {{ trans('general.accessory_report') }}
-                                        </a>
-                                    </li>
-                                </ul>
                             </li>
-                        @endcan
-                            @can('canCheckoutAtLeastOneItemType')
-                                <li{!! (request()->is('requests.index') ? ' class="active" aria-current="page"' : '') !!}>
-                                    <a href="{{ route('requests.index') }}">
-                                        <x-icon type="pending-requests" class="fa-fw"/>
-                                        <span>{{ trans('general.pending_requests') }}</span>
-                                    </a>
-                                </li>
-                                <li{!! (request()->is('unaccepted-acceptances') ? ' class="active" aria-current="page"' : '') !!}>
-                                    <a href="{{ route('unaccepted-acceptances.index') }}">
-                                        <x-icon type="signature" class="fa-fw"/>
-                                        <span>{{ trans('general.unaccepted_asset_report') }}</span>
-                                    </a>
-                                </li>
-                            @endcan
-
+                        @endauth
                         @can('viewRequestable', \App\Models\Asset::class)
                             <li{!! (request()->is('account/requestable') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('account.requestable') }}">
@@ -922,8 +818,8 @@
                                     <span>{{ trans('general.requestable_items') }}</span>
                                 </a>
                             </li>
-                        @endif
-
+                        @endcan
+                        </x-nav.group>
 
                     </ul>
                 </section>
