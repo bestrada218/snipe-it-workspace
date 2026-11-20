@@ -21,11 +21,16 @@ class Kernel extends ConsoleKernel
             $schedule->command('snipeit:expected-checkin')->daily();
             $schedule->command('snipeit:upcoming-audits')->daily();
         }
-        $schedule->command('snipeit:backup')->weekly();
-        $schedule->command('backup:clean')->daily();
+        // Daily, before the inventory sync at 03:00: shipments, duplicate
+        // approvals and damage reports change every day, and a weekly
+        // backup could lose a full week of that history.
+        $schedule->command('snipeit:backup')
+            ->dailyAt('01:30')
+            ->withoutOverlapping();
+        $schedule->command('backup:clean')->dailyAt('02:30');
         $schedule->command('auth:clear-resets')->everyFifteenMinutes();
         $schedule->command('saml:clear_expired_nonces')->weekly();
-        
+
         $schedule->command('snipeit:pull-inventory')
             ->daily()
             ->withoutOverlapping();
