@@ -34,7 +34,8 @@ case "${1:-help}" in
         compose logs -f --tail=100 app
         ;;
     restart)
-        compose restart app
+        # Recreate (not just restart) so changes made to .env take effect.
+        compose up -d --force-recreate app
         ;;
     start)
         compose up -d

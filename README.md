@@ -1,145 +1,200 @@
-![snipe-it-by-grok](https://github.com/grokability/snipe-it/assets/197404/b515673b-c7c8-4d9a-80f5-9fa58829a602)
+# Snipe-IT Workspace
 
-[![Crowdin](https://d322cqt584bo4o.cloudfront.net/snipe-it/localized.svg)](https://crowdin.com/project/snipe-it) [![Docker Pulls](https://img.shields.io/docker/pulls/snipe/snipe-it.svg)](https://hub.docker.com/r/snipe/snipe-it/)  [![Tests in MySQL](https://github.com/grokability/snipe-it/actions/workflows/tests-mysql.yml/badge.svg)](https://github.com/grokability/snipe-it/actions/workflows/tests-mysql.yml)
-[![All Contributors](https://img.shields.io/badge/all_contributors-331-orange.svg?style=flat-square)](#contributing) [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/yZFtShAcKk)
+**Snipe-IT Workspace** is a ready-to-run edition of [Snipe-IT](https://github.com/grokability/snipe-it), the open-source IT asset management system, with a redesigned workspace and the workflows an IT team needs day to day: a structured asset-tag system, shipments to remote people, approvals for duplicate assignments, damage reports, mandatory replacement dates and encrypted off-site backups.
 
-## Snipe-IT - Open Source Asset Management System
+> **Install it from this repository.** The official Snipe-IT downloads, Docker images and installation guides install the original Snipe-IT, without any of the features below.
 
-This is a FOSS project for asset management in IT Operations. Knowing who has which laptop, when it was purchased in order to depreciate it correctly, handling software licenses, etc.
+- [Install](#install)
+- [Update](#update)
+- [Everyday commands](#everyday-commands)
+- [What Snipe-IT Workspace adds](#what-snipe-it-workspace-adds)
+- [Backups](#backups)
+- [Moving to a new server](#moving-to-a-new-server)
+- [Development](#development)
+- [Relationship with Snipe-IT and license](#relationship-with-snipe-it-and-license)
 
-It is built on [Laravel 12](http://laravel.com).
+---
 
-Snipe-IT is actively developed and we [release quite frequently](https://github.com/grokability/snipe-it/releases). ([Check out the live demo here](https://snipeitapp.com/demo/).)
+## Install
 
-> [!TIP]
-> __This is web-based software__. This means there is no executable file (aka no .exe files), and it must be run on a web server and accessed through a web browser. It runs on any Mac OSX, any flavor of Linux, as well as Windows, and we have a [Docker image](https://snipe-it.readme.io/docs/docker) available if that's what you're into.
+**You need:** a machine with Ubuntu 22.04 or newer (Desktop or Server), 2 CPU cores, 4 GB of RAM, 20 GB of free disk and internet access. Docker is installed for you.
 
------
+Open a terminal on that machine and run, **as your normal user (not with sudo)**:
 
-### Table of Contents
-* [Installation](#installation)
-* [User's Manual](#users-manual)
-* [Bug Reports & Feature Requests](#bug-reports--feature-requests)
-* [Security](#security)
-* [Upgrading](#upgrading)
-* [Translations!](#translations-)
-* [Libraries, Modules & Related Projects](#libraries-modules--related-projects)
-* [Join the Community!](#join-the-community)
-* [Contributing](#contributing)
-* [Announcement List](#announcement-list)
+```bash
+curl -fsSL https://raw.githubusercontent.com/bestrada218/snipe-it-workspace/main/scripts/workspace-setup.sh | bash
+```
 
+The installer asks for your password when it needs it and then:
 
------
+1. installs Git and Docker;
+2. downloads Snipe-IT Workspace into `/opt/snipe-it-workspace`;
+3. creates a configuration with its own passwords and encryption key for this server;
+4. builds and starts the application (the first time takes a few minutes);
+5. adds the `snipe-it-workspace` command;
+6. asks whether to update automatically every night and whether to keep the machine from sleeping.
 
-### Installation
+When it finishes, open the address it shows (by default `http://<this-machine's-IP>:8000`) and complete the setup wizard to create the first administrator.
 
-For instructions on installing and configuring Snipe-IT on your server, check out the [installation manual](https://snipe-it.readme.io/docs). (Please see the [requirements documentation](https://snipe-it.readme.io/docs/requirements) for full requirements.)
+> **Keep a copy of `/opt/snipe-it-workspace/.env` somewhere safe, outside the server** (a password manager, for example). It holds the encryption key: without it, backups cannot be restored on another machine.
 
-If you're having trouble with the installation, please check the [Common Issues](https://snipe-it.readme.io/docs/common-issues) and [Getting Help](https://snipe-it.readme.io/docs/getting-help) documentation, and search this repository's open *and* closed issues for help.
+The application starts again on its own after a reboot.
 
------
-### User's Manual
-For help using Snipe-IT, check out the [user's manual](https://snipe-it.readme.io/docs/overview).
+<details>
+<summary>Installer options</summary>
 
------
-### Bug Reports & Feature Requests
+Set any of these before `bash` to skip the questions or change the defaults:
 
-Feel free to check out the [GitHub Issues for this project](https://github.com/grokability/snipe-it/issues) to open a bug report or see what open issues you can help with. Please search through existing issues (open *and* closed) to see if your question has already been answered before opening a new issue.
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `WORKSPACE_PORT` | `8000` | Web port |
+| `WORKSPACE_APP_URL` | `http://<IP>:8000` | Address people will use |
+| `WORKSPACE_AUTO_UPDATE` | asked | `yes` / `no`: nightly automatic updates |
+| `WORKSPACE_KEEP_AWAKE` | asked | `yes` / `no`: disable sleep and suspend |
+| `WORKSPACE_DIR` | `/opt/snipe-it-workspace` | Install folder |
+| `WORKSPACE_BRANCH` | `main` | Branch to follow |
 
-> [!IMPORTANT]  
-> **PLEASE see the [Getting Help Guidelines](https://snipe-it.readme.io/docs/getting-help) and [Common Issues](https://snipe-it.readme.io/docs/common-issues) before opening a ticket, and be sure to complete all of the questions in the Github Issue template to help us to help you as quickly as possible.**
+```bash
+curl -fsSL https://raw.githubusercontent.com/bestrada218/snipe-it-workspace/main/scripts/workspace-setup.sh | WORKSPACE_PORT=80 WORKSPACE_AUTO_UPDATE=no bash
+```
+</details>
 
------
+## Update
 
-### Security
+```bash
+snipe-it-workspace update
+```
 
-> [!IMPORTANT]
-> **To report a security vulnerability, please email security@snipeitapp.com instead of using the issue tracker.**
------
+It only does something when there is a new version on GitHub. It then:
 
+1. backs up the current data (it does not update if the backup fails);
+2. downloads the new version and lists what changed;
+3. rebuilds and restarts; database changes are applied on start;
+4. checks that the application answers, and tells you how to roll back if it does not.
 
-### Upgrading
+The application is unavailable for one or two minutes. To update automatically every night at 3:30 instead:
 
-Please see the [upgrading documentation](https://snipe-it.readme.io/docs/upgrading) for instructions on upgrading Snipe-IT.
+```bash
+snipe-it-workspace auto-update on
+```
 
-------
-### Translations!
+## Everyday commands
 
-Please see the [translations documentation](https://snipe-it.readme.io/docs/translations) for information about available languages and how to add translations to Snipe-IT.
+| Command | What it does |
+| --- | --- |
+| `snipe-it-workspace status` | Whether it is running and which version is installed |
+| `snipe-it-workspace update` | Install the latest version (backs up first) |
+| `snipe-it-workspace backup` | Make a backup now |
+| `snipe-it-workspace backups` | List the backups kept on this server |
+| `snipe-it-workspace logs` | Follow the application log |
+| `snipe-it-workspace restart` / `start` / `stop` | Control the application |
+| `snipe-it-workspace auto-update on` / `off` | Nightly automatic updates |
 
------
+---
 
-### Libraries, Modules & Related Projects
+## What Snipe-IT Workspace adds
 
-Since the release of the JSON REST API, several third-party developers have been developing modules and libraries to work with Snipe-IT.  
+Everything in Snipe-IT is still there. On top of it:
 
-> [!NOTE]  
-> As these were created by third-parties, Snipe-IT cannot provide support for these project, and you should contact the developers directly if you need assistance. Additionally, Snipe-IT makes no guarantees as to the reliability, accuracy or maintainability of these libraries. Use at your own risk. :)
+### Asset tags: `XX-KKK-PP[-TTT]`
 
-#### Libraries & Modules
+- **Tag builder** in every create form (assets, accessories, consumables, components, licenses): pick the location (`XX`), the type (`PP`) and, for computers, the operating system suffix (`TTT`). The tag field cannot be typed by hand.
+- **One global sequence (`KKK`)** across the whole inventory: a number identifies a single item, even after it is deleted. The record and its number are saved together, so two people saving at the same time never get the same number; whoever saves second gets the next free one automatically.
+- **Tag types managed in Settings** (Settings → Asset Tags → Tag types): add types, rename them, choose which ones take a suffix. Changing a code (for example `LP` → `LT`) updates every tag that uses it, in every module, with an entry in each item's history.
+- The **asset tag always comes first**: in titles, lists, checkouts and search results.
+- A tag guide inside the application, and `php artisan snipeit:asset-tag-duplicates` to report legacy duplicates.
 
-- [SnipeScheduler](https://github.com/JSY-Ben/SnipeScheduler) by [@JSY-Ben](https://github.com/JSY-Ben) - An Asset Reservation/Checkout System for Snipe-IT
-- [Snipe-IT MCP Server](https://github.com/jameshgordy/snipeit-mcp) by [@jameshgordy](https://github.com/jameshgordy) - A Model Context Protocol (MCP) server for managing Snipe-IT inventory systems
-- [SnipeSharp - .NET module in C#](https://github.com/barrycarey/SnipeSharp) by [@barrycarey](https://github.com/barrycarey)
-- [SnipeitPS](https://github.com/snazy2000/SnipeitPS) by [@snazy2000](https://github.com/snazy2000) - Powershell API Wrapper for Snipe-it
-- [jamf2snipe](https://github.com/grokability/jamf2snipe) - Python script to sync assets between a JAMFPro instance and a Snipe-IT instance
-- [jamf-snipe-rename](https://macblog.org/jamf-snipe-rename/) - Python script to rename computers in Jamf from Snipe-IT
-- [Snipe-IT plugin for Jira Service Desk](https://marketplace.atlassian.com/apps/1220964/snipe-it-for-jira)
-- [Rudder2Snipe](https://github.com/norbertoaquino/rudder2snipe) by [@norbertoaquino](https://github.com/norbertoaquino) - Rudder.io integration for Snipe-IT
-- [Python 3 CSV importer](https://github.com/gastamper/snipeit-csvimporter) - allows importing assets into Snipe-IT based on Item Name rather than Asset Tag.
-- [Snipe-IT Kubernetes Helm Chart](https://github.com/t3n/helm-charts/tree/master/snipeit) - For more information, [click here](https://hub.helm.sh/charts/t3n/snipeit).
-- [Snipe-IT Bulk Edit](https://github.com/bricelabelle/snipe-it-bulkedit) - Google Script files to use Google Sheets as a bulk checkout/checkin/edit tool for Snipe-IT.
-- [MosyleSnipeSync](https://github.com/RodneyLeeBrands/MosyleSnipeSync) by [@Karpadiem](https://github.com/Karpadiem) - Python script to synchronize information between Mosyle and Snipe-IT.
-- [WWW::SnipeIT](https://github.com/SEDC/perl-www-snipeit) by [@SEDC](https://github.com/SEDC) - perl module for accessing the API
-- [UniFi to Snipe-IT](https://www.edtechirl.com/p/snipe-it-and-azure-asset-management) originally by [@karpadiem](https://github.com/karpadiem) - Python script that synchronizes UniFi devices with Snipe-IT.
-- [Kandji2Snipe](https://github.com/grokability/kandji2snipe) by [@briangoldstein](https://github.com/briangoldstein) - Python script that synchronizes Kandji with Snipe-IT.
-- [SnipeAgent](https://github.com/ReticentRobot/SnipeAgent) by [@ReticentRobot](https://github.com/ReticentRobot) - Windows agent for Snipe-IT.
-- [Gate Pass Generator](https://github.com/cha7uraAE/snipe-it-gate-pass-system) by [@cha7uraAE](https://github.com/cha7uraAE) - A Streamlit application for generating gate passes based on hardware data from a Snipe-IT API.
-- [InQRy (archived)](https://github.com/Microsoft/InQRy) by [@Microsoft](https://github.com/Microsoft)
-- [Marksman (archived)](https://github.com/Scope-IT/marksman) - A Windows agent for Snipe-IT
-- [Python Module (archived)](https://github.com/jbloomer/SnipeIT-PythonAPI) by [@jbloomer](https://github.com/jbloomer)
-[IT-Tools](https://github.com/chrisnox/Snipeit-it-tools) by @chrisnox - Browser bookmarklets for PDF handover/return protocols, digital signatures, label printing (Zebra ZD410), AirWatch MDM sync and Lansweeper CSV import.
+### Assignments
 
-We also have a handful of [Google Apps scripts](https://github.com/grokability/google-apps-scripts-for-snipe-it) to help with various tasks.
+- **One tagged unit per checkout**: no quantity fields.
+- **Duplicate assignments**: giving a person a second item of a category they already hold always requires a reason and a ticket number. For the categories you choose (for example laptops and desktops) it also requires an approver and evidence (PDF or image). The rule applies everywhere: individual and bulk checkouts, kits, transfers between people, request fulfilment and the API.
+- A **Duplicate assignments** page lists people holding more than one unit of a category.
 
-#### Mobile Apps
+### Shipments to remote people
 
-We're currently working on our own mobile app, but in the meantime, check out these third-party apps that work with Snipe-IT:
+- Register a shipment instead of a direct checkout: recipient, purchase platform, carrier, tracking number, estimated delivery and purchase approval with evidence.
+- Progress line (registered → in transit → received → assigned), due and late tracking, rescheduling and cancellation.
+- The asset is assigned when delivery is confirmed.
 
-- [SnipeMate](https://snipemate.app/) (iOS, Google Play, Huawei AppGallery) by Mars Technology
-- [Snipe-Scan](https://apps.apple.com/do/app/snipe-scan/id6744179400?uo=2) (iOS) by Nicolas Maton
-- [Snipe-IT Assets Management](https://play.google.com/store/apps/details?id=com.diegogarciadev.assetsmanager.snipeit&hl=en&pli=1) (Google Play) by DiegoGarciaDEV
-- [AssetX](https://apps.apple.com/my/app/assetx-for-snipe-it/id6741996196?uo=2) (iOS) for Snipe-IT by Rishi Gupta
+### Mandatory replacement
 
------
+- Replacement deadline per asset, with alerts by window (overdue, today or tomorrow, 15 days, 1 month, 3 months) on the dashboard and on their own page.
 
-### Join the Community!
+### Damage reports
 
-- **[Join our Discord](https://discord.gg/yZFtShAcKk)!** It’s full of great people. We even wrote about it [here](https://grokstar.dev/culture/2024/06/the-unlikely-rise-of-discord-as-a-support-channel/)!
-- **Follow us on Bluesky** at [@snipeitapp.com](https://bsky.app/profile/snipeitapp.com)
-- **Follow us on Mastodon** at [hachyderm.io/@grokability](https://hachyderm.io/@grokability)
-- **Follow our blog** at [Grokstar.Dev](https://grokstar.dev)
-- **Subscribe here** on Github for notifications about new releases. (We recommend selecting "Releases" only for most users - this repo can get noisy.)
+- Moving an asset to a "damaged" status (chosen in Settings) requires documenting what is damaged, whether it can be repaired and whether a repair was attempted. Those statuses cannot be assigned. The report is kept in the asset history.
 
------
+### Workspace
 
-### Contributing
+- Redesigned interface: grouped side menu with counters, status chips above the asset list, one row action plus a "more" menu, save button always in reach on long forms, clearer page titles.
+- **Needs attention** on the dashboard: overdue replacements, shipments to confirm, overdue check-ins and audits, overdue maintenance, people leaving with items, expiring licenses, pending requests and acceptances, all in one list with an action for each.
+- **Global search** by tag, serial, person or model, limited to the modules each person can open.
+- English and Spanish interface. Data people type is kept in English.
 
-**Please refrain from submitting issues or pull requests generated by fully-automated tools. Maintainers reserve the right, at their sole discretion, to close such submissions and to block any account responsible for them.** Please see our [AI Contribution Policy](https://snipe-it.readme.io/docs/contributing-overview#ai-usage-policy) for more information.
+### Inventory and permissions
 
-Contributions should follow from a human-to-human discussion in the form of an issue for the best chances of being merged into the core project. (Sometimes we might already be working on that feature, sometimes we've decided against )
+- Inventory modules can be switched off and renamed; location-based modules (for example *Fixed assets*) get their own menu entry.
+- Permission groups can be **limited to a location**.
+- Configurable activity report columns and readable change history.
 
-Please see the complete documentation on [contributing and developing for Snipe-IT](https://snipe-it.readme.io/docs/contributing-overview).
+### Backups
 
-This project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+- Daily automatic backups, with clear reporting of where each copy landed.
+- Optional **encrypted copies off the server**: Amazon S3 and S3-compatible storage (Cloudflare R2, Backblaze B2, Wasabi, MinIO, Google Cloud Storage) or **Google Drive**.
+- Restores check the whole backup (database dump, integrity and password) **before** touching the current data.
 
-The ERD is available [online here](https://drawsql.app/templates/snipe-it).
+---
 
-Be sure to check out all of the [amazing people](CONTRIBUTORS.md) that have contributed to Snipe-IT over the years!
+## Backups
 
-------
-### Announcement List
+Backups run every day at 01:30 and are kept on the server. `snipe-it-workspace backups` lists them, and they can be downloaded or restored from **Settings → Backups**.
 
-To be notified of important news (such as new releases, security advisories, etc), [sign up for our list](http://eepurl.com/XyZKz). We'll never sell or give away your info, and we'll only email you when it's important. 
+To also send an **encrypted copy off the server**, add these lines to `/opt/snipe-it-workspace/.env` and run `snipe-it-workspace restart`. All the options are documented in [`.env.example`](.env.example).
 
-We also usually make smaller announcements on our social accounts, our Discord, and our blog, so be sure to subscribe to those if you're looking for more granular announcements.
+```ini
+# Required for any off-site copy. Keep this password outside the server too.
+BACKUP_ARCHIVE_PASSWORD=a-long-random-password
+
+# Amazon S3 or S3-compatible storage
+BACKUP_CLOUD_DISKS=backup_s3
+BACKUP_S3_KEY=...
+BACKUP_S3_SECRET=...
+BACKUP_S3_REGION=us-east-1
+BACKUP_S3_BUCKET=my-backups
+#BACKUP_S3_ENDPOINT=https://...   # only for R2, B2, Wasabi, MinIO, GCS
+
+# or Google Drive (both can be used: BACKUP_CLOUD_DISKS=backup_s3,backup_google)
+#BACKUP_CLOUD_DISKS=backup_google
+#BACKUP_GOOGLE_SERVICE_ACCOUNT_JSON=/path/to/service-account.json
+#BACKUP_GOOGLE_FOLDER_ID=...
+#BACKUP_GOOGLE_SHARED_DRIVE=true
+```
+
+Without `BACKUP_ARCHIVE_PASSWORD`, nothing leaves the server: the local copy is still made and the backup reports why the cloud copy was skipped. To be told by email when a backup fails or is more than a day old, set `MAIL_BACKUP_NOTIFICATION_DRIVER=mail` and `MAIL_BACKUP_NOTIFICATION_ADDRESS`.
+
+## Moving to a new server
+
+1. Install Snipe-IT Workspace on the new machine with the command in [Install](#install).
+2. Copy the old `.env` over the new `/opt/snipe-it-workspace/.env` (it must have the same `APP_KEY` and `BACKUP_ARCHIVE_PASSWORD`) and run `snipe-it-workspace restart`.
+3. Bring a backup back from the cloud, if that is where it is:
+   ```bash
+   cd /opt/snipe-it-workspace
+   docker compose -f compose.workspace.yml exec --user docker app php artisan snipeit:backup-pull backup_s3 --latest
+   ```
+   or copy the backup file to the new server and upload it in **Settings → Backups**.
+4. Restore it from **Settings → Backups**.
+
+---
+
+## Development
+
+- The application is Laravel 12 on PHP 8.3 with MariaDB; front-end assets are built with Laravel Mix (`npm run dev`, `npm run prod`). The compiled CSS is committed.
+- Tests: `php vendor/bin/phpunit` (run each `tests/` folder separately on machines with little memory).
+- Format PHP with `vendor/bin/pint --dirty`.
+- `compose.workspace.yml` builds the image from this repository; the stock `docker-compose.yml` uses the official Snipe-IT image and is kept only to ease merging with upstream.
+
+## Relationship with Snipe-IT and license
+
+Snipe-IT Workspace is a modified version of [Snipe-IT](https://github.com/grokability/snipe-it), created by [Grokability, Inc.](https://grokability.com) It is not affiliated with or endorsed by Grokability. For anything that works the same as in Snipe-IT, the [Snipe-IT documentation](https://snipe-it.readme.io/docs) applies.
+
+Like Snipe-IT, this project is licensed under the [GNU Affero General Public License v3.0](LICENSE). If you run a modified version for other people over a network, the license requires you to offer them its source code.
