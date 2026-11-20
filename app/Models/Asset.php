@@ -16,6 +16,7 @@ use App\Models\Traits\HasOrders;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
 use App\Models\Traits\Requestable;
+use App\Models\Traits\ReservesAssetTagSequence;
 use App\Models\Traits\Searchable;
 use App\Presenters\AssetPresenter;
 use App\Presenters\Presentable;
@@ -64,6 +65,7 @@ class Asset extends Depreciable
     use Loggable;
     use Presentable;
     use Requestable;
+    use ReservesAssetTagSequence;
     use SoftDeletes;
     use UniqueUndeletedTrait;
     use ValidatingTrait;

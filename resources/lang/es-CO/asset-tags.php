@@ -22,4 +22,7 @@ return [
     'accessory_example' => 'Diadema en Nueva York, sin sufijo.',
     'storage' => 'Registra el código en el campo Placa del activo de cada módulo de inventario.',
     'missing_on_item' => 'Este elemento no tiene placa registrada. Agrégala antes de asignarlo.',
+    'sequence_taken' => 'El consecutivo :sequence ya está en uso en la placa :tag. Cada consecutivo identifica una sola pieza en todo el inventario.',
+    'no_duplicates' => 'No hay consecutivos repetidos.',
+    'duplicates_found' => 'Hay :count consecutivos usados por más de una placa. El primer registro de cada uno conserva el número; corrija las demás placas.',
 ];

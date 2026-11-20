@@ -12,6 +12,7 @@ use App\Models\Traits\HasOrders;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
 use App\Models\Traits\Requestable;
+use App\Models\Traits\ReservesAssetTagSequence;
 use App\Models\Traits\Searchable;
 use App\Presenters\ComponentPresenter;
 use App\Presenters\Presentable;
@@ -37,6 +38,7 @@ use Watson\Validating\ValidatingTrait;
 class Component extends SnipeModel
 {
     use HasFactory;
+    use ReservesAssetTagSequence;
 
     protected $presenter = ComponentPresenter::class;
 

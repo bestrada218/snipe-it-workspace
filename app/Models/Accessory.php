@@ -11,6 +11,7 @@ use App\Models\Traits\HasOrders;
 use App\Models\Traits\HasUploads;
 use App\Models\Traits\Loggable;
 use App\Models\Traits\Requestable;
+use App\Models\Traits\ReservesAssetTagSequence;
 use App\Models\Traits\Searchable;
 use App\Presenters\AccessoryPresenter;
 use App\Presenters\Presentable;
@@ -43,6 +44,7 @@ class Accessory extends SnipeModel
     use Loggable;
     use Presentable;
     use Requestable;
+    use ReservesAssetTagSequence;
     use Searchable;
     use SoftDeletes;
     use ValidatingTrait;

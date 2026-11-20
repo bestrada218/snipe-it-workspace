@@ -22,4 +22,7 @@ return [
     'accessory_example' => 'Headset in New York, with no suffix.',
     'storage' => 'Enter the code in the Asset Tag field of each inventory module.',
     'missing_on_item' => 'This item has no asset tag yet. Add it before assigning it.',
+    'sequence_taken' => 'Sequence :sequence is already used by asset tag :tag. Each sequence identifies a single item across the whole inventory.',
+    'no_duplicates' => 'No sequence numbers are repeated.',
+    'duplicates_found' => ':count sequence numbers are used by more than one asset tag. The first record of each keeps the number; fix the other tags.',
 ];
