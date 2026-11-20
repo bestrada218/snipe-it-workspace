@@ -152,4 +152,32 @@ class AssetTagSequenceTest extends TestCase
         $this->assertSame('NJ-601-HS', $accessory->fresh()->asset_tag);
         $this->assertSame(1, Accessory::where('asset_tag', 'like', 'NJ-60%')->count());
     }
+
+    public function test_the_builder_only_puts_a_suffix_on_laptops_and_desktops(): void
+    {
+        $template = Asset::factory()->make();
+        $actor = User::factory()->superuser()->create();
+        $post = fn (string $tag) => $this->actingAs($actor)->post(route('hardware.store'), [
+            'asset_tags' => [1 => $tag],
+            'asset_tag_from_builder' => 1,
+            'model_id' => $template->model_id,
+            'status_id' => $template->status_id,
+        ]);
+
+        $post('NJ-700-HS-W11')->assertSessionHasErrors('asset_tag');
+        $this->assertFalse(Asset::where('asset_tag', 'NJ-700-HS-W11')->exists());
+
+        $post('NJ-701-LP-W11')->assertSessionHasNoErrors();
+        $post('NJ-702-DT-MAC')->assertSessionHasNoErrors();
+        $post('NJ-703-HS')->assertSessionHasNoErrors();
+
+        $this->assertSame(3, Asset::whereIn('asset_tag', ['NJ-701-LP-W11', 'NJ-702-DT-MAC', 'NJ-703-HS'])->count());
+    }
+
+    public function test_imports_and_api_keep_existing_suffixed_tags(): void
+    {
+        Accessory::factory()->create(['asset_tag' => 'NY-704-HS-W11']);
+
+        $this->assertTrue(Accessory::where('asset_tag', 'NY-704-HS-W11')->exists());
+    }
 }

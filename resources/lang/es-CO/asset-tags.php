@@ -54,4 +54,6 @@ return [
     ],
     'sequence_reassigned' => 'Otra persona guardó primero el consecutivo :previous, así que este elemento quedó con la placa :tag.',
     'builder_placeholder' => 'Arma la placa con «Construir la placa»',
+    'suffix_only_computers' => 'Solo las laptops (LP) y los desktops (DT) llevan sufijo. Quita el sufijo de esta placa.',
+    'suffix_only_computers_help' => 'Solo para laptops (LP) y desktops (DT).',
 ];

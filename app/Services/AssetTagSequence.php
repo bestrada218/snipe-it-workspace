@@ -37,6 +37,9 @@ final class AssetTagSequence
     /** Common TTT suffixes from the tag guide. */
     public const SUFFIXES = ['W11', 'MAC', 'LNX'];
 
+    /** Only computers carry a TTT suffix (operating system). */
+    public const SUFFIX_TYPES = ['LP', 'DT'];
+
     private const PATTERN = '/^[A-Z0-9]{2}-(\d{3})-[A-Z0-9]{2}(?:-[A-Z0-9]{3})?$/iD';
 
     public static function extract(?string $tag): ?int
@@ -85,6 +88,16 @@ final class AssetTagSequence
         $sequence = self::extract($model->asset_tag);
         if ($sequence === null) {
             return;
+        }
+
+        // Tags from the builder: a suffix only on laptops and desktops.
+        if (self::assignsFreeNumber() && $model->isDirty('asset_tag')) {
+            $parts = explode('-', strtoupper(trim($model->asset_tag)));
+            if (isset($parts[3]) && ! in_array($parts[2], self::SUFFIX_TYPES, true)) {
+                throw ValidationException::withMessages([
+                    'asset_tag' => trans('asset-tags.suffix_only_computers'),
+                ]);
+            }
         }
 
         $holder = DB::table('asset_tag_sequences')->where('sequence', $sequence)->first();

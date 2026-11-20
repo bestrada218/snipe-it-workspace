@@ -16,7 +16,8 @@
              preview: if someone saves it first, this item gets the next free
              one on save (AssetTagSequence::takeNextFree). --}}
         <fieldset class="tag-builder" data-tag-builder data-target="{{ $target }}" data-sequence="{{ $nextSequence }}"
-            data-placeholder="{{ trans('asset-tags.builder_placeholder') }}">
+            data-placeholder="{{ trans('asset-tags.builder_placeholder') }}"
+            data-suffix-types="{{ implode(',', \App\Services\AssetTagSequence::SUFFIX_TYPES) }}">
             <legend>{{ trans('asset-tags.builder_title') }}</legend>
             <input type="hidden" name="asset_tag_from_builder" value="1">
             <div class="tag-builder-parts">
@@ -44,12 +45,13 @@
                 </label>
                 <label>
                     <span>{{ trans('asset-tags.builder_suffix') }}</span>
-                    <select class="form-control" data-part="suffix">
+                    <select class="form-control" data-part="suffix" disabled aria-describedby="{{ $id }}-suffix-help">
                         <option value="">{{ trans('asset-tags.builder_none') }}</option>
                         @foreach (\App\Services\AssetTagSequence::SUFFIXES as $suffix)
                             <option value="{{ $suffix }}">{{ $suffix }} · {{ trans('asset-tags.suffixes.'.$suffix) }}</option>
                         @endforeach
                     </select>
+                    <small class="tag-builder-note" id="{{ $id }}-suffix-help">{{ trans('asset-tags.suffix_only_computers_help') }}</small>
                 </label>
             </div>
             <p class="tag-builder-help">{{ trans('asset-tags.builder_help') }}</p>
@@ -83,7 +85,19 @@
                     field.value = '';
                 }
 
+                const suffixTypes = builder.dataset.suffixTypes.split(',');
+                // Only laptops and desktops take a suffix: for anything else
+                // the list is emptied and locked.
+                const syncSuffix = () => {
+                    const allowed = suffixTypes.includes(part('type').value);
+                    part('suffix').disabled = !allowed;
+                    if (!allowed) {
+                        part('suffix').value = '';
+                    }
+                };
+
                 const build = () => {
+                    syncSuffix();
                     const prefix = part('prefix').value.trim().toUpperCase();
                     const type = part('type').value;
                     const suffix = part('suffix').value;

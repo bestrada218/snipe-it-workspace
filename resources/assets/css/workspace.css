@@ -1694,6 +1694,7 @@
 
 .tag-builder-parts label {
     display: grid;
+    align-content: start;
     gap: 4px;
     margin: 0;
     font-size: 12px;
@@ -2328,4 +2329,17 @@ body.workspace-ui,
     font-weight: 700;
     letter-spacing: .03em;
     cursor: default;
+}
+
+.workspace-ui .tag-builder-note {
+    display: block;
+    margin-top: 4px;
+    color: var(--workspace-muted);
+    font-size: 12px;
+}
+
+.workspace-ui .tag-builder select:disabled {
+    background: var(--workspace-navigation);
+    color: var(--workspace-muted);
+    cursor: not-allowed;
 }
