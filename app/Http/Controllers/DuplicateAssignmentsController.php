@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Accessory;
 use App\Models\Actionlog;
 use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\User;
@@ -110,6 +111,26 @@ class DuplicateAssignmentsController extends Controller
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * Duplicate check for the asset create form, where the asset does not
+     * exist yet: the selected model decides the category.
+     */
+    public function previewModel(Request $request, int $model): JsonResponse
+    {
+        $this->authorize('create', Asset::class);
+        $this->authorize('checkout', Asset::class);
+        $input = $request->validate([
+            'user' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1'],
+        ]);
+        $person = User::findOrFail($input['user']);
+
+        $asset = new Asset;
+        $asset->setRelation('model', AssetModel::with('category')->findOrFail($model));
+
+        return response()->json(DuplicateAssignments::inspect($asset, $person, (int) $input['quantity']));
     }
 
     public function preview(Request $request, string $type, int $id): JsonResponse

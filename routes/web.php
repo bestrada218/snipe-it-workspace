@@ -1113,6 +1113,10 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('id')
         ->name('duplicate-assignments.preview');
 
+    Route::get('duplicate-assignments/preview-model/{model}', [DuplicateAssignmentsController::class, 'previewModel'])
+        ->whereNumber('model')
+        ->name('duplicate-assignments.preview-model');
+
     Route::get('duplicate-assignments/evidence/{id}', [DuplicateAssignmentsController::class, 'evidence'])
         ->whereNumber('id')
         ->name('duplicate-assignments.evidence');

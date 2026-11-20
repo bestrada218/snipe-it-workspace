@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Observers\AssetObserver;
 use App\Services\AssetReplacement;
 use App\Services\AssetShipments;
+use App\Services\DuplicateAssignments;
 use App\View\Label;
 use Carbon\Carbon;
 use Com\Tecnick\Barcode\Barcode;
@@ -92,26 +93,42 @@ class AssetsController extends Controller
         $current = $request->query('status_type');
         $pastEol = $request->boolean('past_eol');
         $statusId = $request->query('status_id');
+
+        // Company and order number narrow the list; every chip keeps them so
+        // switching status never widens the set (links and counts alike).
+        $keep = array_filter([
+            'company_id' => is_scalar($request->query('company_id')) ? $request->query('company_id') : null,
+            'order_number' => is_scalar($request->query('order_number')) ? (string) $request->query('order_number') : null,
+        ], fn ($value) => $value !== null && $value !== '');
+        $count = fn ($query): int => $query
+            ->when(isset($keep['company_id']), fn ($assets) => $assets->where('assets.company_id', $keep['company_id']))
+            ->when(isset($keep['order_number']), fn ($assets) => $assets->where('assets.order_number', $keep['order_number']))
+            ->count();
+        $url = fn (array $params = []): string => route('hardware.index', $params + $keep);
         $chip = fn (string $label, string $url, ?int $count, bool $active, ?string $tone = null): array => compact('label', 'url', 'count', 'active', 'tone');
 
         $filters = [
-            $chip(trans('navigation.chip_all'), route('hardware.index'), Asset::AssetsForShow()->count(), ! $current && ! $pastEol && ! $statusId),
-            $chip(trans('general.deployed'), route('hardware.index', ['status_type' => 'Deployed']), Asset::Deployed()->count(), $current === 'Deployed', 'info'),
-            $chip(trans('general.ready_to_deploy'), route('hardware.index', ['status_type' => 'RTD']), Asset::RTD()->count(), $current === 'RTD', 'ok'),
-            $chip(trans('general.pending'), route('hardware.index', ['status_type' => 'Pending']), Asset::Pending()->count(), $current === 'Pending', 'warn'),
-            $chip(trans('general.undeployable'), route('hardware.index', ['status_type' => 'Undeployable']), Asset::Undeployable()->count(), $current === 'Undeployable', 'crit'),
-            $chip(trans('general.byod'), route('hardware.index', ['status_type' => 'byod']), Asset::where('byod', 1)->count(), $current === 'byod'),
-            $chip(trans('admin/hardware/general.archived'), route('hardware.index', ['status_type' => 'Archived']), Asset::Archived()->count(), $current === 'Archived'),
-            $chip(trans('admin/hardware/general.requestable'), route('hardware.index', ['status_type' => 'Requestable']), null, $current === 'Requestable'),
-            $chip(trans('general.past_eol'), route('hardware.index', ['past_eol' => 1]), null, $pastEol, 'warn'),
+            $chip(trans('navigation.chip_all'), $url(), $count(Asset::AssetsForShow()), ! $current && ! $pastEol && ! $statusId),
+            $chip(trans('general.deployed'), $url(['status_type' => 'Deployed']), $count(Asset::Deployed()), $current === 'Deployed', 'info'),
+            $chip(trans('general.ready_to_deploy'), $url(['status_type' => 'RTD']), $count(Asset::RTD()), $current === 'RTD', 'ok'),
+            $chip(trans('general.pending'), $url(['status_type' => 'Pending']), $count(Asset::Pending()), $current === 'Pending', 'warn'),
+            $chip(trans('general.undeployable'), $url(['status_type' => 'Undeployable']), $count(Asset::Undeployable()), $current === 'Undeployable', 'crit'),
+            $chip(trans('general.byod'), $url(['status_type' => 'byod']), $count(Asset::where('byod', 1)), $current === 'byod'),
+            $chip(trans('admin/hardware/general.archived'), $url(['status_type' => 'Archived']), $count(Asset::Archived()), $current === 'Archived'),
+            $chip(trans('admin/hardware/general.requestable'), $url(['status_type' => 'Requestable']), null, $current === 'Requestable'),
+            $chip(trans('general.past_eol'), $url(['past_eol' => 1]), null, $pastEol, 'warn'),
         ];
 
-        foreach (Statuslabel::where('show_in_nav', 1)->withCount('assets')->orderBy('name')->get() as $label) {
-            $filters[] = $chip($label->name, route('statuslabels.show', $label), $label->assets_count, false);
+        // Custom status labels open their own page, which has no company or
+        // order filter; only offer them on the unfiltered list.
+        if ($keep === []) {
+            foreach (Statuslabel::where('show_in_nav', 1)->withCount('assets')->orderBy('name')->get() as $label) {
+                $filters[] = $chip($label->name, route('statuslabels.show', $label), $label->assets_count, false);
+            }
         }
 
         if (Gate::allows('create', Asset::class)) {
-            $filters[] = $chip(trans('general.deleted'), route('hardware.index', ['status_type' => 'Deleted']), null, $current === 'Deleted', 'crit');
+            $filters[] = $chip(trans('general.deleted'), $url(['status_type' => 'Deleted']), null, $current === 'Deleted', 'crit');
         }
 
         return $filters;
@@ -282,7 +299,8 @@ class AssetsController extends Controller
                 $asset->forceFill($replacement);
 
                 $asset->model()->associate($model);
-                $asset->name = $request->input('name');
+                // A new asset without its own name takes the model's name.
+                $asset->name = $request->filled('name') ? $request->input('name') : $model->name;
 
                 // Check for a corresponding serial
                 if (($serials) && (array_key_exists($a, $serials))) {
@@ -396,7 +414,11 @@ class AssetsController extends Controller
                     }
 
                     if (isset($target)) {
-                        $assigned = $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), $request->input('expected_checkin', null), 'Checked out on asset creation', $request->input('name'), $location);
+                        // Same rule as the Checkout screen: a second unit of the
+                        // category needs a justification (and approval where the
+                        // category requires it).
+                        DuplicateAssignments::confirm($request, $asset, $target);
+                        $assigned = $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), $request->input('expected_checkin', null), 'Checked out on asset creation', $asset->name, $location);
                         if ($isInventoryView && ! $assigned) {
                             $asset->throwValidationException();
                         }

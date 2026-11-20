@@ -1,9 +1,16 @@
-@props(['type', 'item'])
+@props(['type' => 'assets', 'item' => null])
 
 @php($availableApprovers = \App\Services\DuplicateAssignments::approvers())
 
+{{-- On the create form there is no item yet: the check uses the selected
+     model and counts one unit per asset tag being created. --}}
 <div class="form-group" data-duplicate-assignment
-    data-preview="{{ route('duplicate-assignments.preview', ['type' => $type, 'id' => $item->getKey()]) }}">
+    @if ($item)
+        data-preview="{{ route('duplicate-assignments.preview', ['type' => $type, 'id' => $item->getKey()]) }}"
+    @else
+        data-preview-model="{{ route('duplicate-assignments.preview-model', ['model' => '__MODEL__']) }}"
+    @endif
+    >
     <div class="col-md-8 col-md-offset-3">
         <div class="workspace-duplicate-warning" role="status" hidden>
             <strong data-duplicate-title></strong>
@@ -92,10 +99,22 @@
 
                     function selection() {
                         const targetType = form.querySelector('[name="checkout_to_type"]:checked');
+                        const tagCount = Array.from(form.querySelectorAll('[name^="asset_tags"]'))
+                            .filter(input => input.value.trim() !== '').length;
                         return {
                             user: !targetType || targetType.value === 'user' ? form.elements.assigned_user?.value : '',
-                            quantity: Math.max(1, Number(form.elements.checkout_qty?.value) || 1),
+                            quantity: panel.dataset.previewModel
+                                ? Math.max(1, tagCount)
+                                : Math.max(1, Number(form.elements.checkout_qty?.value) || 1),
                         };
+                    }
+
+                    function previewUrl() {
+                        if (panel.dataset.preview) {
+                            return panel.dataset.preview;
+                        }
+                        const model = form.elements.model_id?.value;
+                        return model ? panel.dataset.previewModel.replace('__MODEL__', encodeURIComponent(model)) : null;
                     }
 
                     function display(data) {
@@ -117,14 +136,15 @@
                     async function check() {
                         pending?.abort();
                         const current = selection();
-                        if (!current.user) {
+                        const url = previewUrl();
+                        if (!current.user || !url) {
                             display(null);
                             return null;
                         }
                         const controller = new AbortController();
                         pending = controller;
                         try {
-                            const response = await fetch(panel.dataset.preview + '?' + new URLSearchParams(current), {
+                            const response = await fetch(url + '?' + new URLSearchParams(current), {
                                 signal: controller.signal,
                                 headers: {'Accept': 'application/json'},
                             });
@@ -144,7 +164,7 @@
                         }
                     }
 
-                    $(form).on('change', '[name="assigned_user"], [name="checkout_to_type"], [name="checkout_qty"]', async () => {
+                    $(form).on('change', '[name="assigned_user"], [name="checkout_to_type"], [name="checkout_qty"], [name="model_id"], [name^="asset_tags"]', async () => {
                         approved = false;
                         confirmed.value = '0';
                         submittedReason.value = '';

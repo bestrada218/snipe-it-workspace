@@ -122,6 +122,7 @@
             />
             @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.asset'), 'fieldname' => 'assigned_asset', 'style' => 'display:none;', 'required' => 'false'])
             @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'style' => 'display:none;', 'required' => 'false'])
+            <x-checkout.duplicate-assignment type="assets" />
         </fieldset>
     @endif
 
@@ -599,3 +600,49 @@
 
 </script>
 @stop
+
+@if (! $item->id)
+    @push('js')
+        <script nonce="{{ csrf_token() }}">
+            // Pre-fill the asset name from the selected model, unless the
+            // person already typed their own name.
+            $(function () {
+                const nameInput = document.querySelector('[name="name"]');
+                const modelSelect = $('[name="model_id"]');
+                if (!nameInput || !modelSelect.length) {
+                    return;
+                }
+                let lastFilled = null;
+                modelSelect.on('change', async function () {
+                    const modelId = this.value;
+                    const typedByPerson = nameInput.value.trim() !== '' && nameInput.value !== lastFilled;
+                    if (!modelId || typedByPerson) {
+                        return;
+                    }
+                    try {
+                        const response = await fetch(@json(url('api/v1/models')) + '/' + encodeURIComponent(modelId), {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': @json(csrf_token()),
+                            },
+                        });
+                        if (!response.ok) {
+                            return;
+                        }
+                        const model = await response.json();
+                        if (model && model.name && (nameInput.value.trim() === '' || nameInput.value === lastFilled)) {
+                            const holder = document.createElement('textarea');
+                            holder.innerHTML = model.name;
+                            nameInput.value = holder.value;
+                            lastFilled = nameInput.value;
+                        }
+                    } catch (error) {
+                        // The name stays empty; the server uses the model name on save.
+                    }
+                });
+            });
+        </script>
+    @endpush
+@endif
+
