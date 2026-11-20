@@ -32,6 +32,10 @@ if (env('BACKUP_ENV') == 'true') {
     $included_dirs[] = base_path('.env');
 }
 
+// A fresh install has no OAuth keys until the first setup finishes; a path
+// that does not exist yet would make the whole backup fail.
+$included_dirs = array_values(array_filter($included_dirs, 'file_exists'));
+
 // Every backup is written to the local "backup" disk plus any cloud disk
 // listed in BACKUP_CLOUD_DISKS (comma separated: backup_s3, backup_google,
 // both defined in config/filesystems.php).
