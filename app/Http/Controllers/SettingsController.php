@@ -20,6 +20,7 @@ use App\Models\Group;
 use App\Models\Labels\CustomUserLabel;
 use App\Models\Location;
 use App\Models\Setting;
+use App\Models\Statuslabel;
 use App\Models\User;
 use App\Notifications\MailTest;
 use App\Rules\CssColor;
@@ -97,8 +98,9 @@ class SettingsController extends Controller
 
         $approvalCandidates = User::orderBy('first_name')->orderBy('last_name')->get();
         $approvalCategories = Category::orderBy('name')->get(['id', 'name', 'category_type']);
+        $damageStatusCandidates = Statuslabel::where('deployable', 0)->where('pending', 0)->where('archived', 0)->orderBy('name')->get(['id', 'name']);
 
-        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates', 'approvalCategories'));
+        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates', 'approvalCategories', 'damageStatusCandidates'));
     }
 
     /**
@@ -138,10 +140,13 @@ class SettingsController extends Controller
                 'duplicate_assignment_approvers.*' => ['required', 'integer', 'distinct', Rule::exists('users', 'id')->whereNull('deleted_at')],
                 'duplicate_approval_categories' => ['sometimes', 'array', 'list'],
                 'duplicate_approval_categories.*' => ['required', 'integer', 'distinct', Rule::exists('categories', 'id')->whereNull('deleted_at')],
+                'damage_report_statuses' => ['sometimes', 'array', 'list'],
+                'damage_report_statuses.*' => ['required', 'integer', 'distinct', Rule::exists('status_labels', 'id')->whereNull('deleted_at')],
             ]);
 
             $setting->duplicate_assignment_approvers = array_map('intval', $approvalSettings['duplicate_assignment_approvers'] ?? []);
             $setting->duplicate_approval_categories = array_map('intval', $approvalSettings['duplicate_approval_categories'] ?? []);
+            $setting->damage_report_statuses = array_map('intval', $approvalSettings['damage_report_statuses'] ?? []);
         }
 
         if ($request->boolean('purchase_approvers_configured')) {

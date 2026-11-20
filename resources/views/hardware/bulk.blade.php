@@ -142,6 +142,7 @@
                         ></p>
                     </x-slot:input>
                 </x-form.row>
+                <x-form.damage-report />
 
                 <x-input.model-select
                     :label="trans('admin/hardware/form.model')"

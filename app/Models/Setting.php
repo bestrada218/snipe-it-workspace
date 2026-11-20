@@ -93,6 +93,7 @@ class Setting extends Model
         'disabled_inventory_modules' => 'array',
         'duplicate_assignment_approvers' => 'array',
         'duplicate_approval_categories' => 'array',
+        'damage_report_statuses' => 'array',
         'purchase_approvers' => 'array',
         'inventory_module_labels' => 'array',
         'inventory_location_modules' => 'array',

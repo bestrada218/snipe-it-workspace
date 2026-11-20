@@ -6,6 +6,7 @@ use App\Models\CustomField;
 use App\Models\Department;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\DamageReports;
 use Carbon\CarbonImmutable;
 use ForceUTF8\Encoding;
 use Illuminate\Database\Eloquent\Model;
@@ -356,6 +357,12 @@ abstract class Importer
      * @since  5.0
      */
     public function import(?int $offset = null, ?int $limit = null)
+    {
+        // CSV rows carry no damage report: imports keep setting statuses freely.
+        return DamageReports::withoutReport(fn () => $this->runImport($offset, $limit));
+    }
+
+    private function runImport(?int $offset = null, ?int $limit = null)
     {
         $headerRow = $this->csv->fetchOne();
         $this->csv->setHeaderOffset(0); // explicitly sets the CSV document header record

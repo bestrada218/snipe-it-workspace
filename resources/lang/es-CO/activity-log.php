@@ -22,6 +22,11 @@ return [
     'file_restricted' => 'Archivo de acceso restringido',
     'target_not_recorded' => 'Sin dato en el historial',
     'facts' => [
+        'damage_description' => 'Qué está dañado',
+        'damage_repairable' => '¿Se puede reparar?',
+        'damage_repair_attempted' => '¿Se intentó reparar?',
+        'damage_repair_details' => 'Intento de reparación',
+        'damage_status' => 'Cambio de estado',
         'shipment_recipient' => 'Destinatario',
         'shipment_platform' => 'Plataforma de compra',
         'shipment_tracking' => 'Número de guía',

@@ -102,6 +102,7 @@
                             />
                         </x-slot:input>
                     </x-form.row>
+                    <x-form.damage-report :current="$asset->status_id" />
 
                     {{-- Requestable toggle. The outer form-group carries
                          id=requestable-wrapper — the snipeit.js handler

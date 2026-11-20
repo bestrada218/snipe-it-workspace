@@ -13,6 +13,7 @@ enum ActionType: string
     case ShipmentRescheduled = 'shipment rescheduled';
     case ShipmentReceived = 'shipment received';
     case ShipmentCancelled = 'shipment cancelled';
+    case DamageReported = 'damage reported';
 
     // Assets/Accessories/Components/Licenses/Consumables
     case Checkout = 'checkout';

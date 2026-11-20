@@ -20,6 +20,7 @@ use App\Models\Traits\ReservesAssetTagSequence;
 use App\Models\Traits\Searchable;
 use App\Presenters\AssetPresenter;
 use App\Presenters\Presentable;
+use App\Services\DamageReports;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -298,6 +299,10 @@ class Asset extends Depreciable
 
     protected static function booted(): void
     {
+        // Moving an asset into a damaged/undeployable status needs a report.
+        static::saving(fn (Asset $asset) => DamageReports::require($asset));
+        static::saved(fn (Asset $asset) => DamageReports::record($asset));
+
         static::forceDeleted(function (Asset $asset) {
             $asset->requests()->forceDelete();
 

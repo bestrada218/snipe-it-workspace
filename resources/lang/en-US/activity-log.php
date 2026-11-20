@@ -22,6 +22,11 @@ return [
     'file_restricted' => 'File access restricted',
     'target_not_recorded' => 'Not recorded in history',
     'facts' => [
+        'damage_description' => 'What is damaged',
+        'damage_repairable' => 'Can it be repaired?',
+        'damage_repair_attempted' => 'Repair attempted?',
+        'damage_repair_details' => 'Repair attempt',
+        'damage_status' => 'Status change',
         'shipment_recipient' => 'Recipient',
         'shipment_platform' => 'Purchase platform',
         'shipment_tracking' => 'Tracking number',

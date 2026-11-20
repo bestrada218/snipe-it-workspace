@@ -168,6 +168,10 @@ class ActionlogPresenter extends Presenter
     public function activityTitle(): string
     {
         $action = strtolower((string) $this->model->action_type);
+        if ($action === ActionType::DamageReported->value) {
+            return trans('damage-reports.activity_title');
+        }
+
         if (str_starts_with($action, 'shipment ')) {
             return trans('asset-shipments.'.str_replace(' ', '_', $action));
         }
@@ -225,6 +229,19 @@ class ActionlogPresenter extends Presenter
             ActionType::TokenRevoked->value, ActionType::TokenUnrevoked->value => ['related_item' => $target],
             ActionType::AddSeats->value, ActionType::DeleteSeats->value => [
                 'units' => $this->model->quantity !== null ? (string) abs((int) $this->model->quantity) : null,
+            ],
+            ActionType::DamageReported->value => [
+                'damage_status' => isset($meta['_damage_report'])
+                    ? trim(((array) $meta['_damage_report'])['status_from'].' → '.((array) $meta['_damage_report'])['status_to'], ' →')
+                    : null,
+                'damage_description' => ((array) ($meta['_damage_report'] ?? []))['description'] ?? null,
+                'damage_repairable' => isset(((array) ($meta['_damage_report'] ?? []))['repairable'])
+                    ? trans('damage-reports.repairable_options.'.((array) $meta['_damage_report'])['repairable'])
+                    : null,
+                'damage_repair_attempted' => array_key_exists('repair_attempted', (array) ($meta['_damage_report'] ?? []))
+                    ? trans(((array) $meta['_damage_report'])['repair_attempted'] ? 'damage-reports.yes' : 'damage-reports.no')
+                    : null,
+                'damage_repair_details' => ((array) ($meta['_damage_report'] ?? []))['repair_details'] ?? null,
             ],
             ActionType::ShipmentCreated->value => [
                 'shipment_recipient' => $target,

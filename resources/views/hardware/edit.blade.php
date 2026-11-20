@@ -102,6 +102,7 @@
 
 
     @include ('partials.forms.edit.status', [ 'required' => 'true'])
+    <x-form.damage-report :current="$item->status_id" />
     @if (! $item->id && isset($inventoryView))
         <input type="hidden" name="inventory_view" value="{{ $inventoryViewKey }}">
         <input type="hidden" name="checkout_to_type" value="location">

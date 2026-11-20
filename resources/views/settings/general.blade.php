@@ -64,6 +64,20 @@
                                         <x-form.error name="duplicate_approval_categories.*" />
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                    <label for="damage_report_statuses" class="col-md-3 control-label">{{ trans('damage-reports.statuses') }}</label>
+                                    <div class="col-md-9">
+                                        @php($selectedDamageStatuses = array_map('intval', (array) old('damage_report_statuses', $setting->damage_report_statuses ?? [])))
+                                        <select class="form-control select2" name="damage_report_statuses[]" id="damage_report_statuses" multiple style="width: 100%;" aria-describedby="damage-report-statuses-help">
+                                            @foreach ($damageStatusCandidates as $statusLabel)
+                                                <option value="{{ $statusLabel->id }}" @selected(in_array($statusLabel->id, $selectedDamageStatuses, true))>{{ $statusLabel->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <p class="help-block" id="damage-report-statuses-help">{{ trans('damage-reports.statuses_help') }}</p>
+                                        <x-form.error name="damage_report_statuses" />
+                                        <x-form.error name="damage_report_statuses.*" />
+                                    </div>
+                                </div>
                             </fieldset>
 
                             @can('superadmin')

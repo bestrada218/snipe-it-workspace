@@ -49,6 +49,7 @@
                             />
                         </x-slot:input>
                     </x-form.row>
+                    <x-form.damage-report />
 
                     <x-input.location-select
                         :label="trans('general.location')"

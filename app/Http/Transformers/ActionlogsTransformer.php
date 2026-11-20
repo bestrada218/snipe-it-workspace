@@ -97,7 +97,7 @@ class ActionlogsTransformer
                 foreach ($meta_array as $fieldname => $fieldata) {
 
                     // Snapshots are displayed separately from field diffs.
-                    if (in_array($fieldname, ['_audit_snapshot', '_activity_previous_assignment', '_activity_assignment_target', '_duplicate_assignment_reason', '_duplicate_assignment_ticket', '_duplicate_assignment_approval'], true)) {
+                    if (in_array($fieldname, ['_audit_snapshot', '_activity_previous_assignment', '_activity_assignment_target', '_duplicate_assignment_reason', '_duplicate_assignment_ticket', '_duplicate_assignment_approval', '_damage_report'], true)) {
                         continue;
                     }
 
