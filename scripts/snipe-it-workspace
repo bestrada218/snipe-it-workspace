@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Day-to-day commands for a Snipe-IT Workspace installation.
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+cd "$DIR"
+
+docker_cmd() { if docker info >/dev/null 2>&1; then docker "$@"; else sudo docker "$@"; fi; }
+compose() { docker_cmd compose -f compose.workspace.yml "$@"; }
+port() { grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"" | grep . || echo 8000; }
+CRON_MARK="# snipe-it-workspace auto-update"
+
+case "${1:-help}" in
+    update)
+        shift
+        exec "$DIR/scripts/workspace-update.sh" "$@"
+        ;;
+    status)
+        echo "Version: $(git log -1 --format='%h  %cd  %s' --date=short)"
+        compose ps --format 'table {{.Service}}\t{{.Status}}'
+        if curl -fsS "http://localhost:$(port)/health" >/dev/null 2>&1; then
+            echo "Application: answering on $(grep '^APP_URL=' .env | cut -d= -f2-)"
+        else
+            echo "Application: NOT answering. See: snipe-it-workspace logs"
+        fi
+        ;;
+    backup)
+        compose exec -T --user docker app php artisan snipeit:backup
+        ;;
+    backups)
+        compose exec -T app sh -c 'ls -lh /var/lib/snipeit/dumps 2>/dev/null || ls -lh storage/app/backups'
+        ;;
+    logs)
+        compose logs -f --tail=100 app
+        ;;
+    restart)
+        compose restart app
+        ;;
+    start)
+        compose up -d
+        ;;
+    stop)
+        compose stop
+        ;;
+    auto-update)
+        current="$(crontab -l 2>/dev/null | grep -v "$CRON_MARK" || true)"
+        case "${2:-status}" in
+            on)
+                mkdir -p "$HOME/.local/state"
+                { [ -n "$current" ] && printf '%s\n' "$current"
+                  echo "30 3 * * * $DIR/scripts/workspace-update.sh >> $HOME/.local/state/snipe-it-workspace-update.log 2>&1 $CRON_MARK"; } | crontab -
+                echo "Automatic updates: ON (every night at 3:30). Log: ~/.local/state/snipe-it-workspace-update.log"
+                ;;
+            off)
+                printf '%s\n' "$current" | crontab -
+                echo "Automatic updates: OFF"
+                ;;
+            *)
+                crontab -l 2>/dev/null | grep -q "$CRON_MARK" && echo "Automatic updates: ON (every night at 3:30)" || echo "Automatic updates: OFF"
+                ;;
+        esac
+        ;;
+    *)
+        cat <<HELP
+Snipe-IT Workspace ($(git log -1 --format=%h))
+
+  snipe-it-workspace status              is it running, which version
+  snipe-it-workspace update              install the latest version (backs up first)
+  snipe-it-workspace backup              make a backup now
+  snipe-it-workspace backups             list the backups on this server
+  snipe-it-workspace logs                follow the application log
+  snipe-it-workspace restart|start|stop  control the application
+  snipe-it-workspace auto-update on|off  nightly automatic updates
+HELP
+        ;;
+esac

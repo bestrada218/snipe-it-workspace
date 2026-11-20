@@ -10,7 +10,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-COMPOSE=(docker compose -f compose.workspace.yml)
+# Plain docker when this user may use it, sudo otherwise (right after the
+# first install the user is not in the docker group yet).
+if docker info >/dev/null 2>&1; then
+    COMPOSE=(docker compose -f compose.workspace.yml)
+else
+    COMPOSE=(sudo docker compose -f compose.workspace.yml)
+fi
 BRANCH="${WORKSPACE_BRANCH:-main}"
 
 git fetch --quiet origin "$BRANCH"

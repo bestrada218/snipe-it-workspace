@@ -4,10 +4,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-COMPOSE=(docker compose -f compose.workspace.yml)
+# Plain docker when this user may use it, sudo otherwise (right after the
+# first install the user is not in the docker group yet).
+if docker info >/dev/null 2>&1; then
+    COMPOSE=(docker compose -f compose.workspace.yml)
+else
+    COMPOSE=(sudo docker compose -f compose.workspace.yml)
+fi
 
-if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1; then
-    echo "Docker with the compose plugin is not installed. See the deployment steps." >&2
+if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is not installed. Use scripts/workspace-setup.sh, which installs it." >&2
     exit 1
 fi
 
@@ -24,8 +30,15 @@ else
     timezone="$(timedatectl show -p Timezone --value 2>/dev/null || echo UTC)"
     sed -i "s|^APP_TIMEZONE=.*|APP_TIMEZONE='${timezone}'|" .env
 
-    default_url="http://$(hostname -I | awk '{print $1}'):8000"
-    read -rp "Address people will open in the browser [${default_url}]: " app_url
+    port="${WORKSPACE_PORT:-8000}"
+    sed -i "s|^APP_PORT=.*|APP_PORT=${port}|" .env
+    default_url="http://$(hostname -I | awk '{print $1}'):${port}"
+    app_url="${WORKSPACE_APP_URL:-}"
+    if [ -z "$app_url" ]; then
+        if [ -r /dev/tty ]; then
+            read -rp "Address people will open in the browser [${default_url}]: " app_url </dev/tty || true
+        fi
+    fi
     sed -i "s|^APP_URL=.*|APP_URL=${app_url:-$default_url}|" .env
 fi
 
