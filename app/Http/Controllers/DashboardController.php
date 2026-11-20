@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helper;
+use App\Livewire\NeedsAttention;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\Company;
@@ -107,8 +108,10 @@ class DashboardController extends Controller
     }
 
     /**
-     * What needs someone's action today, most urgent first. Only items the
-     * person may act on, and only when there is something to do.
+     * What needs someone's action today, most urgent first, in one list.
+     * Only items the person may act on, and only when there is something
+     * to do. The non-asset reminders reuse the NeedsAttention counts so
+     * both stay in step.
      *
      * @param  array<string, int>  $replacementCounts
      * @return list<array{tone: string, title: string, detail: string, url: string, action: string}>
@@ -117,50 +120,89 @@ class DashboardController extends Controller
     {
         $items = [];
         $user = auth()->user();
-        $assets = Setting::inventoryModuleEnabled('assets') && Gate::allows('index', Asset::class);
-        if (! $assets) {
-            return $items;
-        }
+        $reminders = new NeedsAttention;
+        $reminders->mount();
 
-        $overdueReplacement = $replacementCounts['overdue'] ?? 0;
-        if ($overdueReplacement > 0) {
-            $items[] = ['tone' => 'crit', 'title' => trans_choice('dashboard-attention.replacement_overdue', $overdueReplacement),
-                'detail' => trans('dashboard-attention.replacement_overdue_detail'),
-                'url' => route('hardware.replacement-alerts', ['window' => 'overdue']), 'action' => trans('dashboard-attention.review')];
-        }
+        if (Setting::inventoryModuleEnabled('assets') && Gate::allows('index', Asset::class)) {
+            $overdueReplacement = $replacementCounts['overdue'] ?? 0;
+            if ($overdueReplacement > 0) {
+                $items[] = $this->attentionItem('crit', 'replacement_overdue', $overdueReplacement,
+                    route('hardware.replacement-alerts', ['window' => 'overdue']), 'review');
+            }
 
-        $dueShipments = AssetShipments::dueFor($user)->count();
-        if ($dueShipments > 0) {
-            $items[] = ['tone' => 'warn', 'title' => trans_choice('dashboard-attention.shipments_due', $dueShipments),
-                'detail' => trans('dashboard-attention.shipments_due_detail'),
-                'url' => route('shipments.index', ['due' => 1]), 'action' => trans('dashboard-attention.confirm_delivery')];
-        }
+            $dueShipments = AssetShipments::dueFor($user)->count();
+            if ($dueShipments > 0) {
+                $items[] = $this->attentionItem('warn', 'shipments_due', $dueShipments,
+                    route('shipments.index', ['due' => 1]), 'confirm_delivery');
+            }
 
-        $soonReplacement = ($replacementCounts['one_day'] ?? 0) + ($replacementCounts['fifteen_days'] ?? 0);
-        if ($soonReplacement > 0) {
-            $items[] = ['tone' => 'warn', 'title' => trans_choice('dashboard-attention.replacement_soon', $soonReplacement),
-                'detail' => trans('dashboard-attention.replacement_soon_detail'),
-                'url' => route('hardware.replacement-alerts', ['window' => 'fifteen_days']), 'action' => trans('dashboard-attention.plan')];
-        }
+            $soonReplacement = ($replacementCounts['one_day'] ?? 0) + ($replacementCounts['fifteen_days'] ?? 0);
+            if ($soonReplacement > 0) {
+                $items[] = $this->attentionItem('warn', 'replacement_soon', $soonReplacement,
+                    route('hardware.replacement-alerts', ['window' => 'fifteen_days']), 'plan');
+            }
 
-        if (Gate::allows('checkin', Asset::class)) {
-            $overdueCheckins = Asset::OverdueForCheckin()->count();
-            if ($overdueCheckins > 0) {
-                $items[] = ['tone' => 'warn', 'title' => trans_choice('dashboard-attention.checkins_overdue', $overdueCheckins),
-                    'detail' => trans('dashboard-attention.checkins_overdue_detail'),
-                    'url' => route('assets.checkins.due'), 'action' => trans('dashboard-attention.review')];
+            if (Gate::allows('checkin', Asset::class)) {
+                $overdueCheckins = Asset::OverdueForCheckin()->count();
+                if ($overdueCheckins > 0) {
+                    $items[] = $this->attentionItem('warn', 'checkins_overdue', $overdueCheckins,
+                        route('assets.checkins.due'), 'review');
+                }
+            }
+
+            if (Gate::allows('audit', Asset::class)) {
+                $overdueAudits = Asset::OverdueForAudit()->count();
+                if ($overdueAudits > 0) {
+                    $items[] = $this->attentionItem('info', 'audits_overdue', $overdueAudits,
+                        route('assets.audit.due'), 'audit');
+                }
+            }
+
+            if ($reminders->assetsPastEol > 0) {
+                $items[] = $this->attentionItem('info', 'past_eol', $reminders->assetsPastEol,
+                    route('hardware.index', ['past_eol' => 1]), 'review');
             }
         }
 
-        if (Gate::allows('audit', Asset::class)) {
-            $overdueAudits = Asset::OverdueForAudit()->count();
-            if ($overdueAudits > 0) {
-                $items[] = ['tone' => 'info', 'title' => trans_choice('dashboard-attention.audits_overdue', $overdueAudits),
-                    'detail' => trans('dashboard-attention.audits_overdue_detail'),
-                    'url' => route('assets.audit.due'), 'action' => trans('dashboard-attention.audit')];
-            }
+        if ($reminders->overdueMaintenances > 0) {
+            $items[] = $this->attentionItem('warn', 'maintenances_overdue', $reminders->overdueMaintenances,
+                route('maintenances.index', ['upcoming_status' => 'overdue']), 'review');
+        }
+
+        if ($reminders->usersOffboardingSoon > 0) {
+            $items[] = $this->attentionItem('warn', 'offboarding', $reminders->usersOffboardingSoon,
+                route('users.index', ['end_date_within' => NeedsAttention::OFFBOARDING_DAYS, 'with_assignments' => 1]), 'review');
+        }
+
+        if ($reminders->licensesExpiringSoon > 0) {
+            $items[] = $this->attentionItem('info', 'licenses_expiring', $reminders->licensesExpiringSoon,
+                route('licenses.index', ['status' => 'expiring']), 'review');
+        }
+
+        if ($reminders->pendingRequestsCount > 0) {
+            $items[] = $this->attentionItem('info', 'requests_pending', $reminders->pendingRequestsCount,
+                route('requests.index'), 'review');
+        }
+
+        if ($reminders->pendingAcceptancesCount > 0) {
+            $items[] = $this->attentionItem('info', 'acceptances_pending', $reminders->pendingAcceptancesCount,
+                route('unaccepted-acceptances.index'), 'review');
         }
 
         return $items;
+    }
+
+    /**
+     * @return array{tone: string, title: string, detail: string, url: string, action: string}
+     */
+    private function attentionItem(string $tone, string $key, int $count, string $url, string $action): array
+    {
+        return [
+            'tone' => $tone,
+            'title' => trans_choice('dashboard-attention.'.$key, $count),
+            'detail' => trans('dashboard-attention.'.$key.'_detail'),
+            'url' => $url,
+            'action' => trans('dashboard-attention.'.$action),
+        ];
     }
 }

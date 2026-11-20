@@ -1,37 +1,37 @@
 /*
- * Interface identity: charcoal, slate and mist greys.
- *
- * Layout: charcoal side navigation, white header and cards on a cool
- * grey page. Slate is the only accent and is reserved for primary
- * actions and the active menu entry; green, amber, red and blue are
- * kept for states only.
+ * Palette: plum is the one accent (primary actions, links and the active
+ * menu entry) over neutral greys. Green, amber, red and blue stay
+ * reserved for states.
  */
 :root {
     --brand-charcoal: #313132;
     --brand-slate: #4d5b64;
     --brand-mist: #b1bbc2;
     --brand-black: #000000;
+    --brand-plum: #5e3f73;
+    --brand-plum-night: #231b2b;
     --brand-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .workspace-ui {
-    --workspace-background: #f3f5f6;
+    --workspace-background: #f4f3f6;
     --workspace-surface: #ffffff;
-    --workspace-navigation: #f6f8f9;
-    --workspace-ink: #1f2326;
-    --workspace-muted: #5a666e;
-    --workspace-border: #dde2e5;
-    --workspace-accent: var(--brand-slate);
-    --workspace-tint: #e8edf0;
-    --workspace-primary: var(--brand-slate);
-    --workspace-primary-hover: #3b474e;
+    --workspace-navigation: #f8f7fa;
+    --workspace-ink: #1e1a24;
+    --workspace-muted: #615a6b;
+    --workspace-border: #e3dfe8;
+    --workspace-accent: var(--brand-plum);
+    --workspace-tint: #efe8f4;
+    --workspace-primary: var(--brand-plum);
+    --workspace-primary-hover: #4c3160;
     --workspace-on-primary: #ffffff;
-    --workspace-sidebar: var(--brand-charcoal);
-    --workspace-sidebar-ink: var(--brand-mist);
-    --workspace-sidebar-hover: #3d3e40;
-    --workspace-sidebar-active: var(--brand-slate);
+    --workspace-sidebar: var(--brand-plum-night);
+    --workspace-sidebar-ink: #cbc2d5;
+    --workspace-sidebar-dim: #8d8399;
+    --workspace-sidebar-hover: #2f2539;
+    --workspace-sidebar-active: #3b2e48;
     --workspace-sidebar-active-ink: #ffffff;
-    --workspace-sidebar-border: #444547;
+    --workspace-sidebar-border: #2f2539;
     --workspace-success: #2e7a57;
     --workspace-warning: #9a5c0c;
     --workspace-danger: #b23a2a;
@@ -42,23 +42,24 @@
 }
 
 [data-theme="dark"] .workspace-ui {
-    --workspace-background: #18191a;
-    --workspace-surface: #222425;
-    --workspace-navigation: #1d1f20;
-    --workspace-ink: #e9edef;
-    --workspace-muted: var(--brand-mist);
-    --workspace-border: #383d41;
-    --workspace-accent: var(--brand-mist);
-    --workspace-tint: #2c3236;
-    --workspace-primary: var(--brand-mist);
-    --workspace-primary-hover: #c9d1d6;
-    --workspace-on-primary: #18191a;
-    --workspace-sidebar: #111212;
-    --workspace-sidebar-ink: var(--brand-mist);
-    --workspace-sidebar-hover: #1f2122;
-    --workspace-sidebar-active: var(--brand-slate);
+    --workspace-background: #16131a;
+    --workspace-surface: #1f1b25;
+    --workspace-navigation: #25202c;
+    --workspace-ink: #f1ecf5;
+    --workspace-muted: #aba2b6;
+    --workspace-border: #36303f;
+    --workspace-accent: #b994d3;
+    --workspace-tint: #30263b;
+    --workspace-primary: #b994d3;
+    --workspace-primary-hover: #cbaee0;
+    --workspace-on-primary: #1a1320;
+    --workspace-sidebar: #110e15;
+    --workspace-sidebar-ink: #bcb2c7;
+    --workspace-sidebar-dim: #7f758b;
+    --workspace-sidebar-hover: #1f1a26;
+    --workspace-sidebar-active: #2c2336;
     --workspace-sidebar-active-ink: #ffffff;
-    --workspace-sidebar-border: #2a2c2e;
+    --workspace-sidebar-border: #221c29;
     --workspace-success: #63c398;
     --workspace-warning: #e6a54c;
     --workspace-danger: #ef7f6d;
@@ -209,7 +210,7 @@
 }
 
 .workspace-ui .sidebar-menu > li.active > a {
-    border-inline-start-color: var(--brand-mist);
+    border-inline-start-color: transparent;
 }
 
 .workspace-ui .content .box {
@@ -1291,8 +1292,8 @@
 }
 
 .workspace-ui .basic-page-header {
-    background: var(--brand-charcoal) !important;
-    border-bottom: 3px solid var(--brand-slate);
+    background: var(--brand-plum-night) !important;
+    border-bottom: 3px solid var(--brand-plum);
 }
 
 .workspace-ui .basic-page-header__site-name {
@@ -1345,7 +1346,7 @@
 .workspace-ui .sidebar-menu > li.header.nav-section {
     padding: 18px 16px 6px;
     background: var(--workspace-sidebar) !important;
-    color: #8e989f;
+    color: var(--workspace-sidebar-dim);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: .09em;
@@ -1835,4 +1836,485 @@
     width: 16px;
     height: 16px;
     margin: 0;
+}
+
+/* ------------------------------------------------------------------
+ * Visual refresh, following the approved redesign preview: brand at
+ * the top of the side menu, a calm header (search on the left, one
+ * primary "Create" button), small breadcrumbs above a clear page
+ * title, softer cards, and table toolbars that only show bulk actions
+ * once rows are selected.
+ * ------------------------------------------------------------------ */
+.workspace-ui {
+    --workspace-radius: 10px;
+    --workspace-radius-sm: 8px;
+    --workspace-shadow: 0 1px 2px rgba(20, 24, 28, .05), 0 6px 18px rgba(20, 24, 28, .05);
+}
+
+[data-theme="dark"] .workspace-ui {
+    --workspace-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .25);
+}
+
+/* Header: brand sits over the side menu, search leads, actions on the right. */
+@media (min-width: 768px) {
+    .workspace-ui .main-header .navbar {
+        display: flex;
+        align-items: center;
+        min-height: 56px;
+    }
+
+    .workspace-ui .main-header .navbar > .navbar-left {
+        position: absolute;
+        top: 0;
+        left: -230px;
+        display: flex;
+        align-items: center;
+        width: 180px;
+        height: 56px;
+        background: transparent !important;
+        z-index: 2;
+    }
+
+    .workspace-ui .main-header .navbar > .navbar-left .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 56px;
+        padding: 0 18px;
+        overflow: hidden;
+        color: #ffffff !important;
+        font-size: 16px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        background: transparent !important;
+    }
+
+    .workspace-ui .main-header .navbar > .navbar-left .navbar-brand-img {
+        max-height: 28px;
+        width: auto;
+    }
+
+    .workspace-ui.sidebar-collapse .main-header .navbar > .navbar-left {
+        display: none;
+    }
+
+    .workspace-ui .main-header .navbar a.sidebar-toggle {
+        color: var(--workspace-sidebar-ink) !important;
+        background: transparent !important;
+    }
+
+    .workspace-ui .main-header .navbar a.sidebar-toggle:hover {
+        color: #ffffff !important;
+    }
+
+    .workspace-ui .main-header .navbar-custom-menu {
+        flex: 1;
+        min-width: 0;
+        padding-inline: clamp(12px, 2vw, 28px) 8px;
+    }
+
+    .workspace-ui .main-header .navbar-custom-menu > .navbar-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        float: none;
+        width: 100%;
+    }
+
+    .workspace-ui .main-header .navbar-custom-menu > .navbar-nav > li {
+        float: none;
+    }
+
+    .workspace-ui .main-header .navbar-custom-menu > .navbar-nav > li:has(> form[role="search"]) {
+        flex: 1;
+        margin-inline-end: auto;
+    }
+
+    .workspace-ui .main-header form[role="search"] {
+        position: static;
+        float: none;
+        width: 100%;
+        max-width: 460px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .workspace-ui .main-header form[role="search"] .input-group {
+        display: flex;
+        width: 100%;
+    }
+
+    .workspace-ui .main-header #tagSearch {
+        flex: 1;
+        width: auto;
+        height: 36px;
+        border-radius: var(--workspace-radius-sm) 0 0 var(--workspace-radius-sm);
+    }
+
+    .workspace-ui .main-header #topSearchButton {
+        height: 36px;
+        border-radius: 0 var(--workspace-radius-sm) var(--workspace-radius-sm) 0;
+    }
+
+    .workspace-ui .main-header form[role="search"] .input-group-btn {
+        width: auto;
+    }
+}
+
+/* The sidebar already lists every module; the header shortcuts stay for
+   their keyboard access keys but are not drawn twice. */
+.workspace-ui .main-header .workspace-header-shortcut {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.workspace-ui .main-header .workspace-create-menu > a {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    margin-inline: 6px;
+    padding: 0 14px !important;
+    border-radius: var(--workspace-radius-sm);
+    background: var(--workspace-primary) !important;
+    color: var(--workspace-on-primary) !important;
+    font-weight: 600;
+}
+
+.workspace-ui .main-header .workspace-create-menu > a:is(:hover, :focus),
+.workspace-ui .main-header .workspace-create-menu.open > a {
+    background: var(--workspace-primary-hover) !important;
+    color: var(--workspace-on-primary) !important;
+}
+
+.workspace-ui .main-header .workspace-create-menu > a .caret {
+    margin-inline-start: 2px;
+}
+
+/* Side menu: rounded, inset entries like the preview. */
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu > li > a,
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu .treeview-menu > li > a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 1px 10px;
+    border-left: 0 !important;
+    border-radius: 6px;
+}
+
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu > li > a {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-weight: 500;
+}
+
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu .treeview-menu > li > a {
+    margin-inline-start: 22px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu > li > a > .pull-right-container,
+.workspace-ui:not(.sidebar-collapse) .sidebar-menu a > .nav-count {
+    position: static;
+    margin-inline-start: auto;
+    transform: none;
+}
+
+.workspace-ui .sidebar-menu .treeview-menu {
+    background: transparent !important;
+}
+
+.workspace-ui .sidebar-menu > li.active > a,
+.workspace-ui .sidebar-menu .treeview-menu > li.active > a {
+    border-inline-start-color: transparent;
+    font-weight: 600;
+}
+
+/* Page heading: breadcrumbs as a small line, the page itself as the title. */
+.workspace-ui .content-header .pagetitle {
+    float: none !important;
+    display: block;
+    margin: 0 !important;
+}
+
+.workspace-ui .content-header > .row > .col-md-12 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.workspace-ui .content-header > .row > .col-md-12 > .pull-right {
+    float: none !important;
+    margin-inline-start: auto;
+}
+
+.workspace-ui .content-header .pagetitle ul {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 6px;
+    margin: 0;
+    padding: 0;
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item {
+    color: var(--workspace-muted);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.4;
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item a {
+    color: var(--workspace-muted);
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item a:hover {
+    color: var(--workspace-accent);
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item > :is(i, svg) {
+    margin-inline-start: 4px;
+    font-size: 11px;
+    opacity: .7;
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item[data-page-title] {
+    flex-basis: 100%;
+    margin-top: 2px;
+    color: var(--workspace-ink);
+    font-size: clamp(24px, 2.4vw, 30px);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item[data-page-title] a {
+    color: inherit;
+}
+
+.workspace-ui .content-header .pagetitle .breadcrumb-item[data-page-title] > :is(i, svg) {
+    display: none;
+}
+
+/* A tab name added after the title repeats the tab bar right below. */
+.workspace-ui .content-header .pagetitle .breadcrumb-item[data-page-title] ~ .breadcrumb-item {
+    display: none;
+}
+
+/* Cards, inputs and buttons: one radius, a soft lift. */
+.workspace-ui .content .box {
+    border-radius: var(--workspace-radius);
+    box-shadow: var(--workspace-shadow);
+}
+
+.workspace-ui .content .box > .box-header {
+    padding: 14px 18px;
+}
+
+.workspace-ui .content .box > .box-header .box-title {
+    font-size: 15.5px;
+    letter-spacing: -.01em;
+}
+
+.workspace-ui .content .box > .box-body {
+    padding: 16px 18px;
+}
+
+.workspace-ui .btn {
+    border-radius: var(--workspace-radius-sm);
+}
+
+.workspace-ui .form-control,
+.workspace-ui .select2-container--default .select2-selection--single,
+.workspace-ui .select2-container--default .select2-selection--multiple {
+    border-radius: var(--workspace-radius-sm);
+}
+
+.workspace-ui .input-group > .form-control:not(:last-child) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+
+.workspace-ui .input-group-btn:last-child > .btn,
+.workspace-ui .input-group-addon:last-child {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+
+/* Tables: quiet header band, roomier rows. */
+.workspace-ui .table > thead > tr > th {
+    background: var(--workspace-navigation);
+    border-bottom: 1px solid var(--workspace-border) !important;
+    padding-block: 9px;
+}
+
+.workspace-ui .table > tbody > tr > td {
+    padding-block: 9px;
+    vertical-align: middle;
+}
+
+.workspace-ui .table-striped > tbody > tr:nth-of-type(odd) {
+    background: transparent;
+}
+
+.workspace-ui .table-hover > tbody > tr:hover > td,
+.workspace-ui .table > tbody > tr:hover > td {
+    background: var(--workspace-navigation);
+}
+
+/* Table toolbar: search first, tools to the right, one line. */
+.workspace-ui .fixed-table-toolbar {
+    clear: both;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.workspace-ui .fixed-table-toolbar::after {
+    content: none;
+}
+
+.workspace-ui .fixed-table-toolbar > .bs-bars:empty {
+    display: none;
+}
+
+.workspace-ui .fixed-table-toolbar > .search {
+    order: -1;
+    float: none !important;
+    flex: 0 1 320px;
+    margin: 0 !important;
+}
+
+.workspace-ui .fixed-table-toolbar > .columns {
+    float: none !important;
+    margin: 0 0 0 auto !important;
+}
+
+.workspace-ui .fixed-table-toolbar > .bs-bars {
+    float: none !important;
+}
+
+.workspace-ui .fixed-table-pagination {
+    color: var(--workspace-muted);
+    font-size: 13px;
+}
+
+/* Bulk actions appear only once rows are selected, as a tinted bar
+   above the table instead of a float beside its toolbar. */
+.workspace-ui form:has(> select[name="bulk_actions"]):has(> button.btn[disabled]),
+.workspace-ui .pull-left:has(select[name="bulk_actions"]):not(:has(form > button.btn:not([disabled]))) {
+    display: none;
+}
+
+.workspace-ui div:has(> form > select[name="bulk_actions"]),
+.workspace-ui .pull-left:has(select[name="bulk_actions"]) {
+    float: none !important;
+    min-width: 0 !important;
+}
+
+.workspace-ui form:has(> select[name="bulk_actions"]) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--workspace-radius-sm);
+    background: var(--workspace-tint);
+}
+
+.workspace-ui form:has(> select[name="bulk_actions"]) .select2-container {
+    min-width: 260px !important;
+}
+
+/* Dashboard counts: separate cards with a large figure, as in the preview. */
+.workspace-ui .workspace-metrics {
+    gap: 12px;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+}
+
+.workspace-ui .workspace-metric {
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--workspace-radius);
+    box-shadow: var(--workspace-shadow);
+}
+
+.workspace-ui .workspace-metric-value {
+    font-size: 28px;
+}
+
+/* Alerts and callouts get the same radius as everything else. */
+.workspace-ui .alert,
+.workspace-ui .callout {
+    border-radius: var(--workspace-radius-sm);
+}
+
+/* Long forms keep their save button in reach. AdminLTE clips the page
+   with overflow: hidden, which would stop the footer from sticking;
+   clip keeps the clipping without making a scroll container. */
+body.workspace-ui,
+.workspace-ui .wrapper {
+    overflow-x: clip;
+    overflow-y: visible;
+}
+
+.workspace-ui .content form .box > .box-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    border-top: 1px solid var(--workspace-border);
+    border-radius: 0 0 var(--workspace-radius) var(--workspace-radius);
+    background: var(--workspace-surface);
+}
+
+/* Shipment states read like the asset status pills: a coloured dot. */
+.workspace-ui .workspace-shipment-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border: 0;
+    border-radius: 999px;
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.workspace-ui .workspace-shipment-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.workspace-ui .workspace-shipment-status[data-status="in_transit"] { color: var(--workspace-info); }
+.workspace-ui .workspace-shipment-status:is([data-status="due"], [data-status="late"], [data-status="awaiting_assignment"]) { color: var(--workspace-warning); }
+.workspace-ui .workspace-shipment-status[data-status="received"] { color: var(--workspace-success); }
+.workspace-ui .workspace-shipment-status[data-status="cancelled"] { color: var(--workspace-muted); }
+
+/* In lists the tag is the link: show it as one. */
+.workspace-ui .content table a > strong:first-child {
+    color: var(--workspace-accent);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: .01em;
+}
+
+.workspace-ui .content table a:hover > strong:first-child {
+    text-decoration: underline;
 }

@@ -17,13 +17,7 @@
 <x-container>
     <x-form :item="$item" :route="$item->id ? route('hardware.update', $item) : route('hardware.store')">
         <x-box top_submit class="workspace-asset-form">
-            <x-slot:header>{{ $item->id ? $item->display_name : trans('general.asset_information') }}</x-slot:header>
-
-    <x-input.company-select
-        :label="trans('general.company')"
-        name="company_id"
-        :selected="old('company_id', $item?->company_id)"
-    />
+            <x-slot:header>{{ $item->id ? collect([$item->asset_tag, $item->name])->filter()->implode(' · ') : trans('general.asset_information') }}</x-slot:header>
 
 
   <!-- Asset Tag -->
@@ -103,6 +97,13 @@
 
     @include ('partials.forms.edit.status', [ 'required' => 'true'])
     <x-form.damage-report :current="$item->status_id" />
+
+    <x-input.company-select
+        :label="trans('general.company')"
+        name="company_id"
+        :selected="old('company_id', $item?->company_id)"
+    />
+
     @if (! $item->id && isset($inventoryView))
         <input type="hidden" name="inventory_view" value="{{ $inventoryViewKey }}">
         <input type="hidden" name="checkout_to_type" value="location">

@@ -78,12 +78,17 @@ class BreadcrumbsServiceProvider extends ServiceProvider
             ->push(trans('admin/hardware/general.clone'), route('hardware.create'))
         );
 
+        // The asset tag is what people look for, so it leads the title.
+        $assetTitle = fn (Asset $asset): string => collect([$asset->asset_tag, $asset->name ?: $asset->model?->name])
+            ->filter()
+            ->implode(' · ');
+
         Breadcrumbs::for('hardware.show', fn (Trail $trail, Asset $asset) => $trail->parent('hardware.index', route('hardware.index'))
-            ->push($asset->display_name, route('hardware.show', $asset))
+            ->push($assetTitle($asset), route('hardware.show', $asset))
         );
 
         Breadcrumbs::for('hardware.edit', fn (Trail $trail, Asset $asset) => $trail->parent('hardware.index', route('hardware.index'))
-            ->push($asset->display_name, route('hardware.show', $asset))
+            ->push($assetTitle($asset), route('hardware.show', $asset))
             ->push(trans('general.update'))
         );
 

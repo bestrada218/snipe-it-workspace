@@ -32,9 +32,7 @@
          widget section below stays visible for everyone since each
          widget component already gates itself with @can and Companyable-
          scopes its queries. --}}
-    @if (Gate::allows('index', \App\Models\Asset::class) && \App\Models\Setting::inventoryModuleEnabled('assets'))
-        <x-dashboard.attention :items="$attention ?? []" />
-    @endif
+    <x-dashboard.attention :items="$attention ?? []" />
 
     @if (auth()->user()->hasAccess('admin'))
         <x-dashboard.top-boxes :counts="$counts" :fixed-asset-metric="$fixedAssetMetric ?? null" />

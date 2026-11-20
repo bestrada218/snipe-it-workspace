@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Requiere atención',
-    'all_clear' => 'Todo al día: no hay envíos, reemplazos, ingresos ni auditorías pendientes.',
+    'all_clear' => 'Todo al día: no hay nada pendiente por revisar.',
     'review' => 'Revisar',
     'plan' => 'Planear',
     'audit' => 'Auditar',
@@ -17,4 +17,16 @@ return [
     'checkins_overdue_detail' => 'La fecha esperada de devolución ya pasó.',
     'audits_overdue' => '{1} 1 activo tiene la auditoría vencida|[2,*] :count activos tienen la auditoría vencida',
     'audits_overdue_detail' => 'Verifíquelos físicamente para mantener el inventario confiable.',
+    'past_eol' => '{1} 1 activo superó su fin de vida|[2,*] :count activos superaron su fin de vida',
+    'past_eol_detail' => 'Decida si se reemplazan, se reparan o se dan de baja.',
+    'maintenances_overdue' => '{1} 1 mantenimiento está vencido|[2,*] :count mantenimientos están vencidos',
+    'maintenances_overdue_detail' => 'Pasó la fecha esperada de finalización y siguen abiertos.',
+    'offboarding' => '{1} 1 persona se retira pronto y tiene equipos asignados|[2,*] :count personas se retiran pronto y tienen equipos asignados',
+    'offboarding_detail' => 'Coordine la devolución antes de su último día.',
+    'licenses_expiring' => '{1} 1 licencia está por vencer|[2,*] :count licencias están por vencer',
+    'licenses_expiring_detail' => 'Renueve o libere los puestos antes de la fecha.',
+    'requests_pending' => '{1} 1 solicitud está pendiente|[2,*] :count solicitudes están pendientes',
+    'requests_pending_detail' => 'Alguien pidió un equipo y espera respuesta.',
+    'acceptances_pending' => '{1} 1 asignación espera la aceptación de la persona|[2,*] :count asignaciones esperan la aceptación de la persona',
+    'acceptances_pending_detail' => 'Recuérdele a la persona que firme o acepte la entrega.',
 ];

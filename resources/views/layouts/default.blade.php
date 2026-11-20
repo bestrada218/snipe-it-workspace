@@ -190,8 +190,9 @@
                             @endif
 
                             @can('admin')
-                                <li class="dropdown user-menu" aria-hidden="true">
+                                <li class="dropdown user-menu workspace-create-menu" aria-hidden="true">
                                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" tabindex="-1" aria-haspopup="true" aria-expanded="false">
+                                        <x-icon type="plus" />
                                         {{ trans('general.create') }}
                                         <strong class="caret"></strong>
                                     </a>
@@ -880,7 +881,7 @@
                                                 <x-icon type="angle-right" />
                                             </li>
                                        @else
-                                            <li class="breadcrumb-item active">
+                                            <li class="breadcrumb-item active" data-page-title>
                                                 {{ $crumbs->title() }}
                                             </li>
                                         @endif

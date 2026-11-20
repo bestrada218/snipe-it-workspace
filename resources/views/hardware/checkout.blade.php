@@ -25,9 +25,9 @@
             </p>
             <x-form id="checkout_form" route="{{ url()->current() }}">
 
-                <x-box header="{{ trans('admin/hardware/form.tag') }} {{ $asset->asset_tag }}">
+                <x-box header="{{ trans('general.asset') }}">
 
-                    <x-checkout.asset-tag :tag="$asset->asset_tag" :name="collect([$asset->name, $asset->model?->name])->filter()->unique()->implode(' · ')" />
+                    <x-checkout.asset-tag :tag="$asset->asset_tag" :name="collect([$asset->name, ($asset->model && ! \Illuminate\Support\Str::contains((string) $asset->name, $asset->model->name, true)) ? $asset->model->name : null])->filter()->implode(' · ')" />
 
                     @if ($asset->company)
                         <x-form.static :label="trans('general.company')">{!! $asset->company->present()->formattedNameLink !!}</x-form.static>
@@ -51,6 +51,19 @@
                             </a>
                         @endif
                     </x-form.static>
+
+                    @include ('partials.forms.checkout-selector', ['user_select' => 'true', 'asset_select' => 'true', 'location_select' => 'true'])
+                    <x-input.user-select
+                        :label="trans('general.user')"
+                        name="assigned_user"
+                        :selected="old('assigned_user', $checkoutRequest?->user_id)"
+                        :companyId="$asset->company_id"
+                        :style="(session('checkout_to_type') ?: 'user') == 'user' ? null : 'display: none;'"
+                    />
+                    <x-checkout.duplicate-assignment type="assets" :item="$asset" />
+                    <!-- unselect keeps the asset being checked out from being pre-selected in this picker -->
+                    @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.select_asset'), 'fieldname' => 'assigned_asset', 'company_id' => $asset->company_id, 'unselect' => 'true', 'exclude_id' => $asset->id, 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
+                    @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'company_id' => $asset->company_id, 'style' => session('checkout_to_type') == 'location' ? '' : 'display: none;'])
 
                     <x-form.row
                         :label="trans('admin/hardware/form.name')"
@@ -81,19 +94,6 @@
                         data-user-preference-key="snipeit.checkout.requestable_default.{{ auth()->id() ?? 'guest' }}"
                         data-had-old-input="{{ ((bool) old('requestable', false)) || session()->has('_old_input.requestable') ? '1' : '0' }}"
                     />
-
-                    @include ('partials.forms.checkout-selector', ['user_select' => 'true', 'asset_select' => 'true', 'location_select' => 'true'])
-                    <x-input.user-select
-                        :label="trans('general.user')"
-                        name="assigned_user"
-                        :selected="old('assigned_user', $checkoutRequest?->user_id)"
-                        :companyId="$asset->company_id"
-                        :style="(session('checkout_to_type') ?: 'user') == 'user' ? null : 'display: none;'"
-                    />
-                    <x-checkout.duplicate-assignment type="assets" :item="$asset" />
-                    <!-- unselect keeps the asset being checked out from being pre-selected in this picker -->
-                    @include ('partials.forms.edit.asset-select', ['translated_name' => trans('general.select_asset'), 'fieldname' => 'assigned_asset', 'company_id' => $asset->company_id, 'unselect' => 'true', 'exclude_id' => $asset->id, 'style' => session('checkout_to_type') == 'asset' ? '' : 'display: none;'])
-                    @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'assigned_location', 'company_id' => $asset->company_id, 'style' => session('checkout_to_type') == 'location' ? '' : 'display: none;'])
 
                     <x-form.row
                         :label="trans('admin/hardware/form.checkout_date')"

@@ -4,6 +4,7 @@ namespace Tests\Feature\Dashboard;
 
 use App\Models\Asset;
 use App\Models\AssetShipment;
+use App\Models\Maintenance;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -42,5 +43,19 @@ class NeedsAttentionTest extends TestCase
                 trans_choice('dashboard-attention.replacement_overdue', 1),
                 trans_choice('dashboard-attention.replacement_soon', 1),
             ]);
+    }
+
+    public function test_lists_other_reminders_in_the_same_panel(): void
+    {
+        Maintenance::factory()->create([
+            'expected_completion_date' => now()->subDays(2)->format('Y-m-d H:i:s'),
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs(User::factory()->superuser()->create())
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee(trans_choice('dashboard-attention.maintenances_overdue', 1))
+            ->assertDontSee('wire:name="needs-attention"', false);
     }
 }

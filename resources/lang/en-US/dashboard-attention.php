@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Needs attention',
-    'all_clear' => 'All caught up: no shipments, replacements, check-ins or audits pending.',
+    'all_clear' => 'All caught up: nothing needs your attention.',
     'review' => 'Review',
     'plan' => 'Plan',
     'audit' => 'Audit',
@@ -17,4 +17,16 @@ return [
     'checkins_overdue_detail' => 'The expected check-in date has passed.',
     'audits_overdue' => '{1} 1 asset is overdue for audit|[2,*] :count assets are overdue for audit',
     'audits_overdue_detail' => 'Check them physically to keep the inventory reliable.',
+    'past_eol' => '{1} 1 asset is past its end of life|[2,*] :count assets are past their end of life',
+    'past_eol_detail' => 'Decide whether to replace, repair or retire them.',
+    'maintenances_overdue' => '{1} 1 maintenance is overdue|[2,*] :count maintenances are overdue',
+    'maintenances_overdue_detail' => 'The expected completion date has passed and they are still open.',
+    'offboarding' => '{1} 1 person leaves soon and has items assigned|[2,*] :count people leave soon and have items assigned',
+    'offboarding_detail' => 'Arrange the return before their last day.',
+    'licenses_expiring' => '{1} 1 license is about to expire|[2,*] :count licenses are about to expire',
+    'licenses_expiring_detail' => 'Renew them or free up the seats before the date.',
+    'requests_pending' => '{1} 1 request is pending|[2,*] :count requests are pending',
+    'requests_pending_detail' => 'Someone asked for an item and is waiting for an answer.',
+    'acceptances_pending' => '{1} 1 checkout is waiting for the person to accept it|[2,*] :count checkouts are waiting for the person to accept them',
+    'acceptances_pending_detail' => 'Remind the person to sign or accept the delivery.',
 ];
