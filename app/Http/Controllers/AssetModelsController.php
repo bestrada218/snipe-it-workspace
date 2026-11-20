@@ -717,6 +717,7 @@ class AssetModelsController extends Controller
                     date('Y-m-d H:i:s'),
                     null,
                     $note,
+                    $locked->name,
                 );
             });
 

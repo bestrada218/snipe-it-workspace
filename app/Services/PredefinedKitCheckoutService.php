@@ -240,7 +240,7 @@ class PredefinedKitCheckoutService
                         continue;
                     }
 
-                    $error = $asset->checkOut($user, $admin, $checkout_at, $expected_checkin, $note, null);
+                    $error = $asset->checkOut($user, $admin, $checkout_at, $expected_checkin, $note, $asset->name);
                     if ($error) {
                         array_merge_recursive($errors, $asset->getErrors()->toArray());
                     }
