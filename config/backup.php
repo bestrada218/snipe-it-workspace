@@ -32,6 +32,14 @@ if (env('BACKUP_ENV') == 'true') {
     $included_dirs[] = base_path('.env');
 }
 
+// Every backup is written to the local "backup" disk plus any cloud disk
+// listed in BACKUP_CLOUD_DISKS (comma separated: backup_s3, backup_google,
+// both defined in config/filesystems.php).
+$backup_disks = array_values(array_unique(array_filter(array_merge(
+    ['backup'],
+    array_map('trim', explode(',', (string) env('BACKUP_CLOUD_DISKS', '')))
+))));
+
 return [
 
     'backup' => [
@@ -108,9 +116,7 @@ return [
             /*
              * The disk names on which the backups will be stored.
              */
-            'disks' => [
-                'backup',
-            ],
+            'disks' => $backup_disks,
         ],
 
         /*
@@ -118,7 +124,15 @@ return [
          */
         'temporary_directory' => storage_path('app/backup-temp'),
 
-        // 'encryption' => \ZipArchive::EM_AES_256,
+        /*
+         * Password for the backup zip (AES-256). Strongly recommended as soon
+         * as backups leave the server: the archive holds the database and,
+         * with BACKUP_ENV=true, the .env file. Restores read the same value
+         * (or snipeit:restore --password=). Unset keeps backups unencrypted.
+         */
+        'password' => env('BACKUP_ARCHIVE_PASSWORD') ?: null,
+
+        'encryption' => 'default',
     ],
 
     /*
@@ -194,8 +208,10 @@ return [
      */
     'monitor_backups' => [
         [
-            'name' => config('app.name'),
-            'disks' => [env('PRIVATE_FILESYSTEM_DISK', 'local')],
+            // Must match backup.name above, and watch every place backups are
+            // written to, or the health checks never find them.
+            'name' => 'backups',
+            'disks' => $backup_disks,
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
                 MaximumStorageInMegabytes::class => 5000,

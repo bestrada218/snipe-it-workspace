@@ -24,6 +24,7 @@ use App\Observers\LocationObserver;
 use App\Observers\MaintenanceObserver;
 use App\Observers\SettingObserver;
 use App\Observers\UserObserver;
+use App\Services\Backups\GoogleDriveDisk;
 use App\View\Composers\ImpersonationBannerComposer;
 use App\View\Composers\SidebarComposer;
 use Illuminate\Http\Client\Response as HttpClientResponse;
@@ -31,6 +32,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -56,6 +58,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(UrlGenerator $url)
     {
+        // Google Drive as an optional off-site backup destination (backup_google disk).
+        Storage::extend('google', fn ($app, array $config) => GoogleDriveDisk::make($config));
+
         /**
          * This is a workaround for proxies/reverse proxies that don't always pass the proper headers.
          *

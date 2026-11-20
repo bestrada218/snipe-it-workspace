@@ -43,6 +43,12 @@ class SystemBackup extends Command
     {
         ini_set('max_execution_time', config('backup.time_limit')); // 600 seconds = 10 minutes
 
+        // The archive carries the database and possibly the .env file; sending
+        // it off the server without a password exposes all of it.
+        if (count(config('backup.backup.destination.disks', [])) > 1 && blank(config('backup.backup.password'))) {
+            $this->warn('Backups are copied to a cloud disk without encryption. Set BACKUP_ARCHIVE_PASSWORD in .env.');
+        }
+
         if ($this->option('filename')) {
             $filename = $this->option('filename');
 

@@ -36,6 +36,7 @@
     "erusev/parsedown": "^1.7",
     "fakerphp/faker": "^1.24",
     "firebase/php-jwt": "^6.4|^7.0",
+    "google/apiclient": "^2.20",
     "guzzlehttp/guzzle": "^7.0.1",
     "innoge/laravel-msgraph-mail": "^2.0",
     "intervention/image": "^2.5",
@@ -53,6 +54,7 @@
     "league/csv": "^9.7",
     "league/flysystem-aws-s3-v3": "^3.0",
     "livewire/livewire": "^4.0",
+    "masbug/flysystem-google-drive-ext": "~2.5.0",
     "neitanod/forceutf8": "^2.0",
     "nesbot/carbon": "^3.0",
     "nunomaduro/collision": "^8.1",
@@ -104,7 +106,10 @@
         "rollbar/rollbar-laravel",
         "laravel/telescope"
       ]
-    }
+    },
+    "google/apiclient-services": [
+      "Drive"
+    ]
   },
   "autoload": {
     "classmap": [
@@ -126,6 +131,7 @@
     }
   },
   "scripts": {
+    "pre-autoload-dump": "Google\\Task\\Composer::cleanup",
     "post-autoload-dump": [
       "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
       "@php artisan package:discover --ansi",

@@ -181,6 +181,7 @@ class RestoreFromBackup extends Command
                                             {--force : Skip the danger prompt; assuming you enter "y"} 
                                             {filename : The zip file to be migrated}
                                             {--no-progress : Don\'t show a progress bar}
+                                            {--password= : Password of an encrypted backup (defaults to BACKUP_ARCHIVE_PASSWORD)}
                                             {--sanitize-guess-prefix : Guess and output the table-prefix needed to "sanitize" the SQL}
                                             {--sanitize-with-prefix= : "Sanitize" the SQL, using the passed-in table prefix (can be learned from --sanitize-guess-prefix). Pass as just \'--sanitize-with-prefix=\' to use no prefix}
                                             {--sql-stdout-only : ONLY "Sanitize" the SQL and print it to stdout - useful for debugging - probably requires --sanitize-with-prefix= }';
@@ -244,6 +245,37 @@ class RestoreFromBackup extends Command
     }
 
     /**
+     * Whether any entry in the archive is encrypted.
+     */
+    private static function archiveIsEncrypted(ZipArchive $za): bool
+    {
+        for ($i = 0; $i < $za->numFiles; $i++) {
+            $stat = $za->statIndex($i);
+            if (($stat['encryption_method'] ?? ZipArchive::EM_NONE) !== ZipArchive::EM_NONE) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A wrong password still opens a stream but fails on the first read, so
+     * read one byte to find out before the database gets wiped.
+     */
+    private static function passwordOpens(ZipArchive $za, string $name): bool
+    {
+        $probe = $za->getStream($name);
+        if ($probe === false) {
+            return false;
+        }
+        $byte = @fread($probe, 1);
+        fclose($probe);
+
+        return $byte !== false && $byte !== '';
+    }
+
+    /**
      * Execute the console command.
      *
      * @return mixed
@@ -292,6 +324,16 @@ class RestoreFromBackup extends Command
             };
 
             return $this->error('Could not access file: '.$filename.' - '.$error_msg);
+        }
+
+        // Backups made with BACKUP_ARCHIVE_PASSWORD are AES-encrypted. The
+        // password from the option wins over the configured one, so an old
+        // backup can be restored after the password was rotated.
+        $archivePassword = $this->option('password') ?: config('backup.backup.password');
+        if (filled($archivePassword)) {
+            $za->setPassword($archivePassword);
+        } elseif (self::archiveIsEncrypted($za)) {
+            return $this->error('This backup is encrypted. Set BACKUP_ARCHIVE_PASSWORD in .env or pass --password= to restore it.');
         }
 
         // Upload directory enumeration lives in App\Enums\FileStorage
@@ -442,8 +484,8 @@ class RestoreFromBackup extends Command
         // $this->info("SQL Stat is: ".print_r($sql_stat,true));
         $sql_contents = $za->getStream($sql_stat['name']);
 
-        if ($sql_contents === false) {
-            $this->error('Unable to open SQL file: '.$sql_stat['name']);
+        if ($sql_contents === false || ! self::passwordOpens($za, $sql_stat['name'])) {
+            $this->error('Unable to open SQL file: '.$sql_stat['name'].(self::archiveIsEncrypted($za) ? ' (check the backup password)' : ''));
 
             return -1;
         }

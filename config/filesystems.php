@@ -130,6 +130,41 @@ $config = [
             // AccessControlListNotSupported. See #19670.
         ],
 
+        // Optional off-site copies of every backup. Listing a disk in
+        // BACKUP_CLOUD_DISKS (config/backup.php) makes each backup land on
+        // the local "backup" disk AND on that cloud disk.
+
+        // Amazon S3 or any S3-compatible service (Cloudflare R2, Backblaze
+        // B2, Wasabi, MinIO, Google Cloud Storage interoperability) through
+        // BACKUP_S3_ENDPOINT. Credentials are separate from PRIVATE_AWS_*
+        // so the backup key can be limited to the backup bucket.
+        'backup_s3' => [
+            'driver' => 's3',
+            'key' => env('BACKUP_S3_KEY'),
+            'secret' => env('BACKUP_S3_SECRET'),
+            'region' => env('BACKUP_S3_REGION', 'us-east-1'),
+            'bucket' => env('BACKUP_S3_BUCKET'),
+            'endpoint' => env('BACKUP_S3_ENDPOINT') ?: null,
+            'use_path_style_endpoint' => (bool) env('BACKUP_S3_PATH_STYLE', false),
+            'root' => env('BACKUP_S3_ROOT', ''),
+            'throw' => true,
+        ],
+
+        // Google Drive (App\Services\Backups\GoogleDriveDisk). Either a
+        // service account JSON (Google Workspace, folder on a shared drive)
+        // or an OAuth client id/secret plus refresh token (a personal Drive).
+        'backup_google' => [
+            'driver' => 'google',
+            'service_account_json' => env('BACKUP_GOOGLE_SERVICE_ACCOUNT_JSON'),
+            'client_id' => env('BACKUP_GOOGLE_CLIENT_ID'),
+            'client_secret' => env('BACKUP_GOOGLE_CLIENT_SECRET'),
+            'refresh_token' => env('BACKUP_GOOGLE_REFRESH_TOKEN'),
+            'folder' => env('BACKUP_GOOGLE_FOLDER', 'Snipe-IT Backups'),
+            'folder_id' => env('BACKUP_GOOGLE_FOLDER_ID'),
+            'shared_drive' => (bool) env('BACKUP_GOOGLE_SHARED_DRIVE', false),
+            'throw' => true,
+        ],
+
     ],
 
 ];
