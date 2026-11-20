@@ -89,8 +89,52 @@ final class AssetTagSequence
 
         $holder = DB::table('asset_tag_sequences')->where('sequence', $sequence)->first();
         if ($holder && ! self::isHeldBy($holder, $model)) {
+            // A tag built with the tag builder only previews the next number;
+            // if someone saved first, the new record takes the next free one.
+            if (! $model->exists && self::takeNextFree($model)) {
+                return;
+            }
             self::taken($sequence, $holder);
         }
+    }
+
+    /**
+     * Whether this request comes from a form whose tag was built with the tag
+     * builder. Only then may a new record's number be changed on save; API
+     * calls and imports keep their tag and get an error instead.
+     */
+    public static function assignsFreeNumber(): bool
+    {
+        return request()->boolean('asset_tag_from_builder');
+    }
+
+    /**
+     * Gives a new builder-made tag the next free number, keeping XX, PP and
+     * TTT. Returns false when that is not allowed or no number is left.
+     */
+    public static function takeNextFree(Model $model): bool
+    {
+        $previous = self::extract($model->asset_tag);
+        $next = self::next();
+        if ($previous === null || $next === null || ! self::assignsFreeNumber()) {
+            return false;
+        }
+
+        $model->asset_tag = self::withSequence($model->asset_tag, (int) $next);
+        session()->flash('warning', trans('asset-tags.sequence_reassigned', [
+            'previous' => sprintf('%03d', $previous),
+            'tag' => $model->asset_tag,
+        ]));
+
+        return true;
+    }
+
+    public static function withSequence(string $tag, int $sequence): string
+    {
+        $parts = explode('-', strtoupper(trim($tag)));
+        $parts[1] = sprintf('%03d', $sequence);
+
+        return implode('-', $parts);
     }
 
     /**

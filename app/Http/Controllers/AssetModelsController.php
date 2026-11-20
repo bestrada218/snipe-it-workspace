@@ -12,6 +12,7 @@ use App\Models\CheckoutRequest;
 use App\Models\CustomField;
 use App\Models\SnipeModel;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
+use Illuminate\Validation\ValidationException;
 
 /**
  * This class controls all actions related to asset models for
@@ -707,6 +709,17 @@ class AssetModelsController extends Controller
                 }
                 if (! $locked->availableForCheckout()) {
                     $errors[] = trans('admin/hardware/message.requests.row_asset_not_available', ['id' => $requestId]);
+
+                    return;
+                }
+
+                // Fulfilling a request has no duplicate-assignment form: a
+                // requester who already holds this category gets the second
+                // unit through the individual checkout instead.
+                try {
+                    DuplicateAssignments::confirmOrRefuse(request(), $locked, $requester);
+                } catch (ValidationException $e) {
+                    $errors[] = $e->validator->errors()->first();
 
                     return;
                 }

@@ -2318,3 +2318,14 @@ body.workspace-ui,
 .workspace-ui .content table a:hover > strong:first-child {
     text-decoration: underline;
 }
+
+/* Asset tag made by the tag builder: shown, not typed. */
+.workspace-ui .form-control.tag-builder-output[readonly] {
+    border-style: dashed;
+    background: var(--workspace-tint);
+    color: var(--workspace-ink);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 700;
+    letter-spacing: .03em;
+    cursor: default;
+}

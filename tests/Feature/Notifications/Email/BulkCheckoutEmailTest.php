@@ -273,6 +273,11 @@ class BulkCheckoutEmailTest extends TestCase
                 'checkout_at' => now()->subWeek()->format('Y-m-d'),
                 'expected_checkin' => now()->addWeek()->format('Y-m-d'),
                 'note' => null,
+                // The factory assets share a category: a second unit to one
+                // person needs the duplicate-assignment justification.
+                'duplicate_assignment_confirmed' => 1,
+                'duplicate_assignment_reason' => 'Bulk checkout email test',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ] + $assigned)
             ->assertOk();
     }

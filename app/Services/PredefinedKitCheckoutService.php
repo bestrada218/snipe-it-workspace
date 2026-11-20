@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Class incapsulates checkout logic for reuse in different controllers
@@ -72,6 +73,9 @@ class PredefinedKitCheckoutService
             return ['errors' => [$e->getMessage()]];
         } catch (CheckoutNotAllowed $e) {
             return ['errors' => [$e->getMessage()]];
+        } catch (ValidationException $e) {
+            // Thrown inside the transaction, so nothing from the kit was assigned.
+            return ['errors' => $e->validator->errors()->all()];
         }
     }
 
@@ -240,6 +244,11 @@ class PredefinedKitCheckoutService
                         continue;
                     }
 
+                    // A kit has no duplicate-assignment form: a second unit of a
+                    // category the person already holds must go through the
+                    // individual checkout.
+                    DuplicateAssignments::confirmOrRefuse(request(), $locked, $user);
+
                     $error = $asset->checkOut($user, $admin, $checkout_at, $expected_checkin, $note, $asset->name);
                     if ($error) {
                         array_merge_recursive($errors, $asset->getErrors()->toArray());
@@ -268,6 +277,7 @@ class PredefinedKitCheckoutService
 
                         continue;
                     }
+                    DuplicateAssignments::confirmOrRefuse(request(), $locked->license, $user, ignoreSeat: $locked->id);
                     $locked->created_by = $admin->id;
                     $locked->assigned_to = $user->id;
                     if ($locked->save()) {
@@ -296,6 +306,7 @@ class PredefinedKitCheckoutService
 
                         continue;
                     }
+                    DuplicateAssignments::confirmOrRefuse(request(), $locked, $user);
                     $locked->users()->attach($locked->id, [
                         'consumable_id' => $locked->id,
                         'created_by' => $admin->id,
@@ -322,6 +333,7 @@ class PredefinedKitCheckoutService
                     // not exist on the pivot. Write the checkout row
                     // directly, matching the non-kit accessory checkout
                     // path in AccessoriesController::checkout.
+                    DuplicateAssignments::confirmOrRefuse(request(), $locked, $user);
                     $checkout = new AccessoryCheckout([
                         'accessory_id' => $locked->id,
                         'assigned_to' => $user->id,

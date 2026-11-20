@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Services\AssetTagSequence;
 use Illuminate\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -99,6 +100,13 @@ class AssetAdditionalTags extends Component
      */
     protected function nextAutoTag(int $rowIndex, string $firstTag): string
     {
+        // A builder-made XX-KKK-PP[-TTT] tag: same location, type and suffix,
+        // next numbers. The final number is settled on save.
+        $sequence = AssetTagSequence::extract($firstTag);
+        if ($sequence !== null) {
+            return AssetTagSequence::withSequence($firstTag, $sequence + $rowIndex - 1);
+        }
+
         if (! $this->autoEnabled) {
             return '';
         }

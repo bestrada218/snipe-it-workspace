@@ -3,7 +3,7 @@
 return [
     'quick_structure' => 'XX parent location · KKK global three-digit sequence · PP item type · TTT additional computer information (optional).',
     'full_guide' => 'View full guide',
-    'next_sequence' => 'Next global sequence (KKK): :sequence. Use it in the asset tag for this item.',
+    'next_sequence' => 'Next free sequence (KKK): :sequence. It is confirmed on save: if someone uses it first, this item takes the next one.',
     'sequence_exhausted' => 'The global three-digit sequence has reached 999.',
     'title' => 'Asset tag guide',
     'format' => 'Tag format',
@@ -32,7 +32,7 @@ return [
     'builder_suffix' => 'Suffix (TTT)',
     'builder_choose_type' => 'Choose the type',
     'builder_none' => 'No suffix',
-    'builder_help' => 'Once location and type are filled, the tag is written into the field with the next free sequence.',
+    'builder_help' => 'Fill in location and type and the tag is built above. The tag field is not typed by hand.',
     'types' => [
         'LP' => 'Laptop',
         'DT' => 'Desktop',
@@ -52,4 +52,6 @@ return [
         'MAC' => 'macOS',
         'LNX' => 'Linux',
     ],
+    'sequence_reassigned' => 'Someone else saved sequence :previous first, so this item was saved with asset tag :tag.',
+    'builder_placeholder' => 'Build the tag below',
 ];

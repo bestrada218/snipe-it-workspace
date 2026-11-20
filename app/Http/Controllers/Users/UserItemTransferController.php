@@ -13,10 +13,12 @@ use App\Models\CheckoutAcceptance;
 use App\Models\License;
 use App\Models\LicenseSeat;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class UserItemTransferController extends Controller
 {
@@ -68,11 +70,16 @@ class UserItemTransferController extends Controller
         $target = User::findOrFail($validated['target_user_id']);
         $note = $validated['note'];
 
-        $result = DB::transaction(fn () => [
-            'assets' => $this->transferAssets($validated['asset_ids'] ?? [], $user, $target, $note),
-            'accessories' => $this->transferAccessories($validated['accessory_checkout_ids'] ?? [], $user, $target, $note),
-            'licenses' => $this->transferLicenseSeats($validated['license_seat_ids'] ?? [], $user, $target, $note),
-        ]);
+        try {
+            $result = DB::transaction(fn () => [
+                'assets' => $this->transferAssets($validated['asset_ids'] ?? [], $user, $target, $note),
+                'accessories' => $this->transferAccessories($validated['accessory_checkout_ids'] ?? [], $user, $target, $note),
+                'licenses' => $this->transferLicenseSeats($validated['license_seat_ids'] ?? [], $user, $target, $note),
+            ]);
+        } catch (ValidationException $e) {
+            // Raised inside the transaction: nothing was transferred.
+            return redirect()->back()->withInput()->with('error', $e->validator->errors()->first());
+        }
 
         $flash = trans('admin/users/general.transfer.success', [
             'assets' => $result['assets']['count'],
@@ -123,6 +130,9 @@ class UserItemTransferController extends Controller
             }
 
             $this->checkInAsset($asset, $source, $note);
+            // Transfers have no duplicate-assignment form: a second unit of a
+            // category the target already holds goes through the individual checkout.
+            DuplicateAssignments::confirmOrRefuse(request(), $asset, $target);
             $asset->checkOut($target, auth()->user(), date('Y-m-d H:i:s'), null, $note, $asset->name, transferredFrom: $source);
             $count++;
         }
@@ -148,6 +158,7 @@ class UserItemTransferController extends Controller
             }
 
             $this->checkInAccessory($checkout, $accessory, $note);
+            DuplicateAssignments::confirmOrRefuse(request(), $accessory, $target);
             $this->checkOutAccessory($accessory, $source, $target, $note);
             $count++;
         }
@@ -176,6 +187,7 @@ class UserItemTransferController extends Controller
                 continue;
             }
 
+            DuplicateAssignments::confirmOrRefuse(request(), $license, $target, ignoreSeat: $seat->id);
             $this->transferLicenseSeat($seat, $source, $target, $note);
             $count++;
         }

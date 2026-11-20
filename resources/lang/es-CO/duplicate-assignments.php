@@ -44,4 +44,5 @@ return [
     'ticket' => 'Número de ticket',
     'ticket_placeholder' => 'Por ejemplo, INC-12345',
     'ticket_required' => 'Escriba el número de ticket que respalda esta asignación duplicada (máximo 100 caracteres).',
+    'individual_checkout_required' => ':person ya tiene un elemento de :category. Para asignarle otro, use la asignación individual, donde se registran el motivo, el ticket y la aprobación.',
 ];

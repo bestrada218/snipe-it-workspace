@@ -98,4 +98,58 @@ class AssetTagSequenceTest extends TestCase
             ->expectsOutputToContain('NJ-030-HS')
             ->assertFailed();
     }
+
+    public function test_a_record_is_not_created_when_its_number_is_claimed_meanwhile(): void
+    {
+        $holder = Asset::factory()->create(['asset_tag' => 'LEGACY-HOLDER']);
+        // Runs after the availability check: another save claims 500 first.
+        Accessory::saving(function (Accessory $accessory) use ($holder) {
+            if ($accessory->asset_tag === 'NJ-500-HS' && ! DB::table('asset_tag_sequences')->where('sequence', 500)->exists()) {
+                DB::table('asset_tag_sequences')->insert(['sequence' => 500, 'item_type' => Asset::class, 'item_id' => $holder->id, 'created_at' => now(), 'updated_at' => now()]);
+            }
+        });
+
+        try {
+            Accessory::factory()->create(['asset_tag' => 'NJ-500-HS']);
+            $this->fail('The claimed number was accepted.');
+        } catch (ValidationException) {
+        }
+
+        $this->assertFalse(Accessory::where('asset_tag', 'NJ-500-HS')->exists());
+    }
+
+    public function test_a_tag_from_the_builder_takes_the_next_free_number(): void
+    {
+        Asset::factory()->create(['asset_tag' => 'NY-501-LP-W11']);
+        $template = Asset::factory()->make();
+
+        $this->actingAs(User::factory()->superuser()->create())
+            ->post(route('hardware.store'), [
+                'asset_tags' => [1 => 'NJ-501-DT-W11'],
+                'asset_tag_from_builder' => 1,
+                'model_id' => $template->model_id,
+                'status_id' => $template->status_id,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('warning');
+
+        $this->assertTrue(Asset::where('asset_tag', 'NJ-502-DT-W11')->exists());
+        $this->assertFalse(Asset::where('asset_tag', 'NJ-501-DT-W11')->exists());
+    }
+
+    public function test_a_builder_tag_retries_when_the_number_is_claimed_meanwhile(): void
+    {
+        $holder = Asset::factory()->create(['asset_tag' => 'LEGACY-HOLDER']);
+        Accessory::saving(function (Accessory $accessory) use ($holder) {
+            if ($accessory->asset_tag === 'NJ-600-HS' && ! DB::table('asset_tag_sequences')->where('sequence', 600)->exists()) {
+                DB::table('asset_tag_sequences')->insert(['sequence' => 600, 'item_type' => Asset::class, 'item_id' => $holder->id, 'created_at' => now(), 'updated_at' => now()]);
+            }
+        });
+        request()->merge(['asset_tag_from_builder' => 1]);
+
+        $accessory = Accessory::factory()->create(['asset_tag' => 'NJ-600-HS']);
+
+        $this->assertSame('NJ-601-HS', $accessory->fresh()->asset_tag);
+        $this->assertSame(1, Accessory::where('asset_tag', 'like', 'NJ-60%')->count());
+    }
 }

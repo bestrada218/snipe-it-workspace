@@ -143,7 +143,8 @@ $config = [
             'key' => env('BACKUP_S3_KEY'),
             'secret' => env('BACKUP_S3_SECRET'),
             'region' => env('BACKUP_S3_REGION', 'us-east-1'),
-            'bucket' => env('BACKUP_S3_BUCKET'),
+            // Cast: a missing bucket must fail the cloud copy, not the whole backup.
+            'bucket' => (string) env('BACKUP_S3_BUCKET', ''),
             'endpoint' => env('BACKUP_S3_ENDPOINT') ?: null,
             'use_path_style_endpoint' => (bool) env('BACKUP_S3_PATH_STYLE', false),
             'root' => env('BACKUP_S3_ROOT', ''),

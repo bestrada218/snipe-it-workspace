@@ -3,7 +3,7 @@
 return [
     'quick_structure' => 'XX ubicación padre · KKK consecutivo global de 3 dígitos · PP tipo de elemento · TTT información adicional del equipo (opcional).',
     'full_guide' => 'Ver guía completa',
-    'next_sequence' => 'Siguiente consecutivo global (KKK): :sequence. Úsalo en la placa de este elemento.',
+    'next_sequence' => 'Siguiente consecutivo libre (KKK): :sequence. Se confirma al guardar: si alguien lo usa primero, este elemento toma el siguiente.',
     'sequence_exhausted' => 'La secuencia global de tres dígitos llegó a 999.',
     'title' => 'Guía de placas',
     'format' => 'Formato de la placa',
@@ -32,7 +32,7 @@ return [
     'builder_suffix' => 'Sufijo (TTT)',
     'builder_choose_type' => 'Elija el tipo',
     'builder_none' => 'Sin sufijo',
-    'builder_help' => 'Al completar ubicación y tipo, la placa se escribe en el campo con el siguiente consecutivo libre.',
+    'builder_help' => 'Completa ubicación y tipo y la placa se arma arriba. El campo de la placa no se escribe a mano.',
     'types' => [
         'LP' => 'Portátil',
         'DT' => 'Escritorio',
@@ -52,4 +52,6 @@ return [
         'MAC' => 'macOS',
         'LNX' => 'Linux',
     ],
+    'sequence_reassigned' => 'Otra persona guardó primero el consecutivo :previous, así que este elemento quedó con la placa :tag.',
+    'builder_placeholder' => 'Arma la placa con «Construir la placa»',
 ];

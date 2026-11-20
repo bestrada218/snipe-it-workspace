@@ -44,4 +44,5 @@ return [
     'ticket' => 'Ticket number',
     'ticket_placeholder' => 'e.g. INC-12345',
     'ticket_required' => 'Enter the ticket number that backs this duplicate assignment (100 characters at most).',
+    'individual_checkout_required' => ':person already has an item in :category. To assign another one, use the individual checkout, where the reason, ticket and approval are recorded.',
 ];

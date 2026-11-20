@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\RestoreFromBackup;
 use App\Enums\ActionType;
 use App\Helpers\Helper;
 use App\Helpers\StorageHelper;
@@ -1035,23 +1036,27 @@ class SettingsController extends Controller
     public function postBackups(): RedirectResponse
     {
         if (! config('app.lock_passwords')) {
-            Artisan::call('snipeit:backup', ['--filename' => 'manual-backup-'.date('Y-m-d-H-i-s')]);
+            $exit = Artisan::call('snipeit:backup', ['--filename' => 'manual-backup-'.date('Y-m-d-H-i-s')]);
             $output = Artisan::output();
 
-            // Backup completed
-            if (! preg_match('/failed/', $output)) {
+            if ($exit === 0) {
                 return redirect()->route('settings.backups.index')
                     ->with('success', trans('admin/settings/message.backup.generated'));
             }
 
-            $formatted_output = str_replace('Backup completed!', '', $output);
-            $output_split = explode('...', $formatted_output);
+            // snipeit:backup ends with which destinations got the copy and
+            // which did not; show those lines rather than guessing from text.
+            $summary = collect(preg_split('/\R/', $output))
+                ->map(fn (string $line) => trim($line))
+                ->filter(fn (string $line) => str_starts_with($line, 'Backup saved on')
+                    || str_starts_with($line, 'Backup failed on')
+                    || str_starts_with($line, 'Backup not copied')
+                    || str_starts_with($line, 'Copying the backup to'))
+                ->implode(' ');
 
-            if (array_key_exists(2, $output_split)) {
-                return redirect()->route('settings.backups.index')->with('error', $output_split[2]);
-            }
+            Log::error('Manual backup failed: '.$output);
 
-            return redirect()->route('settings.backups.index')->with('error', $formatted_output);
+            return redirect()->route('settings.backups.index')->with('error', $summary !== '' ? $summary : trim($output));
         }
 
         return redirect()->route('settings.backups.index')->with('error', trans('general.feature_disabled'));
@@ -1272,6 +1277,19 @@ class SettingsController extends Controller
             }
             $zip->close();
 
+            // Read the whole database dump (with the backup password, CRC
+            // checked) before the pre-restore backup and the wipe: a backup
+            // without a dump, damaged or encrypted with another password
+            // must leave the current data untouched.
+            if ($problem = RestoreFromBackup::archiveProblem($absolutePath, config('backup.backup.password'))) {
+                Log::warning('Restore aborted before wiping the database: '.$problem);
+
+                return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.archive_unusable', [
+                    'filename' => $filename,
+                    'reason' => $problem,
+                ]));
+            }
+
             // grab the user's info so we can make sure they exist in the system
             $user = User::find(auth()->id());
 
@@ -1287,9 +1305,12 @@ class SettingsController extends Controller
                 : 'backup disk ('.$preRestoreDiskPath.')';
 
             Log::debug('Running pre-restore backup: '.$preRestoreBackupFilename);
+            // Local only: a slow or unreachable cloud destination must not
+            // block a restore, and this copy only serves to roll back.
             $preBackupExit = Artisan::call('snipeit:backup', [
                 '--filename' => $requestedBackupFilename,
                 '--force' => true,
+                '--local-only' => true,
             ]);
 
             if ($preBackupExit !== 0 || ! $backupDisk->exists($preRestoreDiskPath)) {

@@ -193,6 +193,45 @@ final class DuplicateAssignments
         ]);
     }
 
+    /**
+     * For flows that assign without the duplicate-assignment form (kits, bulk
+     * checkout, transfers, request fulfilment). A request that does carry the
+     * approval fields goes through confirm(); otherwise a second unit of the
+     * same category is refused and the person is sent to the individual
+     * checkout, where the reason, ticket and approval are recorded.
+     *
+     * Call within the same transaction as the assignment write.
+     */
+    public static function confirmOrRefuse(Request $request, Asset|Accessory|Consumable|License $item, mixed $target, int $incoming = 1, ?int $ignoreSeat = null): void
+    {
+        if ($request->boolean('duplicate_assignment_confirmed')) {
+            self::confirm($request, $item, $target, $incoming, $ignoreSeat);
+
+            return;
+        }
+
+        if (! $target instanceof User) {
+            return;
+        }
+
+        $category = $item instanceof Asset ? $item->model?->category : $item->category;
+        if (! $category) {
+            return;
+        }
+
+        $person = User::whereKey($target->id)->lockForUpdate()->firstOrFail();
+        if ($incoming === 1 && ! self::assignments($item::class, $ignoreSeat, $person->id, $category->id)->lockForUpdate()->first()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'duplicate_assignment' => trans('duplicate-assignments.individual_checkout_required', [
+                'person' => $person->display_name,
+                'category' => $category->name,
+            ]),
+        ]);
+    }
+
     public static function recordApproval(mixed $item, mixed $target): array
     {
         if (! $target instanceof User) {

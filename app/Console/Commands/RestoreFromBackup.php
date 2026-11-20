@@ -245,6 +245,83 @@ class RestoreFromBackup extends Command
     }
 
     /**
+     * Checks, without touching the database, that the archive holds exactly
+     * one database dump and that it can be read in full with the password
+     * available (CRC verified). Returns why it cannot be restored, or null.
+     * Settings > Backups calls this before wiping the database.
+     */
+    public static function archiveProblem(string $path, ?string $password): ?string
+    {
+        if (! class_exists(ZipArchive::class)) {
+            return 'The PHP zip extension is not loaded.';
+        }
+
+        $za = new ZipArchive;
+        if ($za->open($path) !== true) {
+            return 'The file is not a readable zip archive.';
+        }
+
+        try {
+            $dumps = [];
+            for ($i = 0; $i < $za->numFiles; $i++) {
+                if (strtolower(pathinfo((string) $za->getNameIndex($i), PATHINFO_EXTENSION)) === 'sql') {
+                    $dumps[] = $i;
+                }
+            }
+            if (count($dumps) !== 1) {
+                return count($dumps) === 0
+                    ? 'The backup has no database dump (.sql file).'
+                    : 'The backup has more than one database dump.';
+            }
+
+            $encrypted = self::archiveIsEncrypted($za);
+            if (filled($password)) {
+                $za->setPassword($password);
+            } elseif ($encrypted) {
+                return 'This backup is encrypted. Set BACKUP_ARCHIVE_PASSWORD in .env or pass --password= to restore it.';
+            }
+
+            $stat = $za->statIndex($dumps[0]);
+            $stream = $za->getStream($stat['name']);
+            $read = 0;
+            $crc = hash_init('crc32b');
+            if ($stream !== false) {
+                while (! feof($stream)) {
+                    $chunk = @fread($stream, 1048576);
+                    if ($chunk === false || $chunk === '') {
+                        break;
+                    }
+                    $read += strlen($chunk);
+                    hash_update($crc, $chunk);
+                }
+                fclose($stream);
+            }
+
+            $intact = $stream !== false
+                && $read > 0
+                && $read === (int) $stat['size']
+                && hexdec(hash_final($crc)) === ($stat['crc'] & 0xFFFFFFFF);
+
+            if (! $intact) {
+                return $encrypted
+                    ? 'The database dump cannot be read: the backup password is wrong or the file is damaged.'
+                    : 'The database dump is damaged or empty.';
+            }
+        } finally {
+            $za->close();
+        }
+
+        return null;
+    }
+
+    private function failWith(string $message): int
+    {
+        $this->error($message);
+
+        return self::FAILURE;
+    }
+
+    /**
      * Whether any entry in the archive is encrypted.
      */
     private static function archiveIsEncrypted(ZipArchive $za): bool
@@ -291,11 +368,11 @@ class RestoreFromBackup extends Command
         $filename = $this->argument('filename');
 
         if (! $filename) {
-            return $this->error('Missing required filename');
+            return $this->failWith('Missing required filename');
         }
 
         if (! $this->option('force') && ! $this->option('sanitize-guess-prefix') && ! $this->confirm('Are you sure you wish to restore from the given backup file? This can lead to MASSIVE DATA LOSS!')) {
-            return $this->error('Data loss not confirmed');
+            return $this->failWith('Data loss not confirmed');
         }
 
         $connectionName = config('database.default');
@@ -303,7 +380,7 @@ class RestoreFromBackup extends Command
         $driver = $connectionConfig['driver'] ?? null;
 
         if (! in_array($driver, ['mysql', 'mariadb'], true)) {
-            return $this->error('DB_CONNECTION must be MySQL or MariaDB in order to perform a restore. Detected driver: '.($driver ?? 'unknown')." (connection: $connectionName)");
+            return $this->failWith('DB_CONNECTION must be MySQL or MariaDB in order to perform a restore. Detected driver: '.($driver ?? 'unknown')." (connection: $connectionName)");
         }
 
         $za = new ZipArchive;
@@ -323,17 +400,18 @@ class RestoreFromBackup extends Command
                 default => "Unknown reason: $errcode",
             };
 
-            return $this->error('Could not access file: '.$filename.' - '.$error_msg);
+            return $this->failWith('Could not access file: '.$filename.' - '.$error_msg);
         }
 
         // Backups made with BACKUP_ARCHIVE_PASSWORD are AES-encrypted. The
         // password from the option wins over the configured one, so an old
         // backup can be restored after the password was rotated.
         $archivePassword = $this->option('password') ?: config('backup.backup.password');
+        if ($problem = self::archiveProblem($filename, $archivePassword)) {
+            return $this->failWith($problem);
+        }
         if (filled($archivePassword)) {
             $za->setPassword($archivePassword);
-        } elseif (self::archiveIsEncrypted($za)) {
-            return $this->error('This backup is encrypted. Set BACKUP_ARCHIVE_PASSWORD in .env or pass --password= to restore it.');
         }
 
         // Upload directory enumeration lives in App\Enums\FileStorage
@@ -471,11 +549,11 @@ class RestoreFromBackup extends Command
         // print_r($interesting_files);exit(-1);
 
         if (count($sqlfiles) != 1) {
-            return $this->error('There should be exactly *one* sql backup file found, found: '.(count($sqlfiles) == 0 ? 'None' : implode(', ', $sqlfiles)));
+            return $this->failWith('There should be exactly *one* sql backup file found, found: '.(count($sqlfiles) == 0 ? 'None' : implode(', ', $sqlfiles)));
         }
 
         if (strpos($sqlfiles[0], 'db-dumps') === false) {
-            // return $this->error("SQL backup file is missing 'db-dumps' component of full pathname: ".$sqlfiles[0]);
+            // return $this->failWith("SQL backup file is missing 'db-dumps' component of full pathname: ".$sqlfiles[0]);
             // older Snipe-IT installs don't have the db-dumps subdirectory component
             $this->warn("Did not find the 'db-dumps' directory - is this really a Snipe-IT backup file? Continuing anyways...");
         }
@@ -522,7 +600,7 @@ class RestoreFromBackup extends Command
         if ($client_binary === null) {
             $preferred = $driver === 'mariadb' ? 'mariadb' : 'mysql';
 
-            return $this->error("DB client binary '$preferred' not found in DB_DUMP_PATH ('$binaryPath'). Please edit DB_DUMP_PATH in your .env to point to a directory that contains the mysql/mariadb client binary.");
+            return $this->failWith("DB client binary '$preferred' not found in DB_DUMP_PATH ('$binaryPath'). Please edit DB_DUMP_PATH in your .env to point to a directory that contains the mysql/mariadb client binary.");
         }
 
         $proc_results = proc_open(escapeshellarg($client_binary).' -h '.
@@ -539,7 +617,7 @@ class RestoreFromBackup extends Command
             null,
             $env_vars); // this is not super-duper awesome-secure, but definitely more secure than showing it on the CLI, or dropping temporary files with passwords in them.
         if ($proc_results === false) {
-            return $this->error('Unable to invoke DB client via CLI');
+            return $this->failWith('Unable to invoke DB client via CLI');
         }
 
         try {
@@ -600,7 +678,7 @@ class RestoreFromBackup extends Command
 
         $close_results = proc_close($proc_results);
         if ($close_results != 0) {
-            return $this->error('There may have been a problem with the database import: Error number '.$close_results);
+            return $this->failWith('There may have been a problem with the database import: Error number '.$close_results);
         }
 
         // Prune the upload directories before extracting the backup's

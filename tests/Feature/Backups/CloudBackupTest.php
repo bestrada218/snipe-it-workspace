@@ -67,16 +67,83 @@ class CloudBackupTest extends TestCase
         $zip->close();
     }
 
+    public function test_cloud_copy_is_refused_without_a_password_but_the_local_copy_is_kept(): void
+    {
+        Storage::fake('backup');
+        Storage::fake('backup_s3');
+        File::put($this->workDir.'/source/evidence.pdf', 'approval evidence');
+
+        config([
+            'backup.backup.source.files.include' => [$this->workDir.'/source'],
+            'backup.backup.source.files.relative_path' => $this->workDir,
+            'backup.backup.source.databases' => [],
+            'backup.backup.destination.disks' => ['backup', 'backup_s3'],
+            'backup.backup.password' => null,
+        ]);
+
+        $this->artisan('snipeit:backup', ['--filename' => 'unencrypted-check'])
+            ->expectsOutputToContain('Backup saved on: backup.')
+            ->expectsOutputToContain('set BACKUP_ARCHIVE_PASSWORD')
+            ->assertFailed();
+
+        $this->assertCount(1, Storage::disk('backup')->files('backups'));
+        $this->assertSame([], Storage::disk('backup_s3')->files('backups'));
+    }
+
+    public function test_backup_reports_a_destination_that_failed(): void
+    {
+        Storage::fake('backup');
+        File::put($this->workDir.'/source/evidence.pdf', 'approval evidence');
+
+        config([
+            'backup.backup.source.files.include' => [$this->workDir.'/source'],
+            'backup.backup.source.files.relative_path' => $this->workDir,
+            'backup.backup.source.databases' => [],
+            // An S3 disk with no bucket cannot be written to.
+            'filesystems.disks.backup_s3.bucket' => '',
+            'filesystems.disks.backup_s3.endpoint' => 'http://127.0.0.1:9',
+            'backup.backup.destination.disks' => ['backup', 'backup_s3'],
+            'backup.backup.password' => 'correct horse battery',
+        ]);
+
+        $this->artisan('snipeit:backup', ['--filename' => 'failing-destination'])
+            ->expectsOutputToContain('Backup saved on: backup.')
+            ->expectsOutputToContain('Backup failed on: backup_s3.')
+            ->assertFailed();
+    }
+
+    public function test_google_drive_without_credentials_does_not_cost_the_local_copy(): void
+    {
+        Storage::fake('backup');
+        File::put($this->workDir.'/source/evidence.pdf', 'approval evidence');
+
+        config([
+            'backup.backup.source.files.include' => [$this->workDir.'/source'],
+            'backup.backup.source.files.relative_path' => $this->workDir,
+            'backup.backup.source.databases' => [],
+            'backup.backup.destination.disks' => ['backup', 'backup_google'],
+            'backup.backup.password' => 'correct horse battery',
+        ]);
+
+        $this->artisan('snipeit:backup', ['--filename' => 'drive-not-configured'])
+            ->expectsOutputToContain('Backup saved on: backup.')
+            ->expectsOutputToContain('Backup failed on: backup_google.')
+            ->assertFailed();
+
+        $this->assertCount(1, Storage::disk('backup')->files('backups'));
+    }
+
     public function test_restore_refuses_an_encrypted_backup_without_its_password(): void
     {
         $archive = $this->encryptedBackup('right-password');
 
         $this->artisan('snipeit:restore', ['filename' => $archive, '--sanitize-guess-prefix' => true])
             ->expectsOutputToContain('This backup is encrypted')
-            ->assertExitCode(0);
+            ->assertFailed();
 
         $this->artisan('snipeit:restore', ['filename' => $archive, '--sanitize-guess-prefix' => true, '--password' => 'wrong-password'])
-            ->expectsOutputToContain('check the backup password');
+            ->expectsOutputToContain('the backup password is wrong')
+            ->assertFailed();
     }
 
     public function test_restore_reads_an_encrypted_backup_with_its_password(): void

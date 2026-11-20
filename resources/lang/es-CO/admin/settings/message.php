@@ -17,6 +17,7 @@ return [
     ],
     'restore' => [
         'success' => 'Se ha restaurado la copia de seguridad de su sistema. Por favor, vuelva a iniciar sesión.',
+        'archive_unusable' => 'La copia :filename no se puede restaurar (:reason). La base de datos no se modificó.',
         'archive_invalid' => 'La copia de seguridad seleccionada (:filename) no es un archivo zip válido. La restauración se canceló antes de tocar la base de datos.',
         'zip_extension_missing' => 'La extensión zip de PHP no está cargada en este servidor. No se puede validar la copia de seguridad y la restauración se canceló para evitar pérdida de datos. Pida a su administrador de servidores que instale ext-zip.',
         'pre_backup_failed' => 'No se pudo crear la copia de seguridad previa a la restauración. La restauración se canceló para no borrar la base de datos actual sin forma de recuperarla.',

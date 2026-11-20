@@ -21,6 +21,7 @@ use App\Models\Location;
 use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\User;
+use App\Services\DuplicateAssignments;
 use App\View\Label;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class BulkAssetsController extends Controller
 {
@@ -765,59 +767,69 @@ class BulkAssetsController extends Controller
             }
 
             $errors = [];
-            DB::transaction(function () use ($target, $admin, $checkout_at, $expected_checkin, &$errors, $assets, $request) { // NOTE: $errors is passsed by reference!
-                foreach ($assets as $asset) {
-                    $this->authorize('checkout', $asset);
+            try {
+                DB::transaction(function () use ($target, $admin, $checkout_at, $expected_checkin, &$errors, $assets, $request) { // NOTE: $errors is passsed by reference!
+                    foreach ($assets as $asset) {
+                        $this->authorize('checkout', $asset);
 
-                    // See if there is a status label passed
-                    if ($request->filled('status_id')) {
-                        $asset->status_id = $request->input('status_id');
+                        // See if there is a status label passed
+                        if ($request->filled('status_id')) {
+                            $asset->status_id = $request->input('status_id');
+                        }
+
+                        // The bulk-checkout form now carries a plain `requestable`
+                        // checkbox (matching the per-item hardware/checkout form
+                        // so the localStorage-backed remembered-default JS is
+                        // shared between the two). Always set the flag from the
+                        // request, so the operator's explicit choice sticks.
+                        $asset->requestable = $request->boolean('requestable');
+
+                        // Concurrency guard, same shape as Api\AssetsController::checkout.
+                        // Bulk checkout iterates over a selection of asset IDs and
+                        // calls checkOut per asset without a per-row lock; two
+                        // operators submitting overlapping bulk selections at the
+                        // same instant could each pass the caller-side selection
+                        // and both proceed through checkOut on the same asset,
+                        // landing duplicate history rows and doubling
+                        // checkout_counter for that asset. Re-fetch the row under
+                        // lockForUpdate and re-check availability before invoking
+                        // checkOut. Assets that racing bulk actions have already
+                        // claimed are skipped and surfaced as errors, matching how
+                        // the per-asset checkout path behaves.
+                        $locked = Asset::whereKey($asset->id)->lockForUpdate()->first();
+                        if (! $locked || ! $locked->availableForCheckout()) {
+                            $errors = array_merge_recursive($errors, [
+                                'asset_'.$asset->id => [trans('admin/hardware/message.checkout.not_available')],
+                            ]);
+
+                            continue;
+                        }
+
+                        // Bulk checkout has no duplicate-assignment form: a second
+                        // unit of a category the person already holds must go
+                        // through the individual checkout.
+                        DuplicateAssignments::confirmOrRefuse($request, $locked, $target);
+
+                        $checkout_success = $asset->checkOut($target, $admin, $checkout_at, $expected_checkin, e($request->input('note')), $asset->name, null);
+
+                        // TODO - I think this logic is duplicated in the checkOut method?
+                        if ($target->location_id != '') {
+                            $asset->location_id = $target->location_id;
+                            // TODO - I don't know why this is being saved without events
+                            $asset::withoutEvents(function () use ($asset) {
+                                $asset->save();
+                            });
+                        }
+
+                        if (! $checkout_success) {
+                            $errors = array_merge_recursive($errors, $asset->getErrors()->toArray());
+                        }
                     }
-
-                    // The bulk-checkout form now carries a plain `requestable`
-                    // checkbox (matching the per-item hardware/checkout form
-                    // so the localStorage-backed remembered-default JS is
-                    // shared between the two). Always set the flag from the
-                    // request, so the operator's explicit choice sticks.
-                    $asset->requestable = $request->boolean('requestable');
-
-                    // Concurrency guard, same shape as Api\AssetsController::checkout.
-                    // Bulk checkout iterates over a selection of asset IDs and
-                    // calls checkOut per asset without a per-row lock; two
-                    // operators submitting overlapping bulk selections at the
-                    // same instant could each pass the caller-side selection
-                    // and both proceed through checkOut on the same asset,
-                    // landing duplicate history rows and doubling
-                    // checkout_counter for that asset. Re-fetch the row under
-                    // lockForUpdate and re-check availability before invoking
-                    // checkOut. Assets that racing bulk actions have already
-                    // claimed are skipped and surfaced as errors, matching how
-                    // the per-asset checkout path behaves.
-                    $locked = Asset::whereKey($asset->id)->lockForUpdate()->first();
-                    if (! $locked || ! $locked->availableForCheckout()) {
-                        $errors = array_merge_recursive($errors, [
-                            'asset_'.$asset->id => [trans('admin/hardware/message.checkout.not_available')],
-                        ]);
-
-                        continue;
-                    }
-
-                    $checkout_success = $asset->checkOut($target, $admin, $checkout_at, $expected_checkin, e($request->input('note')), $asset->name, null);
-
-                    // TODO - I think this logic is duplicated in the checkOut method?
-                    if ($target->location_id != '') {
-                        $asset->location_id = $target->location_id;
-                        // TODO - I don't know why this is being saved without events
-                        $asset::withoutEvents(function () use ($asset) {
-                            $asset->save();
-                        });
-                    }
-
-                    if (! $checkout_success) {
-                        $errors = array_merge_recursive($errors, $asset->getErrors()->toArray());
-                    }
-                }
-            });
+                });
+            } catch (ValidationException $e) {
+                // Raised inside the transaction: none of the selected assets was checked out.
+                return redirect()->route('hardware.bulkcheckout.show')->withInput()->with('error', $e->validator->errors()->first());
+            }
 
             if (! $errors) {
                 CheckoutablesCheckedOutInBulk::dispatch(

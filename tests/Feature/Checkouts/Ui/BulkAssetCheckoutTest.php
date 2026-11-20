@@ -56,6 +56,11 @@ class BulkAssetCheckoutTest extends TestCase
                 'checkout_at' => $checkoutAt,
                 'expected_checkin' => $expectedCheckin,
                 'note' => null,
+                // Both factory assets share a category: a second unit to the
+                // same person needs the duplicate-assignment justification.
+                'duplicate_assignment_confirmed' => 1,
+                'duplicate_assignment_reason' => 'Bulk checkout test',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertOk();
 

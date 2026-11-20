@@ -12,8 +12,13 @@
 
     @if ($nextSequence !== null)
         {{-- Builds XX-KKK-PP[-TTT] into the tag field with the next free sequence. --}}
-        <fieldset class="tag-builder" data-tag-builder data-target="{{ $target }}" data-sequence="{{ $nextSequence }}">
+        {{-- The tag field only shows what the builder makes. The number is a
+             preview: if someone saves it first, this item gets the next free
+             one on save (AssetTagSequence::takeNextFree). --}}
+        <fieldset class="tag-builder" data-tag-builder data-target="{{ $target }}" data-sequence="{{ $nextSequence }}"
+            data-placeholder="{{ trans('asset-tags.builder_placeholder') }}">
             <legend>{{ trans('asset-tags.builder_title') }}</legend>
+            <input type="hidden" name="asset_tag_from_builder" value="1">
             <div class="tag-builder-parts">
                 <label>
                     <span>{{ trans('asset-tags.builder_prefix') }}</span>
@@ -61,25 +66,38 @@
                     return;
                 }
                 const part = name => builder.querySelector('[data-part="' + name + '"]');
-                let lastBuilt = null;
+                const pattern = /^([A-Z0-9]{2})-(\d{3})-([A-Z0-9]{2})(?:-([A-Z0-9]{3}))?$/;
+
+                // The builder is the only way to make the tag: the field just
+                // shows the result. A tag kept after a failed save (old input)
+                // fills the builder back in.
+                field.readOnly = true;
+                field.classList.add('tag-builder-output');
+                field.placeholder = builder.dataset.placeholder;
+                const kept = field.value.trim().toUpperCase().match(pattern);
+                if (kept) {
+                    part('prefix').value = kept[1];
+                    part('type').value = kept[3];
+                    part('suffix').value = kept[4] || '';
+                } else {
+                    field.value = '';
+                }
+
                 const build = () => {
                     const prefix = part('prefix').value.trim().toUpperCase();
                     const type = part('type').value;
                     const suffix = part('suffix').value;
                     part('prefix').value = prefix;
-                    if (!/^[A-Z0-9]{2}$/.test(prefix) || !type) {
-                        return;
-                    }
-                    // Never overwrite a tag the person typed by hand.
-                    if (field.value.trim() !== '' && field.value !== lastBuilt && field.defaultValue !== field.value) {
-                        return;
-                    }
-                    field.value = [prefix, builder.dataset.sequence, type].concat(suffix ? [suffix] : []).join('-');
-                    lastBuilt = field.value;
+                    field.value = /^[A-Z0-9]{2}$/.test(prefix) && type
+                        ? [prefix, builder.dataset.sequence, type].concat(suffix ? [suffix] : []).join('-')
+                        : '';
                     field.dispatchEvent(new Event('input', {bubbles: true}));
                 };
                 builder.addEventListener('input', build);
                 builder.addEventListener('change', build);
+                if (kept) {
+                    build();
+                }
             });
         </script>
     @endpush

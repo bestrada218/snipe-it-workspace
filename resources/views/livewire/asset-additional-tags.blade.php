@@ -15,6 +15,8 @@
                         name="asset_tags[{{ $index }}]"
                         id="asset_tag_{{ $index }}"
                         wire:model="rows.{{ $index }}.asset_tag"
+                        :readonly="\App\Services\AssetTagSequence::extract($row['asset_tag']) !== null"
+                        :class="\App\Services\AssetTagSequence::extract($row['asset_tag']) !== null ? 'tag-builder-output' : ''"
                         required
                     />
                 </x-slot:input>
