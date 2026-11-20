@@ -11,3 +11,8 @@ node_modules
 .vagrant
 .idea
 
+# Local secrets and development files never go into the image.
+.env
+.local-dev
+.lima
+tests/coverage
