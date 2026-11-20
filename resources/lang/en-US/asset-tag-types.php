@@ -21,4 +21,5 @@ return [
     'repeated_code' => 'Code :code is repeated.',
     'unknown_code' => 'Type :code does not exist. Add it in Settings > Asset Tags > Tag types.',
     'history_note' => 'Asset tag type code changed from :old to :new',
+    'discard' => 'Remove this row',
 ];

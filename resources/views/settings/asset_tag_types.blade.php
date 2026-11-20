@@ -36,13 +36,15 @@
                                 <tr>
                                     <td>
                                         <input type="hidden" name="types[{{ $index }}][original]" value="{{ $original }}">
+                                        {{-- Saved types must keep a code and a name; a new row left
+                                             empty is simply skipped on save. --}}
                                         <input type="text" class="form-control tag-types-code" name="types[{{ $index }}][code]" value="{{ $row['code'] ?? '' }}"
-                                            maxlength="2" required aria-label="{{ trans('asset-tag-types.code') }}" placeholder="{{ trans('asset-tag-types.code_placeholder') }}">
+                                            maxlength="2" @required($original) aria-label="{{ trans('asset-tag-types.code') }}" placeholder="{{ trans('asset-tag-types.code_placeholder') }}">
                                         <x-form.error name="types.{{ $index }}.code" />
                                     </td>
                                     <td>
                                         <input type="text" class="form-control" name="types[{{ $index }}][name]" value="{{ $row['name'] ?? '' }}"
-                                            maxlength="60" required aria-label="{{ trans('asset-tag-types.name') }}" placeholder="{{ trans('asset-tag-types.name_placeholder') }}">
+                                            maxlength="60" @required($original) aria-label="{{ trans('asset-tag-types.name') }}" placeholder="{{ trans('asset-tag-types.name_placeholder') }}">
                                         <x-form.error name="types.{{ $index }}.name" />
                                     </td>
                                     <td class="text-center">
@@ -52,7 +54,12 @@
                                     </td>
                                     <td>{{ trans_choice('asset-tag-types.in_use_tags', $count, ['count' => $count]) }}</td>
                                     <td class="text-center">
-                                        @if ($original === null || $count === 0)
+                                        @if ($original === null)
+                                            <button type="button" class="btn btn-default btn-sm" data-discard-tag-type
+                                                aria-label="{{ trans('asset-tag-types.discard') }}" title="{{ trans('asset-tag-types.discard') }}">
+                                                <x-icon type="x" />
+                                            </button>
+                                        @elseif ($count === 0)
                                             <input type="hidden" name="types[{{ $index }}][remove]" value="0">
                                             <input type="checkbox" name="types[{{ $index }}][remove]" value="1" @checked(filter_var($row['remove'] ?? false, FILTER_VALIDATE_BOOLEAN))
                                                 aria-label="{{ trans('asset-tag-types.remove') }}">
@@ -90,8 +97,10 @@
             </td>
             <td>{{ trans_choice('asset-tag-types.in_use_tags', 0) }}</td>
             <td class="text-center">
-                <input type="hidden" data-name="remove" value="0">
-                <input type="checkbox" data-name="remove" value="1" aria-label="{{ trans('asset-tag-types.remove') }}">
+                <button type="button" class="btn btn-default btn-sm" data-discard-tag-type
+                    aria-label="{{ trans('asset-tag-types.discard') }}" title="{{ trans('asset-tag-types.discard') }}">
+                    <x-icon type="x" />
+                </button>
             </td>
         </tr>
     </template>
@@ -112,6 +121,14 @@
                 next++;
                 body.appendChild(row);
                 row.querySelector('.tag-types-code').focus();
+            });
+
+            // A row that was never saved is just taken off the form.
+            body.addEventListener('click', event => {
+                const discard = event.target.closest('[data-discard-tag-type]');
+                if (discard) {
+                    discard.closest('tr').remove();
+                }
             });
 
             // Codes are two uppercase letters or digits.

@@ -139,4 +139,17 @@ class AssetTagTypesTest extends TestCase
 
         $this->assertFalse(Asset::where('asset_tag', 'NJ-809-ZZ')->exists());
     }
+
+    public function test_empty_added_rows_are_ignored(): void
+    {
+        $this->save([
+            ...$this->currentRows(),
+            ['original' => '', 'code' => 'pd', 'name' => 'iPad', 'suffix' => 0, 'remove' => 0],
+            ['original' => '', 'code' => '', 'name' => '', 'suffix' => 0, 'remove' => 0],
+            ['original' => '', 'code' => '', 'name' => '', 'suffix' => 0, 'remove' => 1],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertContains('PD', AssetTagTypes::codes());
+        $this->assertCount(13, AssetTagTypes::all());
+    }
 }

@@ -21,4 +21,5 @@ return [
     'repeated_code' => 'El código :code está repetido.',
     'unknown_code' => 'El tipo :code no existe. Agrégalo en Configuración > Placas > Tipos de placa.',
     'history_note' => 'Código de tipo de placa cambiado de :old a :new',
+    'discard' => 'Quitar esta fila',
 ];
