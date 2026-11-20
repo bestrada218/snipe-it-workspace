@@ -20,4 +20,5 @@ return [
     'results_people' => 'People',
     'no_tag' => 'No tag',
     'show_more' => 'Show more results',
+    'more_actions' => 'More actions',
 ];

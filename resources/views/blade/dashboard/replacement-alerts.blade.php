@@ -1,9 +1,15 @@
+@php($highest = max(1, ...array_values($replacementCounts)))
+
 <x-box :header="trans('asset-replacement.alerts')" class="workspace-replacement-panel">
-    <div class="workspace-replacement-windows">
+    <div class="replacement-bars">
         @foreach ($replacementCounts as $window => $count)
-            <a class="workspace-replacement-alert" href="{{ route('hardware.replacement-alerts', ['window' => $window]) }}">
-                <span class="workspace-metric-label">{{ trans('asset-replacement.windows.'.$window) }}</span>
-                <strong class="workspace-metric-value">{{ number_format($count) }}</strong>
+            <a @class(['replacement-bar-row', 'is-empty' => $count === 0, 'is-overdue' => $window === 'overdue'])
+               href="{{ route('hardware.replacement-alerts', ['window' => $window]) }}">
+                <span class="replacement-bar-label">{{ trans('asset-replacement.windows.'.$window) }}</span>
+                <span class="replacement-bar-track" aria-hidden="true">
+                    <span class="replacement-bar-fill" style="width: {{ $count === 0 ? 0 : max(4, round($count / $highest * 100)) }}%"></span>
+                </span>
+                <strong class="replacement-bar-count">{{ number_format($count) }}</strong>
             </a>
         @endforeach
     </div>

@@ -75,4 +75,11 @@ return [
     'reschedule_reason_placeholder' => 'En inglés, p. ej. «Carrier delayed the delivery»',
     'cancel_reason_placeholder' => 'En inglés, p. ej. «Order returned to the vendor»',
     'duplicate_reason_placeholder' => 'En inglés, p. ej. «Second laptop for the lab, approved by IT»',
+    'progress' => 'Progreso del envío',
+    'step_registered' => 'Registrado',
+    'step_in_transit' => 'En tránsito',
+    'step_received' => 'Recibido',
+    'step_assigned' => 'Asignado',
+    'expected_short' => 'Llega el :date',
+    'cancelled_on' => 'Envío cancelado el :date.',
 ];

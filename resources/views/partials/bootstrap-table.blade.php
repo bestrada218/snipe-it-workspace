@@ -2989,10 +2989,76 @@
             }
 
             actions +='</nobr>';
-            return actions;
+            return compactRowActions(actions);
 
         };
     }
+
+    // One visible action per row (Edit) and the rest in a "more" menu with
+    // their names, instead of a row of coloured icon buttons. Disabled
+    // placeholders are dropped from the menu.
+    function compactRowActions(html) {
+        var $wrap = $('<div>').html(html);
+        var $box = $wrap.children('nobr');
+        var $controls = $box.children();
+        var $primary = $controls.filter('a[href$="/edit"]').first();
+        var $rest = $controls.not($primary).filter(function () {
+            return !$(this).hasClass('disabled') && !$(this).find('.disabled').length;
+        });
+
+        if ($rest.length === 0) {
+            return html;
+        }
+
+        var items = $rest.map(function () {
+            var $item = $(this);
+            var danger = $item.hasClass('delete-asset');
+            var $control = $item.is('form') ? $item.find('button') : $item;
+            $control.removeClass('btn btn-sm btn-info btn-primary btn-warning btn-danger btn-default actions')
+                .removeAttr('data-tooltip').addClass('row-action-item');
+            $control.find('.sr-only').removeClass('sr-only');
+            return '<li' + (danger ? ' class="row-action-danger"' : '') + '>' + this.outerHTML + '</li>';
+        }).get();
+        var danger = items.filter(function (item) { return item.indexOf('row-action-danger') !== -1; });
+        var others = items.filter(function (item) { return item.indexOf('row-action-danger') === -1; });
+        if (danger.length && others.length) {
+            others.push('<li role="separator" class="divider"></li>');
+        }
+
+        return '<nobr class="row-actions">'
+            + ($primary.length ? $primary.prop('outerHTML') : '')
+            + '<span class="dropdown row-actions-dropdown hidden-print">'
+            + '<button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="{{ trans('navigation.more_actions') }}">'
+            + '<i class="fas fa-ellipsis-v fa-fw" aria-hidden="true"></i><span class="sr-only">{{ trans('navigation.more_actions') }}</span></button>'
+            + '<ul class="dropdown-menu dropdown-menu-right row-actions-menu">' + others.concat(danger).join('') + '</ul>'
+            + '</span></nobr>';
+    }
+
+    // Table cells in the sticky actions column each create their own layer,
+    // so a menu left inside its cell is painted under the next rows. While
+    // open, the menu lives in <body> with fixed positioning next to its button.
+    $(document).on('shown.bs.dropdown', '.row-actions-dropdown', function () {
+        var $dropdown = $(this);
+        var $menu = $dropdown.children('.row-actions-menu');
+        $dropdown.data('floatingMenu', $menu);
+        $menu.appendTo(document.body).css({display: 'block', position: 'fixed', visibility: 'hidden'});
+        var rect = this.getBoundingClientRect();
+        var top = rect.bottom + 4;
+        if (top + $menu.outerHeight() > window.innerHeight - 8) {
+            top = Math.max(8, rect.top - $menu.outerHeight() - 4);
+        }
+        $menu.css({top: top, left: Math.max(8, rect.right - $menu.outerWidth()), right: 'auto', visibility: ''});
+    });
+    $(document).on('hidden.bs.dropdown', '.row-actions-dropdown', function () {
+        var $menu = $(this).data('floatingMenu');
+        if ($menu) {
+            $menu.css({display: '', position: '', top: '', left: '', right: '', visibility: ''}).appendTo(this);
+            $(this).removeData('floatingMenu');
+        }
+    });
+    $(window).on('scroll resize', function () {
+        $('.row-actions-dropdown.open > .dropdown-toggle').dropdown('toggle');
+    });
 
 
     // This handles the icons and display of polymorphic entries

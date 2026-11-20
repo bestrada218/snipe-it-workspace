@@ -4,8 +4,9 @@
 
 @section('content')
     <x-container>
-        <x-box :header="$shipment->asset->display_name">
+        <x-box :header="collect([$shipment->asset->asset_tag, $shipment->asset->name ?: $shipment->asset->model?->name])->filter()->implode(' · ')">
             <span class="workspace-shipment-status" data-status="{{ $shipment->status() }}">{{ trans('asset-shipments.'.$shipment->status()) }}</span>
+            <x-shipments.progress :$shipment />
             <dl class="workspace-shipment-details">
                 <div><dt>{{ trans('asset-shipments.recipient') }}</dt><dd>{{ $shipment->recipient?->display_name }}</dd></div>
                 <div><dt>{{ trans('asset-shipments.platform') }}</dt><dd>{{ $shipment->platform }}</dd></div>

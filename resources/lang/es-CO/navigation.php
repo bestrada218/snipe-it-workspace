@@ -20,4 +20,5 @@ return [
     'results_people' => 'Personas',
     'no_tag' => 'Sin placa',
     'show_more' => 'Ver más resultados',
+    'more_actions' => 'Más acciones',
 ];

@@ -75,4 +75,11 @@ return [
     'reschedule_reason_placeholder' => 'e.g. Carrier delayed the delivery',
     'cancel_reason_placeholder' => 'e.g. Order returned to the vendor',
     'duplicate_reason_placeholder' => 'e.g. Second laptop for the lab, approved by IT',
+    'progress' => 'Shipment progress',
+    'step_registered' => 'Registered',
+    'step_in_transit' => 'In transit',
+    'step_received' => 'Received',
+    'step_assigned' => 'Assigned',
+    'expected_short' => 'Due :date',
+    'cancelled_on' => 'Shipment cancelled on :date.',
 ];

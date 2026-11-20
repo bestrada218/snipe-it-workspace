@@ -31,6 +31,12 @@ final class AssetTagSequence
         License::class => 'licenses',
     ];
 
+    /** PP codes from the tag guide. */
+    public const TYPE_CODES = ['LP', 'DT', 'HS', 'KB', 'MS', 'WC', 'DK', 'TV', 'SP', 'PJ', 'AP', 'VC'];
+
+    /** Common TTT suffixes from the tag guide. */
+    public const SUFFIXES = ['W11', 'MAC', 'LNX'];
+
     private const PATTERN = '/^[A-Z0-9]{2}-(\d{3})-[A-Z0-9]{2}(?:-[A-Z0-9]{3})?$/iD';
 
     public static function extract(?string $tag): ?int
@@ -44,6 +50,22 @@ final class AssetTagSequence
         $highest = (int) DB::table('asset_tag_sequences')->max('sequence');
 
         return $highest < 999 ? sprintf('%03d', $highest + 1) : null;
+    }
+
+    /**
+     * XX location prefixes already used in tags, for the tag builder.
+     *
+     * @return list<string>
+     */
+    public static function knownPrefixes(): array
+    {
+        $prefixes = collect(['NY', 'NJ']);
+        foreach (self::MODULE_TABLES as $table) {
+            $prefixes = $prefixes->merge(DB::table($table)->where('asset_tag', 'like', '__-___-__%')
+                ->selectRaw('DISTINCT UPPER(LEFT(asset_tag, 2)) AS prefix')->pluck('prefix'));
+        }
+
+        return $prefixes->filter(fn ($prefix) => preg_match('/^[A-Z0-9]{2}$/', (string) $prefix))->unique()->sort()->values()->all();
     }
 
     public static function hint(): string

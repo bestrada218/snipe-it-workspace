@@ -1497,3 +1497,342 @@
     margin-top: 8px;
     font-weight: 600;
 }
+
+/* ------------------------------------------------------------------
+ * Dashboard: "Needs attention" and replacement bars.
+ * ------------------------------------------------------------------ */
+.workspace-ui .attention-panel > .box-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attention-count {
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: var(--workspace-tint);
+    color: var(--workspace-ink);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.workspace-ui .attention-list {
+    padding: 0;
+}
+
+.attention-row {
+    display: grid;
+    grid-template-columns: 4px minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 16px 12px 0;
+    border-top: 1px solid var(--workspace-border);
+}
+
+.attention-row:first-child {
+    border-top: 0;
+}
+
+.attention-severity {
+    align-self: stretch;
+    border-radius: 0 3px 3px 0;
+}
+
+.attention-crit { background: var(--workspace-danger); }
+.attention-warn { background: var(--workspace-warning); }
+.attention-info { background: var(--workspace-info); }
+
+.attention-text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.attention-text span,
+.attention-clear {
+    color: var(--workspace-muted);
+    font-size: 13px;
+}
+
+.attention-clear {
+    margin: 0;
+    padding: 14px 16px;
+}
+
+.replacement-bars {
+    display: grid;
+    gap: 8px;
+}
+
+.workspace-ui .replacement-bar-row {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr) 40px;
+    gap: 12px;
+    align-items: center;
+    color: var(--workspace-ink) !important;
+    text-decoration: none;
+}
+
+.replacement-bar-track {
+    height: 8px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 4px;
+    background: var(--workspace-navigation);
+    overflow: hidden;
+}
+
+.replacement-bar-fill {
+    display: block;
+    height: 100%;
+    background: var(--workspace-warning);
+}
+
+.replacement-bar-row.is-overdue .replacement-bar-fill {
+    background: var(--workspace-danger);
+}
+
+.replacement-bar-count {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+.replacement-bar-row.is-empty {
+    color: var(--workspace-muted) !important;
+}
+
+.replacement-bar-row.is-empty .replacement-bar-count {
+    font-weight: 500;
+}
+
+@media (max-width: 560px) {
+    .workspace-ui .replacement-bar-row {
+        grid-template-columns: 110px minmax(0, 1fr) 32px;
+    }
+}
+
+/* ------------------------------------------------------------------
+ * Row actions: one visible action and a "more" menu.
+ * ------------------------------------------------------------------ */
+.row-actions {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.workspace-ui .row-actions-menu {
+    min-width: 190px;
+    padding: 4px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 8px;
+    background: var(--workspace-surface) !important;
+    box-shadow: 0 1px 2px rgba(31, 35, 38, .06), 0 12px 28px rgba(31, 35, 38, .14);
+    z-index: 1060;
+}
+
+.workspace-ui .row-actions-menu .row-action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent !important;
+    color: var(--workspace-ink) !important;
+    font-weight: 500;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.workspace-ui .row-actions-menu .row-action-item:hover,
+.workspace-ui .row-actions-menu .row-action-item:focus {
+    background: var(--workspace-tint) !important;
+    text-decoration: none;
+}
+
+.workspace-ui .row-actions-menu li.row-action-danger .row-action-item {
+    color: var(--workspace-danger) !important;
+}
+
+.workspace-ui .row-actions-menu form {
+    margin: 0;
+}
+
+.workspace-ui .row-actions-menu .divider {
+    margin: 4px 0;
+    background: var(--workspace-border);
+}
+
+/* ------------------------------------------------------------------
+ * Asset tag builder (XX-KKK-PP[-TTT]).
+ * ------------------------------------------------------------------ */
+.workspace-ui .tag-builder {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 8px;
+    background: var(--workspace-navigation);
+}
+
+.workspace-ui .tag-builder legend {
+    width: auto;
+    margin: 0 0 6px;
+    padding: 0;
+    border: 0;
+    color: var(--workspace-ink);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tag-builder-parts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    max-width: 420px;
+}
+
+.tag-builder-parts label {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tag-builder-sequence {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 700;
+}
+
+.tag-builder-help {
+    margin: 6px 0 0;
+    font-size: 12px;
+}
+
+
+/* ------------------------------------------------------------------
+ * Shipment progress line.
+ * ------------------------------------------------------------------ */
+.shipment-progress {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 14px 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.shipment-progress li {
+    display: grid;
+    gap: 4px;
+    color: var(--workspace-muted);
+    font-size: 12.5px;
+}
+
+.shipment-progress li::before {
+    content: "";
+    height: 5px;
+    border-radius: 3px;
+    background: var(--workspace-border);
+}
+
+.shipment-progress li.is-done {
+    color: var(--workspace-ink);
+}
+
+.shipment-progress li.is-done::before {
+    background: var(--workspace-success);
+}
+
+.shipment-progress li.is-current {
+    color: var(--workspace-ink);
+    font-weight: 700;
+}
+
+.shipment-progress li.is-current::before {
+    background: var(--workspace-info);
+}
+
+.shipment-progress.is-cancelled li:not(.is-done)::before {
+    background: repeating-linear-gradient(90deg, var(--workspace-border) 0 6px, transparent 6px 10px);
+}
+
+.shipment-progress-label {
+    font-weight: 600;
+}
+
+.shipment-progress-date {
+    color: var(--workspace-muted);
+    font-weight: 400;
+}
+
+.shipment-progress-cancelled {
+    color: var(--workspace-danger);
+    font-weight: 600;
+}
+
+@media (max-width: 560px) {
+    .shipment-progress {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.workspace-ui .row-actions-menu > li,
+.workspace-ui .row-actions-menu > li:hover {
+    background: transparent !important;
+}
+
+/* ------------------------------------------------------------------
+ * Damage report (required when moving an asset into a damaged status).
+ * ------------------------------------------------------------------ */
+.workspace-ui .damage-report {
+    margin: 0 0 16px;
+}
+
+.workspace-ui .damage-report > div {
+    padding: 12px 14px;
+    border: 1px solid var(--workspace-border);
+    border-inline-start: 3px solid var(--workspace-danger);
+    border-radius: 8px;
+    background: var(--workspace-navigation);
+}
+
+.workspace-ui .damage-report legend {
+    margin: 0 0 4px;
+    border: 0;
+    color: var(--workspace-ink);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.workspace-ui .damage-report textarea {
+    margin-bottom: 8px;
+}
+
+.damage-report-label {
+    display: block;
+    margin-top: 6px;
+    font-weight: 700;
+}
+
+.damage-report-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 4px 0 8px;
+}
+
+.workspace-ui .damage-report-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.workspace-ui .damage-report-options input[type="radio"] {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
