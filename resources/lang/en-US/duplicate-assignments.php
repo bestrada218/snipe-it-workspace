@@ -41,4 +41,7 @@ return [
     'justification_only' => 'This category only requires a justification.',
     'approval_required' => 'This category requires approval: choose who approved it and attach the evidence.',
     'multi_warning' => 'This hands :total units of “:category” to the same person.',
+    'ticket' => 'Ticket number',
+    'ticket_placeholder' => 'e.g. INC-12345',
+    'ticket_required' => 'Enter the ticket number that backs this duplicate assignment (100 characters at most).',
 ];

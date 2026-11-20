@@ -59,6 +59,7 @@ class DuplicateAssignmentRulesTest extends TestCase
             ->post(route('hardware.checkout.store', $second), $checkout + [
                 'duplicate_assignment_confirmed' => '1',
                 'duplicate_assignment_reason' => 'Backup headset for night shifts',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertSessionHasNoErrors();
 
@@ -72,6 +73,41 @@ class DuplicateAssignmentRulesTest extends TestCase
             ->assertOk()
             ->assertSee('Backup headset for night shifts')
             ->assertSee(trans('duplicate-assignments.justification_only'));
+    }
+
+    public function test_a_ticket_number_is_required_and_kept_in_the_asset_history(): void
+    {
+        $headsets = AssetModel::factory()->create();
+        $person = User::factory()->create();
+        Asset::factory()->for($headsets, 'model')->assignedToUser($person)->create();
+        $second = Asset::factory()->for($headsets, 'model')->create();
+        $checkout = [
+            'checkout_to_type' => 'user',
+            'assigned_user' => $person->id,
+            'duplicate_assignment_confirmed' => '1',
+            'duplicate_assignment_reason' => 'Backup headset for night shifts',
+        ];
+        $actor = User::factory()->superuser()->create();
+
+        $this->actingAs($actor)
+            ->post(route('hardware.checkout.store', $second), $checkout)
+            ->assertSessionHasErrors('duplicate_assignment_ticket');
+        $this->assertNull($second->fresh()->assigned_to);
+
+        $this->actingAs($actor)
+            ->post(route('hardware.checkout.store', $second), $checkout + ['duplicate_assignment_ticket' => 'INC-48211'])
+            ->assertSessionHasNoErrors();
+
+        $meta = json_decode($second->log()->where('action_type', 'checkout')->sole()->log_meta, true);
+        $this->assertSame('INC-48211', $meta['_duplicate_assignment_ticket']);
+
+        $this->actingAs($actor)
+            ->get(route('duplicate-assignments.index'))
+            ->assertSee('INC-48211');
+        $this->actingAsForApi($actor)
+            ->getJson(route('api.activity.index', ['item_type' => 'asset', 'item_id' => $second->id]))
+            ->assertOk()
+            ->assertSee('INC-48211');
     }
 
     public function test_duplicate_in_an_approval_category_still_needs_approver_and_evidence(): void
@@ -91,6 +127,7 @@ class DuplicateAssignmentRulesTest extends TestCase
                 'assigned_user' => $person->id,
                 'duplicate_assignment_confirmed' => '1',
                 'duplicate_assignment_reason' => 'Backup laptop',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertSessionHasErrors(['duplicate_assignment_approver', 'duplicate_assignment_evidence']);
 
@@ -112,6 +149,7 @@ class DuplicateAssignmentRulesTest extends TestCase
             ->post(route('accessories.checkout.store', $keyboards), $checkout + [
                 'duplicate_assignment_confirmed' => '1',
                 'duplicate_assignment_reason' => 'One for the office and one for home',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertSessionHasNoErrors();
 

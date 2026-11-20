@@ -28,6 +28,7 @@ return [
         'shipment_expected' => 'Estimated delivery date',
         'duplicate_assignment_approver' => 'Approved by',
         'duplicate_assignment_reason' => 'Duplicate assignment reason',
+        'duplicate_assignment_ticket' => 'Ticket number',
         'previous_assignment' => 'Previously assigned to',
         'assigned_to' => 'Assigned to',
         'returned_from' => 'Returned by or from',

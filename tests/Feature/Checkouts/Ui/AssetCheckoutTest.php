@@ -62,6 +62,7 @@ class AssetCheckoutTest extends TestCase
         $confirmed = $data + [
             'duplicate_assignment_confirmed' => '1',
             'duplicate_assignment_reason' => 'Approved backup equipment',
+            'duplicate_assignment_ticket' => 'INC-1001',
         ];
         $this->post(route('hardware.checkout.store', $newAsset), $confirmed + [
             'duplicate_assignment_approver' => $recipient->id,

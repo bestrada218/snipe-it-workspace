@@ -43,6 +43,7 @@ class CreateAssetDuplicateAssignmentTest extends TestCase
             ->post(route('hardware.store'), $this->payload('NY-062-LP-W11') + [
                 'duplicate_assignment_confirmed' => '1',
                 'duplicate_assignment_reason' => 'Second laptop for the lab',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertSessionHasNoErrors();
 
@@ -61,6 +62,7 @@ class CreateAssetDuplicateAssignmentTest extends TestCase
             ->post(route('hardware.store'), $this->payload('NY-063-LP-W11') + [
                 'duplicate_assignment_confirmed' => '1',
                 'duplicate_assignment_reason' => 'Second laptop for the lab',
+                'duplicate_assignment_ticket' => 'INC-1001',
             ])
             ->assertSessionHasErrors(['duplicate_assignment_approver', 'duplicate_assignment_evidence']);
         $this->assertFalse(Asset::where('asset_tag', 'NY-063-LP-W11')->exists());

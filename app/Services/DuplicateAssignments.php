@@ -149,9 +149,18 @@ final class DuplicateAssignments
             ]);
         }
 
+        $ticket = $request->input('duplicate_assignment_ticket');
+        $ticket = is_string($ticket) ? trim($ticket) : '';
+        if ($ticket === '' || mb_strlen($ticket) > 100) {
+            throw ValidationException::withMessages([
+                'duplicate_assignment_ticket' => trans('duplicate-assignments.ticket_required'),
+            ]);
+        }
+
         if (! self::requiresApproval($category)) {
             request()->attributes->set(self::approvalKey($item::class, $item->id, $target->id), [
                 'reason' => $reason,
+                'ticket' => $ticket,
                 'category_id' => $category->id,
             ]);
 
@@ -176,6 +185,7 @@ final class DuplicateAssignments
         $approver = $approvers->get($validated['duplicate_assignment_approver']);
         request()->attributes->set(self::approvalKey($item::class, $item->id, $target->id), [
             'reason' => $reason,
+            'ticket' => $ticket,
             'approver_id' => $approver->id,
             'approver_name' => $approver->display_name,
             'category_id' => $category->id,
@@ -204,7 +214,7 @@ final class DuplicateAssignments
 
         $attributes->remove($approvalKey);
         if (! isset($approval['file'])) {
-            return ['_duplicate_assignment_reason' => $approval['reason']];
+            return ['_duplicate_assignment_reason' => $approval['reason'], '_duplicate_assignment_ticket' => $approval['ticket']];
         }
 
         $file = $approval['file'];
@@ -232,6 +242,7 @@ final class DuplicateAssignments
 
         return [
             '_duplicate_assignment_reason' => $approval['reason'],
+            '_duplicate_assignment_ticket' => $approval['ticket'],
             '_duplicate_assignment_approval' => [
                 'approver_id' => $approval['approver_id'],
                 'approver_name' => $approval['approver_name'],
@@ -269,7 +280,7 @@ final class DuplicateAssignments
         }
 
         if (! self::canViewApproval($log)) {
-            unset($meta['_duplicate_assignment_reason'], $meta['_duplicate_assignment_approval']);
+            unset($meta['_duplicate_assignment_reason'], $meta['_duplicate_assignment_ticket'], $meta['_duplicate_assignment_approval']);
         } else {
             unset($meta['_duplicate_assignment_approval']['key']);
         }

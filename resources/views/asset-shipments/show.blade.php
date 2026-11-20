@@ -82,6 +82,8 @@
                         <input type="hidden" name="duplicate_assignment_confirmed" value="1">
                         <label for="shipment-duplicate-reason">{{ trans('duplicate-assignments.reason') }}</label>
                         <textarea class="form-control" id="shipment-duplicate-reason" name="duplicate_assignment_reason" maxlength="1000" rows="3" placeholder="{{ trans('asset-shipments.duplicate_reason_placeholder') }}" required>{{ old('duplicate_assignment_reason') }}</textarea>
+                        <label for="shipment-duplicate-ticket">{{ trans('duplicate-assignments.ticket') }}</label>
+                        <input class="form-control" type="text" id="shipment-duplicate-ticket" name="duplicate_assignment_ticket" maxlength="100" value="{{ old('duplicate_assignment_ticket') }}" placeholder="{{ trans('duplicate-assignments.ticket_placeholder') }}" required>
                         @if ($duplicateNeedsApproval)
                         <label for="shipment-duplicate-approver">{{ trans('duplicate-assignments.approved_by') }}</label>
                         <select class="form-control" id="shipment-duplicate-approver" name="duplicate_assignment_approver" required>
@@ -97,6 +99,7 @@
                         @endif
                     @endif
                     <x-form.error name="duplicate_assignment_reason" />
+                    <x-form.error name="duplicate_assignment_ticket" />
                     <x-form.error name="duplicate_assignment_approver" />
                     <x-form.error name="duplicate_assignment_evidence" />
                     <button class="btn btn-theme" type="submit">{{ trans('asset-shipments.complete') }}</button>

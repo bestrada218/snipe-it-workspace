@@ -41,4 +41,7 @@ return [
     'justification_only' => 'Esta categoría solo requiere justificación.',
     'approval_required' => 'Esta categoría requiere aprobación: elige quién aprobó y adjunta el comprobante.',
     'multi_warning' => 'Esta operación entrega :total unidades de «:category» a la misma persona.',
+    'ticket' => 'Número de ticket',
+    'ticket_placeholder' => 'Por ejemplo, INC-12345',
+    'ticket_required' => 'Escriba el número de ticket que respalda esta asignación duplicada (máximo 100 caracteres).',
 ];

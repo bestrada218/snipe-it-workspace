@@ -97,7 +97,7 @@ class ActionlogsTransformer
                 foreach ($meta_array as $fieldname => $fieldata) {
 
                     // Snapshots are displayed separately from field diffs.
-                    if (in_array($fieldname, ['_audit_snapshot', '_activity_previous_assignment', '_activity_assignment_target', '_duplicate_assignment_reason', '_duplicate_assignment_approval'], true)) {
+                    if (in_array($fieldname, ['_audit_snapshot', '_activity_previous_assignment', '_activity_assignment_target', '_duplicate_assignment_reason', '_duplicate_assignment_ticket', '_duplicate_assignment_approval'], true)) {
                         continue;
                     }
 
@@ -225,7 +225,7 @@ class ActionlogsTransformer
         if (isset($factsMeta['_duplicate_assignment_reason']) && DuplicateAssignments::canViewApproval($actionlog)) {
             $approval = (array) ($factsMeta['_duplicate_assignment_approval'] ?? []);
         } else {
-            unset($factsMeta['_duplicate_assignment_reason']);
+            unset($factsMeta['_duplicate_assignment_reason'], $factsMeta['_duplicate_assignment_ticket']);
         }
 
         $array = [

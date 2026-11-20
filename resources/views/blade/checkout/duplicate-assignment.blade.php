@@ -17,17 +17,22 @@
             <p data-duplicate-message></p>
         </div>
         <x-form.error name="duplicate_assignment_reason" />
+        <x-form.error name="duplicate_assignment_ticket" />
         <x-form.error name="duplicate_assignment_approver" />
         <x-form.error name="duplicate_assignment_evidence" />
     </div>
     <input type="hidden" name="duplicate_assignment_confirmed" value="0">
     <input type="hidden" name="duplicate_assignment_reason" value="">
+    <input type="hidden" name="duplicate_assignment_ticket" value="">
     <dialog class="workspace-duplicate-dialog" aria-labelledby="duplicate-assignment-question">
         <h2 id="duplicate-assignment-question">{{ trans('duplicate-assignments.confirm_title') }}</h2>
         <p data-duplicate-dialog-message></p>
         <label for="duplicate-assignment-motive">{{ trans('duplicate-assignments.reason') }}</label>
         <textarea id="duplicate-assignment-motive" class="form-control" rows="3" maxlength="1000"
             placeholder="{{ trans('duplicate-assignments.reason_placeholder') }}">{{ old('duplicate_assignment_reason') }}</textarea>
+        <label for="duplicate-assignment-ticket">{{ trans('duplicate-assignments.ticket') }}</label>
+        <input id="duplicate-assignment-ticket" type="text" class="form-control" maxlength="100" aria-required="true"
+            placeholder="{{ trans('duplicate-assignments.ticket_placeholder') }}" value="{{ old('duplicate_assignment_ticket') }}">
         <p class="help-block" data-duplicate-requirement></p>
         <div data-duplicate-approval hidden>
         <label for="duplicate-assignment-approver">{{ trans('duplicate-assignments.approved_by') }}</label>
@@ -67,6 +72,8 @@
                     const evidence = dialog.querySelector('[name="duplicate_assignment_evidence"]');
                     const confirmed = panel.querySelector('[name="duplicate_assignment_confirmed"]');
                     const submittedReason = panel.querySelector('[name="duplicate_assignment_reason"]');
+                    const ticket = dialog.querySelector('#duplicate-assignment-ticket');
+                    const submittedTicket = panel.querySelector('[name="duplicate_assignment_ticket"]');
                     const messages = {
                         warning: @json(trans('duplicate-assignments.warning')),
                         multiWarning: @json(trans('duplicate-assignments.multi_warning')),
@@ -74,6 +81,7 @@
                         multiple: @json(trans('duplicate-assignments.multi_title')),
                         failed: @json(trans('duplicate-assignments.check_failed')),
                         reason: @json(trans('duplicate-assignments.reason')),
+                        ticket: @json(trans('duplicate-assignments.ticket_required')),
                         approver: @json(trans('duplicate-assignments.select_approver')),
                         evidence: @json(trans('duplicate-assignments.evidence_help')),
                         justificationOnly: @json(trans('duplicate-assignments.justification_only')),
@@ -169,6 +177,8 @@
                         confirmed.value = '0';
                         submittedReason.value = '';
                         reason.value = '';
+                        submittedTicket.value = '';
+                        ticket.value = '';
                         approver.value = '';
                         evidence.value = '';
                         const result = await check();
@@ -212,7 +222,7 @@
                         }
                     });
 
-                    const fields = [reason, approver, evidence];
+                    const fields = [reason, ticket, approver, evidence];
                     for (const field of fields) {
                         field.addEventListener('input', () => field.setCustomValidity(''));
                         field.addEventListener('change', () => field.setCustomValidity(''));
@@ -233,6 +243,12 @@
                             return;
                         }
 
+                        if (!ticket.value.trim()) {
+                            ticket.setCustomValidity(messages.ticket);
+                            ticket.reportValidity();
+                            return;
+                        }
+
                         if (requiresApproval && !approver.value) {
                             approver.setCustomValidity(messages.approver);
                             approver.reportValidity();
@@ -250,6 +266,7 @@
                         }
                         confirmed.value = '1';
                         submittedReason.value = reason.value.trim();
+                        submittedTicket.value = ticket.value.trim();
                         dialog.close();
                         approved = true;
                         form.requestSubmit(savedSubmitter || undefined);

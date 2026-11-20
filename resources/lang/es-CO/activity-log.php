@@ -28,6 +28,7 @@ return [
         'shipment_expected' => 'Fecha estimada de entrega',
         'duplicate_assignment_approver' => 'Aprobado por',
         'duplicate_assignment_reason' => 'Motivo de la asignación duplicada',
+        'duplicate_assignment_ticket' => 'Número de ticket',
         'previous_assignment' => 'Asignación anterior',
         'assigned_to' => 'Asignado a',
         'returned_from' => 'Devuelto desde',

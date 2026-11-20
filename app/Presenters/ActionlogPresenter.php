@@ -205,6 +205,7 @@ class ActionlogPresenter extends Presenter
                     : $missing,
                 'assigned_to' => $target ?? $missing,
                 'duplicate_assignment_reason' => $meta['_duplicate_assignment_reason'] ?? null,
+                'duplicate_assignment_ticket' => $meta['_duplicate_assignment_ticket'] ?? null,
                 'duplicate_assignment_approver' => ((array) ($meta['_duplicate_assignment_approval'] ?? []))['approver_name'] ?? null,
                 'units' => $this->model->quantity > 1 ? (string) $this->model->quantity : null,
             ],
