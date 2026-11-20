@@ -31,14 +31,8 @@ final class AssetTagSequence
         License::class => 'licenses',
     ];
 
-    /** PP codes from the tag guide. */
-    public const TYPE_CODES = ['LP', 'DT', 'HS', 'KB', 'MS', 'WC', 'DK', 'TV', 'SP', 'PJ', 'AP', 'VC'];
-
     /** Common TTT suffixes from the tag guide. */
     public const SUFFIXES = ['W11', 'MAC', 'LNX'];
-
-    /** Only computers carry a TTT suffix (operating system). */
-    public const SUFFIX_TYPES = ['LP', 'DT'];
 
     private const PATTERN = '/^[A-Z0-9]{2}-(\d{3})-[A-Z0-9]{2}(?:-[A-Z0-9]{3})?$/iD';
 
@@ -90,12 +84,18 @@ final class AssetTagSequence
             return;
         }
 
-        // Tags from the builder: a suffix only on laptops and desktops.
+        // Tags from the builder: a known type (Settings > Asset Tags > Tag
+        // types), with a suffix only on the types that allow one.
         if (self::assignsFreeNumber() && $model->isDirty('asset_tag')) {
             $parts = explode('-', strtoupper(trim($model->asset_tag)));
-            if (isset($parts[3]) && ! in_array($parts[2], self::SUFFIX_TYPES, true)) {
+            if (! in_array($parts[2], AssetTagTypes::codes(), true)) {
                 throw ValidationException::withMessages([
-                    'asset_tag' => trans('asset-tags.suffix_only_computers'),
+                    'asset_tag' => trans('asset-tag-types.unknown_code', ['code' => $parts[2]]),
+                ]);
+            }
+            if (isset($parts[3]) && ! in_array($parts[2], AssetTagTypes::suffixCodes(), true)) {
+                throw ValidationException::withMessages([
+                    'asset_tag' => trans('asset-tags.suffix_only_computers', ['codes' => implode(', ', AssetTagTypes::suffixCodes())]),
                 ]);
             }
         }

@@ -64,6 +64,11 @@
                     min="1"
                     max="99999"
                 />
+                <div class="form-group">
+                    <div class="col-md-9 col-md-offset-3">
+                        <a href="{{ route('settings.asset_tag_types.index') }}">{{ trans('asset-tag-types.title') }} →</a>
+                    </div>
+                </div>
             </x-box>
         </x-form>
     </x-container>

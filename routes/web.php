@@ -4,6 +4,7 @@ use App\Actions\Breadcrumbs\BuildAcceptanceBreadcrumbs;
 use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
 use App\Http\Controllers\Assets\AssetShipmentController;
+use App\Http\Controllers\AssetTagTypesController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -403,6 +404,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
 
     Route::post('asset_tags', [SettingsController::class, 'postAssetTags'])
         ->name('settings.asset_tags.save');
+
+    Route::get('asset_tags/types', [AssetTagTypesController::class, 'index'])
+        ->name('settings.asset_tag_types.index')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.asset_tags.index')
+            ->push(trans('asset-tag-types.title'), route('settings.asset_tag_types.index')));
+
+    Route::post('asset_tags/types', [AssetTagTypesController::class, 'update'])
+        ->name('settings.asset_tag_types.save');
 
     Route::get('labels', [SettingsController::class, 'getLabels'])
         ->name('settings.labels.index')

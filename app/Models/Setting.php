@@ -94,6 +94,7 @@ class Setting extends Model
         'duplicate_assignment_approvers' => 'array',
         'duplicate_approval_categories' => 'array',
         'damage_report_statuses' => 'array',
+        'asset_tag_types' => 'array',
         'purchase_approvers' => 'array',
         'inventory_module_labels' => 'array',
         'inventory_location_modules' => 'array',

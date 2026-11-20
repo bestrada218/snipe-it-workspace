@@ -54,6 +54,7 @@ return [
     ],
     'sequence_reassigned' => 'Someone else saved sequence :previous first, so this item was saved with asset tag :tag.',
     'builder_placeholder' => 'Build the tag below',
-    'suffix_only_computers' => 'Only laptops (LP) and desktops (DT) carry a suffix. Remove the suffix from this tag.',
-    'suffix_only_computers_help' => 'Only for laptops (LP) and desktops (DT).',
+    'suffix_only_computers' => 'Only types :codes carry a suffix. Remove the suffix from this tag.',
+    'suffix_only_computers_help' => 'Only for: :codes.',
+    'manage_types' => 'Manage types',
 ];

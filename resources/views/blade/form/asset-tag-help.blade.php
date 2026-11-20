@@ -17,7 +17,7 @@
              one on save (AssetTagSequence::takeNextFree). --}}
         <fieldset class="tag-builder" data-tag-builder data-target="{{ $target }}" data-sequence="{{ $nextSequence }}"
             data-placeholder="{{ trans('asset-tags.builder_placeholder') }}"
-            data-suffix-types="{{ implode(',', \App\Services\AssetTagSequence::SUFFIX_TYPES) }}">
+            data-suffix-types="{{ implode(',', \App\Services\AssetTagTypes::suffixCodes()) }}">
             <legend>{{ trans('asset-tags.builder_title') }}</legend>
             <input type="hidden" name="asset_tag_from_builder" value="1">
             <div class="tag-builder-parts">
@@ -38,10 +38,13 @@
                     <span>{{ trans('asset-tags.builder_type') }}</span>
                     <select class="form-control" data-part="type">
                         <option value="">{{ trans('asset-tags.builder_choose_type') }}</option>
-                        @foreach (\App\Services\AssetTagSequence::TYPE_CODES as $code)
-                            <option value="{{ $code }}">{{ $code }} · {{ trans('asset-tags.types.'.$code) }}</option>
+                        @foreach (\App\Services\AssetTagTypes::all() as $type)
+                            <option value="{{ $type['code'] }}">{{ $type['code'] }} · {{ $type['name'] }}</option>
                         @endforeach
                     </select>
+                    @can('superuser')
+                        <a class="tag-builder-note" href="{{ route('settings.asset_tag_types.index') }}" target="_blank" rel="noopener">{{ trans('asset-tags.manage_types') }}</a>
+                    @endcan
                 </label>
                 <label>
                     <span>{{ trans('asset-tags.builder_suffix') }}</span>
@@ -51,7 +54,7 @@
                             <option value="{{ $suffix }}">{{ $suffix }} · {{ trans('asset-tags.suffixes.'.$suffix) }}</option>
                         @endforeach
                     </select>
-                    <small class="tag-builder-note" id="{{ $id }}-suffix-help">{{ trans('asset-tags.suffix_only_computers_help') }}</small>
+                    <small class="tag-builder-note" id="{{ $id }}-suffix-help">{{ trans('asset-tags.suffix_only_computers_help', ['codes' => implode(', ', \App\Services\AssetTagTypes::suffixCodes())]) }}</small>
                 </label>
             </div>
             <p class="tag-builder-help">{{ trans('asset-tags.builder_help') }}</p>
