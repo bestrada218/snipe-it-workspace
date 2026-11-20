@@ -1491,3 +1491,9 @@
         width: 180px;
     }
 }
+
+.workspace-ui .search-more {
+    display: inline-block;
+    margin-top: 8px;
+    font-weight: 600;
+}

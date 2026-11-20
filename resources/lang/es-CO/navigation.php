@@ -17,8 +17,7 @@ return [
     'search_too_short' => 'Escriba al menos dos caracteres para buscar.',
     'search_no_results' => 'Nada coincide con «:term». Revise la placa o pruebe con parte del número de serie o del nombre de la persona.',
     'results_assets' => 'Activos',
-    'results_items' => 'Otros elementos con placa',
     'results_people' => 'Personas',
-    'results_limited' => 'Se muestran los primeros resultados. Afine la búsqueda para acotarlos.',
     'no_tag' => 'Sin placa',
+    'show_more' => 'Ver más resultados',
 ];

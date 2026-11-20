@@ -73,6 +73,47 @@ class GlobalSearchTest extends TestCase
             ->assertDontSee('NY-034-LP-MAC');
     }
 
+    public function test_people_with_only_accessory_access_can_search_accessories(): void
+    {
+        Accessory::factory()->create(['asset_tag' => 'NY-036-HS', 'name' => 'Jabra Evolve2 40']);
+        Asset::factory()->create(['asset_tag' => 'NY-037-LP-W11']);
+
+        $this->actingAs(User::factory()->viewAccessories()->create())
+            ->get(route('search', ['q' => 'NY-03']))
+            ->assertOk()
+            ->assertSee('NY-036-HS')
+            ->assertDontSee('NY-037-LP-W11');
+    }
+
+    public function test_unnamed_assets_are_found_by_their_model(): void
+    {
+        $asset = Asset::factory()->create(['asset_tag' => 'NY-038-LP-W11', 'name' => null]);
+
+        $this->actingAs(User::factory()->viewAssets()->create())
+            ->get(route('search', ['q' => $asset->model->name]))
+            ->assertOk()
+            ->assertSee('NY-038-LP-W11');
+    }
+
+    public function test_more_results_can_be_opened(): void
+    {
+        foreach (range(40, 50) as $number) {
+            Accessory::factory()->create(['asset_tag' => 'NJ-'.$number.'0-KB', 'name' => 'Logitech keyboard '.$number]);
+        }
+        $user = User::factory()->superuser()->create();
+
+        $this->actingAs($user)
+            ->get(route('search', ['q' => 'Logitech keyboard']))
+            ->assertOk()
+            ->assertSee(trans('navigation.show_more'))
+            ->assertDontSee('NJ-500-KB');
+
+        $this->actingAs($user)
+            ->get(route('search', ['q' => 'Logitech keyboard', 'more' => 'accessories']))
+            ->assertOk()
+            ->assertSee('NJ-500-KB');
+    }
+
     public function test_disabled_modules_are_not_searched(): void
     {
         $this->settings->set(['disabled_inventory_modules' => ['accessories']]);

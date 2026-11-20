@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Accessory;
 use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
@@ -25,6 +26,11 @@ class SearchController extends Controller
 {
     private const MIN_LENGTH = 2;
 
+    /** Rows shown per section, and when the person asks for more. */
+    private const LIMITS = ['assets' => 25, 'items' => 10, 'people' => 15];
+
+    private const EXPANDED_LIMIT = 200;
+
     /**
      * Tagged inventory modules searched besides assets, with the ability the
      * side menu uses to show each one.
@@ -40,42 +46,55 @@ class SearchController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
-        abort_unless($this->canSearchAssets() || Gate::allows('view', User::class), 403);
+        abort_unless(self::isAvailable(), 403);
 
         $term = trim((string) $request->query('q', ''));
-        $assets = collect();
-        $items = collect();
-        $people = collect();
+        $more = (string) $request->query('more', '');
+        $assets = null;
+        $items = [];
+        $people = null;
 
         if (mb_strlen($term) >= self::MIN_LENGTH) {
             $like = '%'.addcslashes($term, '%_\\').'%';
 
-            if ($this->canSearchAssets()) {
+            if (self::canSearchAssets()) {
                 $exact = Asset::where('asset_tag', $term)->first();
                 if ($exact && ! $request->boolean('all')) {
                     return redirect()->route('hardware.show', $exact);
                 }
 
-                $assets = Asset::with(['model', 'status', 'assignedTo'])
+                // Assets without a name are shown by their model, so the model
+                // name is searched too.
+                $assets = $this->limited(Asset::with(['model', 'status', 'assignedTo'])
                     ->where(fn (Builder $query) => $query->where('assets.asset_tag', 'like', $like)
                         ->orWhere('assets.serial', 'like', $like)
-                        ->orWhere('assets.name', 'like', $like))
-                    ->orderBy('assets.asset_tag')
-                    ->limit(25)
-                    ->get();
+                        ->orWhere('assets.name', 'like', $like)
+                        ->orWhereIn('assets.model_id', AssetModel::where('name', 'like', $like)->select('id')))
+                    ->orderBy('assets.asset_tag'), $more === 'assets' ? self::EXPANDED_LIMIT : self::LIMITS['assets']);
             }
 
-            $items = $this->taggedItems($like);
+            foreach (self::TAGGED_ITEMS as $module => [$class, $ability, $route]) {
+                if (! self::canSearchModule($module)) {
+                    continue;
+                }
+
+                $table = (new $class)->getTable();
+                $found = $this->limited($class::query()
+                    ->where(fn (Builder $query) => $query->where($table.'.asset_tag', 'like', $like)
+                        ->orWhere($table.'.name', 'like', $like))
+                    ->orderBy($table.'.asset_tag'), $more === $module ? self::EXPANDED_LIMIT : self::LIMITS['items']);
+                if ($found['rows']->isNotEmpty()) {
+                    $items[$module] = $found + ['route' => $route];
+                }
+            }
 
             if (Gate::allows('view', User::class)) {
-                $people = User::with('location')
+                $people = $this->limited(User::with('location')
                     ->where(fn (Builder $query) => $query->where('users.username', 'like', $like)
                         ->orWhere('users.email', 'like', $like)
                         ->orWhere('users.employee_num', 'like', $like)
                         ->orWhereRaw("CONCAT(users.first_name, ' ', COALESCE(users.last_name, '')) LIKE ?", [$like]))
-                    ->orderBy('users.first_name')
-                    ->limit(15)
-                    ->get();
+                    ->orderBy('users.first_name'), $more === 'people' ? self::EXPANDED_LIMIT : self::LIMITS['people']);
             }
         }
 
@@ -85,35 +104,43 @@ class SearchController extends Controller
             'assets' => $assets,
             'items' => $items,
             'people' => $people,
+            'nothingFound' => mb_strlen($term) >= self::MIN_LENGTH
+                && ($assets['rows'] ?? collect())->isEmpty() && $items === [] && ($people['rows'] ?? collect())->isEmpty(),
         ]);
     }
 
-    private function canSearchAssets(): bool
+    /**
+     * Whether the header search applies to this person: any inventory module
+     * they can open, or people.
+     */
+    public static function isAvailable(): bool
     {
-        return Setting::inventoryModuleEnabled('assets') && Gate::allows('index', Asset::class);
+        return self::canSearchAssets()
+            || Gate::allows('view', User::class)
+            || collect(array_keys(self::TAGGED_ITEMS))->contains(fn (string $module) => self::canSearchModule($module));
     }
 
     /**
-     * @return Collection<int, array{module: string, model: \Illuminate\Database\Eloquent\Model, route: string}>
+     * Fetch one row past the limit to know whether there is more to show.
+     *
+     * @return array{rows: Collection, more: bool}
      */
-    private function taggedItems(string $like): Collection
+    private function limited(Builder $query, int $limit): array
     {
-        $found = collect();
-        foreach (self::TAGGED_ITEMS as $module => [$class, $ability, $route]) {
-            if (! Setting::inventoryModuleEnabled($module) || Gate::denies($ability, $class)) {
-                continue;
-            }
+        $rows = $query->limit($limit + 1)->get();
 
-            $table = (new $class)->getTable();
-            $class::query()
-                ->where(fn (Builder $query) => $query->where($table.'.asset_tag', 'like', $like)
-                    ->orWhere($table.'.name', 'like', $like))
-                ->orderBy($table.'.asset_tag')
-                ->limit(10)
-                ->get()
-                ->each(fn ($model) => $found->push(['module' => $module, 'model' => $model, 'route' => $route]));
-        }
+        return ['rows' => $rows->take($limit), 'more' => $rows->count() > $limit && $limit < self::EXPANDED_LIMIT];
+    }
 
-        return $found;
+    private static function canSearchModule(string $module): bool
+    {
+        [$class, $ability] = self::TAGGED_ITEMS[$module];
+
+        return Setting::inventoryModuleEnabled($module) && Gate::allows($ability, $class);
+    }
+
+    private static function canSearchAssets(): bool
+    {
+        return Setting::inventoryModuleEnabled('assets') && Gate::allows('index', Asset::class);
     }
 }

@@ -175,7 +175,7 @@
                                 </li>
                             @endcan
 
-                            @if ((\App\Models\Setting::inventoryModuleEnabled('assets') && Gate::allows('index', \App\Models\Asset::class)) || Gate::allows('view', \App\Models\User::class))
+                            @if (\App\Http\Controllers\SearchController::isAvailable())
                                 <li>
                                     <form class="navbar-form navbar-left form-inline" role="search" action="{{ route('search') }}" method="get">
                                         <div class="input-group col-xs-12" style="border: 0 !important;">
