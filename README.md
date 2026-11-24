@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/bestrada218/snipe-it-workspace/main
 snipe-it-workspace update
 ```
 
-It only does something when there is a new version on GitHub. It then:
+It only does something when there is a new version on GitHub. Servers install only released versions (the `main` branch); what each version changed is in [CHANGELOG.md](CHANGELOG.md). It then:
 
 1. backs up the current data (it does not update if the backup fails);
 2. downloads the new version and lists what changed;
@@ -82,7 +82,7 @@ snipe-it-workspace auto-update on
 
 | Command | What it does |
 | --- | --- |
-| `snipe-it-workspace status` | Whether it is running and which version is installed |
+| `snipe-it-workspace status` | Whether it is running, the Snipe-IT Workspace version and the Snipe-IT version it is based on |
 | `snipe-it-workspace update` | Install the latest version (backs up first) |
 | `snipe-it-workspace backup` | Make a backup now |
 | `snipe-it-workspace backups` | List the backups kept on this server |
@@ -191,6 +191,7 @@ Without `BACKUP_ARCHIVE_PASSWORD`, nothing leaves the server: the local copy is 
 - The application is Laravel 12 on PHP 8.3 with MariaDB; front-end assets are built with Laravel Mix (`npm run dev`, `npm run prod`). The compiled CSS is committed.
 - Tests: `php vendor/bin/phpunit` (run each `tests/` folder separately on machines with little memory).
 - Format PHP with `vendor/bin/pint --dirty`.
+- Work goes to the `develop` branch; `main` only receives released versions (see [CHANGELOG.md](CHANGELOG.md)).
 - `compose.workspace.yml` builds the image from this repository; the stock `docker-compose.yml` uses the official Snipe-IT image and is kept only to ease merging with upstream.
 
 ## Relationship with Snipe-IT and license

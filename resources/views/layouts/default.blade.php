@@ -964,8 +964,8 @@
                     <div class="pull-right">
                     @if ($snipeSettings->version_footer!='off')
                         @if (($snipeSettings->version_footer=='on') || (($snipeSettings->version_footer=='admin') && (Auth::user()->isSuperUser()=='1')))
-                            &nbsp; {{ trans('general.version') }} {{ config('version.app_version') }} -
-                            {{ trans('general.build') }} {{ config('version.build_version') }} ({{ config('version.branch') }})
+                            &nbsp; Snipe-IT Workspace {{ config('workspace.version') }} ·
+                            {{ trans('admin/settings/general.based_on_snipe_it') }} {{ config('version.app_version') }}
                         @endif
                     @endif
 

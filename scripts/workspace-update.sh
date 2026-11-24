@@ -36,8 +36,10 @@ echo "1/4 Backing up the current data..."
 
 echo "2/4 Downloading the new version..."
 previous="$(git rev-parse --short HEAD)"
+previous_version="$(cat VERSION 2>/dev/null || echo unknown)"
 git merge --ff-only --quiet "origin/$BRANCH"
-echo "    ${previous} -> $(git rev-parse --short HEAD)"
+echo "    Snipe-IT Workspace ${previous_version} -> $(cat VERSION 2>/dev/null || echo unknown)  (${previous} -> $(git rev-parse --short HEAD))"
+echo "    What changed: CHANGELOG.md"
 git log --oneline "${previous}..HEAD" | sed 's/^/    /'
 
 echo "3/4 Rebuilding and restarting..."

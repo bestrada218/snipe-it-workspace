@@ -361,6 +361,8 @@ return [
     'no_company_webhooks' => 'No company-specific webhook integrations have been configured.',
     'shortcuts_enabled' => 'Enable Shortcuts',
     'shortcuts_help_text' => '<strong>Windows</strong>: Alt + Access key, <strong>Mac</strong>: Control + Option + Access key',
+    'workspace_version' => 'Snipe-IT Workspace version',
+    'based_on_snipe_it' => 'based on Snipe-IT',
     'snipe_version' => 'Snipe-IT version',
     'fixed_assets' => 'Fixed assets',
     'inventory_display_name' => 'Display name for :module',

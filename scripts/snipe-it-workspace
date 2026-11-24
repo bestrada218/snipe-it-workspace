@@ -82,7 +82,8 @@ case "${1:-help}" in
         exec "$DIR/scripts/workspace-update.sh" "$@"
         ;;
     status)
-        echo "Version: $(git log -1 --format='%h  %cd  %s' --date=short)"
+        echo "Snipe-IT Workspace: $(cat VERSION 2>/dev/null || echo unknown)  (based on Snipe-IT $(grep "'app_version'" config/version.php | cut -d"'" -f4))"
+        echo "Code: $(git log -1 --format='%h  %cd' --date=short)"
         compose ps --format 'table {{.Service}}\t{{.Status}}'
         if curl -fsS "http://localhost:$(port)/health" >/dev/null 2>&1; then
             echo "Application: answering on $(grep '^APP_URL=' .env | cut -d= -f2-)"

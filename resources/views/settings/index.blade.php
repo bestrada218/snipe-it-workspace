@@ -366,6 +366,16 @@
           <!-- row -->
           <div class="row">
             <div class="col-md-2">
+              <strong>{{ trans('admin/settings/general.workspace_version') }}:</strong>
+            </div>
+            <div class="col-md-10">
+              {{ config('workspace.version') }}
+            </div>
+          </div>
+
+          <!-- row -->
+          <div class="row">
+            <div class="col-md-2">
               <strong>{{ trans('admin/settings/general.snipe_version') }}:</strong>
             </div>
             <div class="col-md-4">
