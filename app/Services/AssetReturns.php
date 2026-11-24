@@ -47,15 +47,47 @@ final class AssetReturns
     }
 
     /**
-     * Where items that do not go to the partner can be kept: any location
-     * (each clinic), except the partner's own warehouse.
+     * Every location as a tree (country → state → clinic), in order, for
+     * the clinic picker. Only the deepest level (the clinics) can receive
+     * items, and never the partner's own warehouse.
+     *
+     * @return Collection<int, array{location: Location, depth: int, selectable: bool}>
+     */
+    public static function clinicLocationTree(): Collection
+    {
+        $locations = Location::query()->orderBy('name')->get(['id', 'name', 'parent_id']);
+        $ids = $locations->pluck('id')->all();
+        $byParent = $locations->groupBy(fn (Location $location) => in_array($location->parent_id, $ids, true) ? $location->parent_id : 0);
+        $partnerId = self::partnerLocation()?->id;
+        $rows = collect();
+
+        $walk = function (int $parentId, int $depth) use (&$walk, $byParent, $partnerId, $rows): void {
+            foreach ($byParent->get($parentId, collect()) as $location) {
+                $rows->push([
+                    'location' => $location,
+                    'depth' => $depth,
+                    'selectable' => ! $byParent->has($location->id) && $location->id !== $partnerId,
+                ]);
+                $walk($location->id, $depth + 1);
+            }
+        };
+        $walk(0, 0);
+
+        // Clinics are the deepest level: a state with no clinics yet is a
+        // leaf too, but it is not a place that keeps equipment.
+        $deepest = $rows->max('depth') ?? 0;
+
+        return $rows->map(fn (array $row) => ['selectable' => $row['selectable'] && $row['depth'] === $deepest] + $row);
+    }
+
+    /**
+     * The locations that can keep returned items (see clinicLocationTree()).
+     *
+     * @return Collection<int, Location>
      */
     public static function clinicLocations(): Collection
     {
-        return Location::query()
-            ->when(self::partnerLocation(), fn ($query, Location $partner) => $query->whereKeyNot($partner->id))
-            ->orderBy('name')
-            ->get();
+        return self::clinicLocationTree()->where('selectable', true)->pluck('location')->values();
     }
 
     /**
@@ -186,19 +218,29 @@ final class AssetReturns
     }
 
     /**
-     * Mark the next step of the box shipment. When the boxes reach the
-     * warehouse, the partner items are checked in from the person.
+     * Mark a step of the box shipment (by default the next one) on a date.
+     * The shipment is tracked on another platform, so any later step can be
+     * marked: the earlier ones still open take the same date. When the boxes
+     * reach the warehouse, the partner items are checked in from the person.
      */
-    public static function advanceShipping(AssetReturn $return, User $actor): void
+    public static function markShippingStep(AssetReturn $return, User $actor, ?string $step = null, ?Carbon $date = null): void
     {
-        DB::transaction(function () use ($return, $actor) {
+        DB::transaction(function () use ($return, $actor, $step, $date) {
             $return = AssetReturn::whereKey($return->id)->lockForUpdate()->firstOrFail();
-            $step = $return->nextShippingStep();
-            if (! $return->isOpen() || $step === null || ! $return->hasPartnerItems()) {
+            $step ??= $return->nextShippingStep();
+            if (! $return->isOpen() || ! $return->hasPartnerItems() || ! in_array($step, AssetReturn::SHIPPING_STEPS, true) || $return->{$step} !== null) {
                 throw ValidationException::withMessages(['step' => trans('asset-returns.step_not_available')]);
             }
 
-            $return->{$step} = now();
+            $date = self::stepDate($date, $return);
+            foreach (AssetReturn::SHIPPING_STEPS as $each) {
+                if ($return->{$each} === null) {
+                    $return->{$each} = $date;
+                }
+                if ($each === $step) {
+                    break;
+                }
+            }
             $return->save();
 
             if ($step === 'warehouse_arrived_at') {
@@ -212,23 +254,125 @@ final class AssetReturns
         });
     }
 
-    /** Mark the partner received or set up one item that was not with them before. */
-    public static function advancePartnerStep(AssetReturnItem $item): void
+    /** Kept for callers that only move to the next step today. */
+    public static function advanceShipping(AssetReturn $return, User $actor): void
     {
-        $step = $item->nextPartnerStep();
-        if (! $item->assetReturn->isOpen() || $step === null) {
+        self::markShippingStep($return, $actor);
+    }
+
+    /**
+     * Undo the last shipping step marked by mistake. The arrival cannot be
+     * undone: it already checked the items in.
+     */
+    public static function undoShippingStep(AssetReturn $return): void
+    {
+        $step = $return->lastShippingStep();
+        if (! $return->isOpen() || $step === null || $step === 'warehouse_arrived_at') {
+            throw ValidationException::withMessages(['step' => trans('asset-returns.cannot_undo')]);
+        }
+
+        $return->{$step} = null;
+        $return->save();
+    }
+
+    /**
+     * Mark the partner received or set up an item that was not with them
+     * before (by default the next of the two), on a date.
+     */
+    public static function markPartnerStep(AssetReturnItem $item, ?string $step = null, ?Carbon $date = null): void
+    {
+        $return = $item->assetReturn;
+        $step ??= $item->nextPartnerStep();
+        if (! $return->isOpen() || $item->nextPartnerStep() === null || ! in_array($step, AssetReturnItem::PARTNER_STEPS, true) || $item->{$step} !== null) {
             throw ValidationException::withMessages(['step' => trans('asset-returns.step_not_available')]);
         }
 
-        $item->{$step} = now();
+        $date = self::stepDate($date, $return);
+        foreach (AssetReturnItem::PARTNER_STEPS as $each) {
+            if ($item->{$each} === null) {
+                $item->{$each} = $date;
+            }
+            if ($each === $step) {
+                break;
+            }
+        }
         $item->save();
-        self::completeIfDone($item->assetReturn->fresh('items'));
+        self::completeIfDone($return->fresh('items'));
     }
 
-    /** Check the item in from the person and assign it to its storage location. */
-    public static function store(AssetReturnItem $item, User $actor): void
+    public static function advancePartnerStep(AssetReturnItem $item): void
     {
-        DB::transaction(function () use ($item, $actor) {
+        self::markPartnerStep($item);
+    }
+
+    /** Undo the last partner step of an item; a completed return opens again. */
+    public static function undoPartnerStep(AssetReturnItem $item): void
+    {
+        $return = $item->assetReturn;
+        $step = $item->lastPartnerStep();
+        if ($return->cancelled_at !== null || $step === null) {
+            throw ValidationException::withMessages(['step' => trans('asset-returns.cannot_undo')]);
+        }
+
+        $item->{$step} = null;
+        $item->save();
+        if ($return->completed_at !== null) {
+            $return->completed_at = null;
+            $return->save();
+        }
+    }
+
+    /**
+     * Ticket, owners, reason and the box shipment's carrier and tracking
+     * number can be corrected while the return is open.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public static function updateDetails(AssetReturn $return, array $input): void
+    {
+        if ($return->cancelled_at !== null) {
+            throw ValidationException::withMessages(['return' => trans('asset-returns.step_not_available')]);
+        }
+
+        $return->fill(collect($input)->only(['reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'carrier', 'tracking_number'])->all());
+        $return->save();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function detailRules(): array
+    {
+        return [
+            'reason' => ['required', Rule::in(AssetReturn::REASONS)],
+            'ticket_number' => ['nullable', 'string', 'max:100'],
+            'ticket_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'return_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'carrier' => ['nullable', 'string', 'max:100'],
+            'tracking_number' => ['nullable', 'string', 'max:100'],
+        ];
+    }
+
+    /**
+     * The date someone typed for a step: not in the future, not before the
+     * return was created. Today keeps the current time.
+     */
+    private static function stepDate(?Carbon $date, AssetReturn $return): Carbon
+    {
+        if ($date === null || $date->isToday()) {
+            return now();
+        }
+        if ($date->isFuture() || $date->lt($return->created_at->copy()->startOfDay())) {
+            throw ValidationException::withMessages(['step' => trans('asset-returns.invalid_date')]);
+        }
+
+        return $date->copy()->setTime(12, 0);
+    }
+
+    /** Check the item in from the person: back in stock at the clinic it is stored in. */
+    public static function store(AssetReturnItem $item, User $actor, ?Carbon $date = null): void
+    {
+        DB::transaction(function () use ($item, $actor, $date) {
             $item = AssetReturnItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
             $return = $item->assetReturn;
             if (! $return->isOpen() || $item->goesToPartner() || $item->stored_at !== null) {
@@ -236,7 +380,7 @@ final class AssetReturns
             }
 
             self::checkIn($item, $return, $actor, $item->location, trans('asset-returns.log_stored', ['id' => $return->id]));
-            $item->stored_at = now();
+            $item->stored_at = self::stepDate($date, $return);
             $item->save();
 
             self::completeIfDone($return->fresh('items'));

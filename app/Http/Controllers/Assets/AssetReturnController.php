@@ -8,9 +8,11 @@ use App\Models\AssetReturn;
 use App\Models\AssetReturnItem;
 use App\Models\User;
 use App\Services\AssetReturns;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Returns of what a person holds (termination or change): the items, where
@@ -42,7 +44,7 @@ class AssetReturnController extends Controller
         return view('asset-returns.create', [
             'person' => $person,
             'items' => $person ? AssetReturns::returnableItems($person) : collect(),
-            'clinicLocations' => AssetReturns::clinicLocations(),
+            'clinicLocations' => AssetReturns::clinicLocationTree(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }
@@ -64,35 +66,78 @@ class AssetReturnController extends Controller
 
         return view('asset-returns.show', [
             'return' => $return,
-            'clinicLocations' => AssetReturns::clinicLocations(),
+            'clinicLocations' => AssetReturns::clinicLocationTree(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }
 
+    /** Mark a shipping step (the next one, or a later one) on a date. */
     public function advance(Request $request, AssetReturn $return): RedirectResponse
     {
         $this->authorize('checkin', Asset::class);
-        AssetReturns::advanceShipping($return, $request->user());
+        $input = $request->validate([
+            'step' => ['nullable', Rule::in(AssetReturn::SHIPPING_STEPS)],
+            'date' => ['nullable', 'date'],
+        ]);
+        AssetReturns::markShippingStep($return, $request->user(), $input['step'] ?? null, $this->date($input));
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.step_saved'));
     }
 
-    public function advanceItem(AssetReturn $return, AssetReturnItem $item): RedirectResponse
+    public function undo(AssetReturn $return): RedirectResponse
+    {
+        $this->authorize('checkin', Asset::class);
+        AssetReturns::undoShippingStep($return);
+
+        return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.step_undone'));
+    }
+
+    public function advanceItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
         $this->authorize('checkin', Asset::class);
         abort_unless($item->asset_return_id === $return->id, 404);
-        AssetReturns::advancePartnerStep($item);
+        $input = $request->validate([
+            'step' => ['nullable', Rule::in(AssetReturnItem::PARTNER_STEPS)],
+            'date' => ['nullable', 'date'],
+        ]);
+        AssetReturns::markPartnerStep($item, $input['step'] ?? null, $this->date($input));
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.step_saved'));
+    }
+
+    public function undoItem(AssetReturn $return, AssetReturnItem $item): RedirectResponse
+    {
+        $this->authorize('checkin', Asset::class);
+        abort_unless($item->asset_return_id === $return->id, 404);
+        AssetReturns::undoPartnerStep($item);
+
+        return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.step_undone'));
     }
 
     public function storeItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
         $this->authorize('checkin', Asset::class);
         abort_unless($item->asset_return_id === $return->id, 404);
-        AssetReturns::store($item, $request->user());
+        $input = $request->validate(['date' => ['nullable', 'date']]);
+        AssetReturns::store($item, $request->user(), $this->date($input));
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.stored', ['location' => $item->location?->name]));
+    }
+
+    public function updateDetails(Request $request, AssetReturn $return): RedirectResponse
+    {
+        $this->authorize('checkin', Asset::class);
+        AssetReturns::updateDetails($return, $request->validate(AssetReturns::detailRules()));
+
+        return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.details_saved'));
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    private function date(array $input): ?Carbon
+    {
+        return filled($input['date'] ?? null) ? Carbon::parse($input['date']) : null;
     }
 
     public function updateItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse

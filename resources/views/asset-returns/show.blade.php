@@ -4,6 +4,8 @@
 
 @php
     $canManage = auth()->user()->can('checkin', \App\Models\Asset::class) && $return->isOpen();
+    // A partner step marked by mistake can be undone even after the return completed.
+    $canUndoItems = auth()->user()->can('checkin', \App\Models\Asset::class) && $return->cancelled_at === null;
     $stepLabel = fn (string $step) => trans('asset-returns.steps.'.$step, ['partner' => $partner]);
 @endphp
 
@@ -17,7 +19,41 @@
                 <div><dt>{{ trans('asset-returns.ticket_owner') }}</dt><dd>{{ $return->ticketOwner?->display_name ?: '—' }}</dd></div>
                 <div><dt>{{ trans('asset-returns.return_owner') }}</dt><dd>{{ $return->returnOwner?->display_name ?: '—' }}</dd></div>
                 <div><dt>{{ trans('asset-returns.created_on') }}</dt><dd>{{ Helper::getFormattedDateObject($return->created_at, 'date', false) }}</dd></div>
+                @if ($return->hasPartnerItems())
+                    <div><dt>{{ trans('asset-returns.carrier') }}</dt><dd>{{ $return->carrier ?: '—' }}</dd></div>
+                    <div><dt>{{ trans('asset-returns.tracking_number') }}</dt><dd>{{ $return->tracking_number ?: '—' }}</dd></div>
+                @endif
             </dl>
+
+            @if ($canManage)
+                <details class="return-edit return-edit-details" @if ($errors->hasAny(['reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'carrier', 'tracking_number'])) open @endif>
+                    <summary>{{ trans('asset-returns.edit_details') }}</summary>
+                    <form method="POST" action="{{ route('returns.update', $return) }}" class="form-horizontal">
+                        @csrf
+                        @method('PUT')
+                        <div class="form-group">
+                            <label class="col-md-3 control-label">{{ trans('asset-returns.reason') }}</label>
+                            <div class="col-md-7 return-reasons">
+                                @foreach (\App\Models\AssetReturn::REASONS as $reason)
+                                    <label><input type="radio" name="reason" value="{{ $reason }}" @checked(old('reason', $return->reason) === $reason) required> {{ trans('asset-returns.reasons.'.$reason) }}</label>
+                                @endforeach
+                            </div>
+                        </div>
+                        <x-form.row :label="trans('asset-returns.ticket')" name="ticket_number" :item="$return" :required="false" :placeholder="trans('asset-returns.ticket_placeholder')" maxlength="100" />
+                        <x-input.user-select :label="trans('asset-returns.ticket_owner')" name="ticket_owner_id" :selected="old('ticket_owner_id', $return->ticket_owner_id)" />
+                        <x-input.user-select :label="trans('asset-returns.return_owner')" name="return_owner_id" :selected="old('return_owner_id', $return->return_owner_id)" />
+                        @if ($return->hasPartnerItems())
+                            <x-form.row :label="trans('asset-returns.carrier')" name="carrier" :item="$return" :required="false" :placeholder="trans('asset-returns.carrier_placeholder')" maxlength="100" />
+                            <x-form.row :label="trans('asset-returns.tracking_number')" name="tracking_number" :item="$return" :required="false" maxlength="100" />
+                        @endif
+                        <div class="form-group">
+                            <div class="col-md-7 col-md-offset-3">
+                                <button class="btn btn-theme" type="submit">{{ trans('general.save') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </details>
+            @endif
             <x-form.error name="step" />
             <x-form.error name="return" />
 
@@ -35,11 +71,35 @@
                         </li>
                     @endforeach
                 </ol>
-                @if ($canManage && $next)
-                    <form method="POST" action="{{ route('returns.advance', $return) }}" class="return-step-action">
-                        @csrf
-                        <button class="btn btn-theme" type="submit">{{ trans('asset-returns.mark', ['step' => $stepLabel($next)]) }}</button>
-                    </form>
+                @if ($canManage)
+                    <div class="return-step-actions">
+                        @if ($next)
+                            @php($pending = array_slice(\App\Models\AssetReturn::SHIPPING_STEPS, array_search($next, \App\Models\AssetReturn::SHIPPING_STEPS)))
+                            <form method="POST" action="{{ route('returns.advance', $return) }}" class="return-step-form">
+                                @csrf
+                                <label>
+                                    <span>{{ trans('asset-returns.what_happened') }}</span>
+                                    <select class="form-control" name="step">
+                                        @foreach ($pending as $step)
+                                            <option value="{{ $step }}">{{ $stepLabel($step) }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>{{ trans('asset-returns.date') }}</span>
+                                    <input class="form-control" type="date" name="date" value="{{ now()->toDateString() }}" min="{{ $return->created_at->toDateString() }}" max="{{ now()->toDateString() }}" required>
+                                </label>
+                                <button class="btn btn-theme" type="submit">{{ trans('asset-returns.record') }}</button>
+                            </form>
+                            <p class="help-block">{{ trans('asset-returns.record_help', ['partner' => $partner]) }}</p>
+                        @endif
+                        @if (($last = $return->lastShippingStep()) && $last !== 'warehouse_arrived_at')
+                            <form method="POST" action="{{ route('returns.undo', $return) }}">
+                                @csrf
+                                <button class="btn btn-link btn-sm return-undo" type="submit">{{ trans('asset-returns.undo', ['step' => $stepLabel($last)]) }}</button>
+                            </form>
+                        @endif
+                    </div>
                 @endif
             @endif
         </x-box>
@@ -90,12 +150,7 @@
                                                     @endforeach
                                                 </div>
                                                 <div data-when="storage">
-                                                    <select class="form-control" name="location_id" aria-label="{{ trans('asset-returns.storage_location') }}">
-                                                        <option value="">{{ trans('asset-returns.choose_location') }}</option>
-                                                        @foreach ($clinicLocations as $location)
-                                                            <option value="{{ $location->id }}" @selected($item->location_id === $location->id)>{{ $location->name }}</option>
-                                                        @endforeach
-                                                    </select>
+                                                    <x-input.clinic-location-select name="location_id" :tree="$clinicLocations" :selected="$item->location_id" :aria-label="trans('asset-returns.storage_location')" />
                                                 </div>
                                                 <button class="btn btn-default btn-sm" type="submit">{{ trans('general.save') }}</button>
                                             </form>
@@ -118,10 +173,22 @@
                                                 </li>
                                             @endforeach
                                         </ol>
-                                        @if ($canManage && $item->nextPartnerStep())
-                                            <form method="POST" action="{{ route('returns.items.advance', [$return, $item]) }}">
+                                        @if ($canManage && ($itemNext = $item->nextPartnerStep()))
+                                            <form method="POST" action="{{ route('returns.items.advance', [$return, $item]) }}" class="return-step-form return-step-form-sm">
                                                 @csrf
-                                                <button class="btn btn-default btn-sm" type="submit">{{ trans('asset-returns.mark', ['step' => $stepLabel($item->nextPartnerStep())]) }}</button>
+                                                <select class="form-control input-sm" name="step" aria-label="{{ trans('asset-returns.what_happened') }}">
+                                                    @foreach (array_slice(\App\Models\AssetReturnItem::PARTNER_STEPS, array_search($itemNext, \App\Models\AssetReturnItem::PARTNER_STEPS)) as $step)
+                                                        <option value="{{ $step }}">{{ $stepLabel($step) }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input class="form-control input-sm" type="date" name="date" value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}" aria-label="{{ trans('asset-returns.date') }}" required>
+                                                <button class="btn btn-default btn-sm" type="submit">{{ trans('asset-returns.record') }}</button>
+                                            </form>
+                                        @endif
+                                        @if ($canUndoItems && ($itemLast = $item->lastPartnerStep()))
+                                            <form method="POST" action="{{ route('returns.items.undo', [$return, $item]) }}">
+                                                @csrf
+                                                <button class="btn btn-link btn-sm return-undo" type="submit">{{ trans('asset-returns.undo', ['step' => $stepLabel($itemLast)]) }}</button>
                                             </form>
                                         @endif
                                     @else
@@ -130,8 +197,9 @@
                                         @else
                                             <span class="workspace-shipment-status" data-status="in_transit">{{ trans('asset-returns.pending_store', ['location' => $item->location?->name]) }}</span>
                                             @if ($canManage)
-                                                <form method="POST" action="{{ route('returns.items.store', [$return, $item]) }}">
+                                                <form method="POST" action="{{ route('returns.items.store', [$return, $item]) }}" class="return-step-form return-step-form-sm">
                                                     @csrf
+                                                    <input class="form-control input-sm" type="date" name="date" value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}" aria-label="{{ trans('asset-returns.date') }}" required>
                                                     <button class="btn btn-default btn-sm" type="submit">{{ trans('asset-returns.store') }}</button>
                                                 </form>
                                             @endif

@@ -45,7 +45,7 @@
                     @if ($items->isEmpty())
                         <p>{{ trans('asset-returns.no_items') }}</p>
                     @else
-                        @if ($clinicLocations->isEmpty())
+                        @if ($clinicLocations->where('selectable', true)->isEmpty())
                             <p class="callout callout-warning">{{ trans('asset-returns.no_locations') }}</p>
                         @endif
                         <div class="table-responsive">
@@ -79,12 +79,8 @@
                                                     @endforeach
                                                 </div>
                                                 <div data-when="storage">
-                                                    <select class="form-control" name="items[{{ $key }}][location_id]" aria-label="{{ trans('asset-returns.storage_location') }}">
-                                                        <option value="">{{ trans('asset-returns.choose_location') }}</option>
-                                                        @foreach ($clinicLocations as $location)
-                                                            <option value="{{ $location->id }}" @selected((string) old('items.'.$key.'.location_id') === (string) $location->id)>{{ $location->name }}</option>
-                                                        @endforeach
-                                                    </select>
+                                                    <x-input.clinic-location-select :name="'items['.$key.'][location_id]'" :tree="$clinicLocations" :selected="old('items.'.$key.'.location_id')" :aria-label="trans('asset-returns.storage_location')" />
+                                                    <span class="return-item-category">{{ trans('asset-returns.only_last_level') }}</span>
                                                 </div>
                                                 <x-form.error :name="'items.'.$key" />
                                             </td>

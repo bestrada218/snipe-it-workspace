@@ -34,6 +34,11 @@ The current number is in the [`VERSION`](VERSION) file.
 - Returns: the destinations read "<partner> warehouse" (the partner name set
   in Settings, for example Rippling) and "A clinic's storage"; choosing a
   clinic asks which one, from all the locations.
+- Returns are recorded by hand, since the shipment is handled on another
+  platform: pick what happened and its date (a later step fills in the
+  earlier ones), undo a step marked by mistake, and edit the ticket, owners,
+  carrier and tracking number. The clinic picker shows locations as a tree
+  (country → state → clinic) and only clinics can be chosen.
 - Returned items are no longer assigned to the warehouse location: they are
   checked in, ready to deploy, and their location is the clinic or the
   partner warehouse. The asset page shows "In the <place> warehouse" with a

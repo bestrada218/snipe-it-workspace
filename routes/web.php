@@ -1197,6 +1197,9 @@ Route::middleware('auth')->group(function () {
         ->breadcrumbs(fn (Trail $trail, $return) => $trail->parent('returns.index')
             ->push(trans('asset-returns.number', ['id' => $return instanceof \App\Models\AssetReturn ? $return->id : $return]), ''));
     Route::post('returns/{return}/advance', [AssetReturnController::class, 'advance'])->whereNumber('return')->name('returns.advance');
+    Route::post('returns/{return}/undo', [AssetReturnController::class, 'undo'])->whereNumber('return')->name('returns.undo');
+    Route::put('returns/{return}', [AssetReturnController::class, 'updateDetails'])->whereNumber('return')->name('returns.update');
+    Route::post('returns/{return}/items/{item}/undo', [AssetReturnController::class, 'undoItem'])->whereNumber(['return', 'item'])->name('returns.items.undo');
     Route::post('returns/{return}/notes', [AssetReturnController::class, 'addNote'])->whereNumber('return')->name('returns.notes');
     Route::post('returns/{return}/cancel', [AssetReturnController::class, 'cancel'])->whereNumber('return')->name('returns.cancel');
     Route::post('returns/{return}/items/{item}/advance', [AssetReturnController::class, 'advanceItem'])->whereNumber(['return', 'item'])->name('returns.items.advance');

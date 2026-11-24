@@ -69,6 +69,15 @@ class AssetReturnItem extends Model
     }
 
     /** Next per-item step for partner items: partner_received_at, then partner_configured_at. */
+    /** Steps the partner does with an item that was not with them before. */
+    public const PARTNER_STEPS = ['partner_received_at', 'partner_configured_at'];
+
+    public function lastPartnerStep(): ?string
+    {
+        return $this->partner_configured_at !== null ? 'partner_configured_at'
+            : ($this->partner_received_at !== null ? 'partner_received_at' : null);
+    }
+
     public function nextPartnerStep(): ?string
     {
         if (! $this->needsPartnerSetup() || $this->assetReturn->warehouse_arrived_at === null) {

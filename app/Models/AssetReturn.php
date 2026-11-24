@@ -21,7 +21,7 @@ class AssetReturn extends Model
     /** Box shipment to the partner warehouse, in order. */
     public const SHIPPING_STEPS = ['address_confirmed_at', 'boxes_sent_at', 'boxes_shipped_at', 'warehouse_arrived_at'];
 
-    protected $fillable = ['user_id', 'reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'created_by'];
+    protected $fillable = ['user_id', 'reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'carrier', 'tracking_number', 'created_by'];
 
     protected $casts = [
         'address_confirmed_at' => 'datetime',
@@ -73,6 +73,19 @@ class AssetReturn extends Model
     }
 
     /** The next box-shipment step still to do, or null when all are done. */
+    /** The last shipping step marked, which can still be undone (not the arrival: it checks items in). */
+    public function lastShippingStep(): ?string
+    {
+        $last = null;
+        foreach (self::SHIPPING_STEPS as $step) {
+            if ($this->{$step} !== null) {
+                $last = $step;
+            }
+        }
+
+        return $last;
+    }
+
     public function nextShippingStep(): ?string
     {
         foreach (self::SHIPPING_STEPS as $step) {

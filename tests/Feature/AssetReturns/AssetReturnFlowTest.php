@@ -200,4 +200,100 @@ class AssetReturnFlowTest extends TestCase
         $this->actingAs(User::factory()->viewAssets()->create())->get(route('returns.create'))->assertForbidden();
         $this->actingAs(User::factory()->viewAssets()->create())->get(route('returns.index'))->assertOk();
     }
+
+    public function test_any_shipping_step_can_be_recorded_by_hand_with_its_date_and_undone(): void
+    {
+        $return = $this->createReturn();
+        $this->travel(3)->days();
+        $day = $return->created_at->copy()->addDay()->toDateString();
+
+        // The person already shipped: the earlier steps take the same date.
+        $this->actingAs($this->admin)->post(route('returns.advance', $return), ['step' => 'boxes_shipped_at', 'date' => $day])
+            ->assertSessionHasNoErrors();
+        $return->refresh();
+        $this->assertSame($day, $return->address_confirmed_at->toDateString());
+        $this->assertSame($day, $return->boxes_sent_at->toDateString());
+        $this->assertSame($day, $return->boxes_shipped_at->toDateString());
+        $this->assertNull($return->warehouse_arrived_at);
+
+        $this->actingAs($this->admin)->post(route('returns.undo', $return))->assertSessionHasNoErrors();
+        $this->assertNull($return->fresh()->boxes_shipped_at);
+        $this->assertNotNull($return->fresh()->boxes_sent_at);
+
+        // Dates in the future are refused.
+        $this->actingAs($this->admin)->post(route('returns.advance', $return), ['step' => 'boxes_shipped_at', 'date' => now()->addDay()->toDateString()])
+            ->assertSessionHasErrors('step');
+
+        // The arrival checks items in, so it cannot be undone.
+        $this->actingAs($this->admin)->post(route('returns.advance', $return), ['step' => 'warehouse_arrived_at'])->assertSessionHasNoErrors();
+        $this->assertNull($this->laptop->fresh()->assigned_to);
+        $this->actingAs($this->admin)->post(route('returns.undo', $return))->assertSessionHasErrors('step');
+    }
+
+    public function test_partner_steps_are_recorded_by_hand_and_undoing_one_reopens_the_return(): void
+    {
+        $return = $this->createReturn();
+        $this->actingAs($this->admin)->post(route('returns.advance', $return), ['step' => 'warehouse_arrived_at']);
+        foreach ($return->items()->where('destination', 'storage')->get() as $storageItem) {
+            $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $storageItem]));
+        }
+
+        $laptop = $return->items()->where('item_id', $this->laptop->id)->where('item_type', Asset::class)->firstOrFail();
+        $this->actingAs($this->admin)->post(route('returns.items.advance', [$return, $laptop]), ['step' => 'partner_configured_at'])
+            ->assertSessionHasNoErrors();
+        $this->assertNotNull($laptop->fresh()->partner_received_at);
+        $this->assertNotNull($return->fresh()->completed_at);
+
+        $this->actingAs($this->admin)->post(route('returns.items.undo', [$return, $laptop]))->assertSessionHasNoErrors();
+        $this->assertNull($laptop->fresh()->partner_configured_at);
+        $this->assertNull($return->fresh()->completed_at);
+    }
+
+    public function test_return_details_can_be_corrected(): void
+    {
+        $return = $this->createReturn();
+
+        $this->actingAs($this->admin)->put(route('returns.update', $return), [
+            'reason' => 'change',
+            'ticket_number' => 'INC-9999',
+            'carrier' => 'FedEx',
+            'tracking_number' => '7712 3456 7890',
+        ])->assertSessionHasNoErrors();
+
+        $return->refresh();
+        $this->assertSame('change', $return->reason);
+        $this->assertSame('INC-9999', $return->ticket_number);
+        $this->assertSame('7712 3456 7890', $return->tracking_number);
+        $this->actingAs($this->admin)->get(route('returns.show', $return))->assertSee('FedEx');
+    }
+
+    public function test_only_the_last_level_of_locations_can_keep_items(): void
+    {
+        $country = Location::factory()->create(['name' => 'United States']);
+        $state = Location::factory()->create(['name' => 'New Jersey', 'parent_id' => $country->id]);
+        $clinic = Location::factory()->create(['name' => 'Edgewater clinic', 'parent_id' => $state->id]);
+        // A state with no clinics yet is not a clinic either.
+        $emptyState = Location::factory()->create(['name' => 'California', 'parent_id' => $country->id]);
+
+        $tree = AssetReturns::clinicLocationTree()->keyBy(fn (array $row) => $row['location']->name);
+        $this->assertFalse($tree['United States']['selectable']);
+        $this->assertFalse($tree['New Jersey']['selectable']);
+        $this->assertFalse($tree['California']['selectable']);
+        $this->assertTrue($tree['Edgewater clinic']['selectable']);
+        $this->assertSame(2, $tree['Edgewater clinic']['depth']);
+
+        foreach ([$country, $state, $emptyState] as $notAClinic) {
+            $this->actingAs($this->admin)->post(route('returns.store'), [
+                'user_id' => $this->person->id,
+                'reason' => 'change',
+                'items' => ['asset-'.$this->monitor->id => ['include' => 1, 'destination' => 'storage', 'location_id' => $notAClinic->id]],
+            ])->assertSessionHasErrors();
+        }
+
+        $this->actingAs($this->admin)->post(route('returns.store'), [
+            'user_id' => $this->person->id,
+            'reason' => 'change',
+            'items' => ['asset-'.$this->monitor->id => ['include' => 1, 'destination' => 'storage', 'location_id' => $clinic->id]],
+        ])->assertSessionHasNoErrors();
+    }
 }

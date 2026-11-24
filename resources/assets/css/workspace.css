@@ -1752,7 +1752,9 @@
 }
 
 .shipment-progress li.is-current::before {
-    background: var(--workspace-info);
+    /* The step that comes next: outlined, so it never reads as done. */
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--workspace-accent);
 }
 
 .shipment-progress.is-cancelled li:not(.is-done)::before {
@@ -2543,4 +2545,39 @@ body.workspace-ui,
 /* Returned asset waiting in a warehouse (asset page) */
 .asset-warehouse {
     margin-top: 8px;
+}
+
+/* Returns: steps are recorded by hand, with their date */
+.return-step-actions {
+    display: grid;
+    gap: 6px;
+}
+.return-step-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+.return-step-form label {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    font-weight: 600;
+}
+.return-step-form .form-control {
+    width: auto;
+    min-width: 160px;
+}
+.return-step-form-sm {
+    gap: 6px;
+    margin-top: 8px;
+}
+.return-step-form-sm .form-control {
+    min-width: 0;
+}
+.return-undo {
+    padding-left: 0;
+}
+.return-edit-details {
+    margin: 8px 0 16px;
 }
