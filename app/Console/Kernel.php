@@ -21,11 +21,11 @@ class Kernel extends ConsoleKernel
             $schedule->command('snipeit:expected-checkin')->daily();
             $schedule->command('snipeit:upcoming-audits')->daily();
         }
-        // Daily, before the inventory sync at 03:00: shipments, duplicate
-        // approvals and damage reports change every day, and a weekly
-        // backup could lose a full week of that history.
+        // Every 6 hours (01:30, 07:30, 13:30, 19:30): at most 6 hours of work
+        // can be lost. The dump is taken in a single transaction, so people
+        // can keep working while it runs.
         $schedule->command('snipeit:backup')
-            ->dailyAt('01:30')
+            ->cron('30 1,7,13,19 * * *')
             ->withoutOverlapping();
         $schedule->command('backup:clean')->dailyAt('02:30');
         // Warns by mail (MAIL_BACKUP_NOTIFICATION_*) when the newest backup on

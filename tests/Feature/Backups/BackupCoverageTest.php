@@ -43,7 +43,7 @@ class BackupCoverageTest extends TestCase
         }
     }
 
-    public function test_backup_runs_every_day(): void
+    public function test_backup_runs_every_six_hours(): void
     {
         $this->app->make(Kernel::class)->bootstrap();
 
@@ -51,6 +51,6 @@ class BackupCoverageTest extends TestCase
             ->first(fn ($event) => str_contains((string) $event->command, 'snipeit:backup'));
 
         $this->assertNotNull($backup, 'snipeit:backup is not scheduled.');
-        $this->assertSame('30 1 * * *', $backup->expression);
+        $this->assertSame('30 1,7,13,19 * * *', $backup->expression);
     }
 }

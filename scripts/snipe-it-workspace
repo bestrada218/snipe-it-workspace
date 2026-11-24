@@ -63,10 +63,11 @@ sync_backups() {
     echo "Backups folder: $folder ($copied new, $removed removed)"
 }
 
-# Copy every 6 hours (it only copies finished backup files; it never makes
-# a backup). Rewritten when it differs, so older installs move to it.
+# Copy half an hour after each backup (01:30, 07:30, 13:30, 19:30; the
+# installer gives the application this machine's time zone). It only copies
+# finished backup files; it never makes a backup. Rewritten when it differs, so older installs move to it.
 ensure_backup_sync_schedule() {
-    local entry="0 */6 * * * $DIR/scripts/snipe-it-workspace sync-backups >> $HOME/.local/state/snipe-it-workspace-backups.log 2>&1 $SYNC_MARK"
+    local entry="0 2,8,14,20 * * * $DIR/scripts/snipe-it-workspace sync-backups >> $HOME/.local/state/snipe-it-workspace-backups.log 2>&1 $SYNC_MARK"
     if crontab -l 2>/dev/null | grep -qxF "$entry"; then
         return
     fi

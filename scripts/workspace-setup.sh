@@ -72,7 +72,7 @@ main() {
     say "5/5 Adding the snipe-it-workspace command"
     sudo ln -sf "$DIR/scripts/snipe-it-workspace" /usr/local/bin/snipe-it-workspace
     echo "Done: run 'snipe-it-workspace' to see what it can do."
-    # Backups also land in a normal Documents folder, every night.
+    # Backups are also copied to a Documents folder after each one.
     "$DIR/scripts/snipe-it-workspace" sync-backups || true
 
     port="$(grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"")"

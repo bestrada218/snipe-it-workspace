@@ -139,7 +139,7 @@ Everything in Snipe-IT is still there. On top of it:
 
 ### Backups
 
-- Daily automatic backups, with clear reporting of where each copy landed.
+- Automatic backups every 6 hours, with clear reporting of where each copy landed.
 - Optional **encrypted copies off the server**: Amazon S3 and S3-compatible storage (Cloudflare R2, Backblaze B2, Wasabi, MinIO, Google Cloud Storage) or **Google Drive**.
 - Restores check the whole backup (database dump, integrity and password) **before** touching the current data.
 
@@ -147,7 +147,7 @@ Everything in Snipe-IT is still there. On top of it:
 
 ## Backups
 
-Backups run every day at 01:30 and are kept on the server. `snipe-it-workspace backups` lists them, and they can be downloaded or restored from **Settings → Backups**.
+Backups run every 6 hours (01:30, 07:30, 13:30 and 19:30) and are kept on the server; half an hour later they are also copied to a *Snipe-IT Workspace backups* folder in your Documents. `snipe-it-workspace backups` lists them, and they can be downloaded or restored from **Settings → Backups**.
 
 To also send an **encrypted copy off the server**, add these lines to `/opt/snipe-it-workspace/.env` and run `snipe-it-workspace restart`. All the options are documented in [`.env.example`](.env.example).
 
