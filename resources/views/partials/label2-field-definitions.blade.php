@@ -219,7 +219,8 @@
                 },
 
                 getFieldLabel: function(field) {
-                    return field.options.map(option => option.label).join(' | ');
+                    // A field printed without a name is listed by its data source.
+                    return field.options.map(option => option.label || option.datasource).join(' | ');
                 },
                 fromString: function(string) {
                     return string
