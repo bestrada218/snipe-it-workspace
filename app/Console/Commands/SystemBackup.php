@@ -2,10 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Backups\CloudBackupSettings;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Spatie\Backup\Events\BackupZipWasCreated;
+use Spatie\Backup\Listeners\EncryptBackupArchive;
 use Throwable;
 
 class SystemBackup extends Command
@@ -47,6 +51,10 @@ class SystemBackup extends Command
     {
         ini_set('max_execution_time', config('backup.time_limit')); // 600 seconds = 10 minutes
 
+        // Destinations and the archive password saved in Settings → Backups.
+        CloudBackupSettings::apply();
+        $this->encryptWithCurrentPassword();
+
         $filename = $this->option('filename') ?: date('Y-m-d-H-i-s');
         if (! str_ends_with($filename, '.zip')) {
             $filename .= '.zip';
@@ -76,6 +84,7 @@ class SystemBackup extends Command
             $copyTo = [];
         }
 
+        $results = [];
         foreach ($copyTo as $disk) {
             try {
                 $cloud = Storage::disk($disk);
@@ -84,8 +93,10 @@ class SystemBackup extends Command
                     throw new RuntimeException('the file is not there after the upload');
                 }
                 $stored[] = $disk;
+                $results[$disk] = null;
             } catch (Throwable $error) {
                 $failed[] = $disk;
+                $results[$disk] = $error->getMessage();
                 $this->error("Copying the backup to {$disk} failed: {$error->getMessage()}");
                 Log::error("Backup copy to {$disk} failed: {$error->getMessage()}");
             }
@@ -98,9 +109,30 @@ class SystemBackup extends Command
             $this->error('Backup failed on: '.implode(', ', $failed).'.');
         }
         if ($refusedCloud) {
+            $results += array_fill_keys($cloudDisks, 'Not copied: no backup password is set.');
+        }
+        CloudBackupSettings::recordResults($this->option('local-only') ? [] : $results);
+        if ($refusedCloud) {
             $this->error('Backup not copied to '.implode(', ', $cloudDisks).': set BACKUP_ARCHIVE_PASSWORD to send encrypted copies off the server.');
         }
 
         return ($failed === [] && ! $refusedCloud) ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * spatie registers its encryption listener at boot, and only when a
+     * password was configured then. A password saved in the UI arrives
+     * later, so the listener is added here (once) when it is missing.
+     */
+    private function encryptWithCurrentPassword(): void
+    {
+        if (! EncryptBackupArchive::shouldEncrypt()) {
+            return;
+        }
+
+        $listeners = Event::getRawListeners()[BackupZipWasCreated::class] ?? [];
+        if (! in_array(EncryptBackupArchive::class, $listeners, true)) {
+            Event::listen(BackupZipWasCreated::class, EncryptBackupArchive::class);
+        }
     }
 }

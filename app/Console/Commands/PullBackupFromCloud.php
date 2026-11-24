@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Backups\CloudBackupSettings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,6 +22,7 @@ class PullBackupFromCloud extends Command
 
     public function handle(): int
     {
+        CloudBackupSettings::apply();
         $diskName = $this->argument('disk');
         if ($diskName === 'backup' || ! array_key_exists($diskName, config('filesystems.disks', []))) {
             $this->error("Unknown cloud disk [{$diskName}]. Use one of: ".implode(', ', array_diff(config('backup.backup.destination.disks', []), ['backup'])));

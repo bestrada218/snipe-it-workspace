@@ -2509,3 +2509,33 @@ body.workspace-ui,
     padding-top: 0;
     border-top: 0;
 }
+
+/* Cloud copies of the backups */
+.cloud-backup-status {
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+}
+.cloud-backup-status > li {
+    padding: 12px 0;
+    border-top: 1px solid var(--workspace-border);
+}
+.cloud-backup-status > li p {
+    margin: 6px 0;
+}
+.cloud-backup-status-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+}
+.sensitive-confirm-qr {
+    display: flex;
+    justify-content: center;
+    margin: 12px 0;
+}
+.sensitive-confirm-qr > div {
+    background: #fff;
+    padding: 8px;
+}

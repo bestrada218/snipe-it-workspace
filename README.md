@@ -149,7 +149,9 @@ Everything in Snipe-IT is still there. On top of it:
 
 Backups run every 6 hours (01:30, 07:30, 13:30 and 19:30) and are kept on the server; half an hour later they are also copied to a *Snipe-IT Workspace backups* folder in your Documents. `snipe-it-workspace backups` lists them, and they can be downloaded or restored from **Settings → Backups**.
 
-To also send an **encrypted copy off the server**, add these lines to `/opt/snipe-it-workspace/.env` and run `snipe-it-workspace restart`. All the options are documented in [`.env.example`](.env.example).
+To also send an **encrypted copy off the server**, open **Settings → Backups → Cloud copies**. Only superadmins can open it, and only after typing their password and a two-factor code again (someone without two-factor sets it up right there). The credentials are stored encrypted, a *Test connection* button checks each destination, and the page shows how the last copy to each one went.
+
+The same can be set up in `/opt/snipe-it-workspace/.env` instead (then run `snipe-it-workspace restart`); destinations from both places are used. All the options are documented in [`.env.example`](.env.example).
 
 ```ini
 # Required for any off-site copy. Keep this password outside the server too.

@@ -19,6 +19,7 @@ use App\Http\Controllers\BulkManufacturersController;
 use App\Http\Controllers\BulkStatuslabelsController;
 use App\Http\Controllers\BulkSuppliersController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\CloudBackupSettingsController;
 use App\Http\Controllers\CompaniesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentsController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Reports\CustomConsumableReportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ReportTemplatesController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SensitiveConfirmationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StatuslabelsController;
@@ -536,6 +538,27 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
             ->name('settings.backups.index')
             ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.index')
                 ->push(trans('admin/settings/general.backups'), route('settings.backups.index')));
+    });
+
+    // Cloud copies of the backups: credentials, so a fresh password and
+    // two-factor check (mandatory) comes first.
+    Route::get('backups/confirm', [SensitiveConfirmationController::class, 'show'])
+        ->name('sensitive.confirm')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.backups.index')
+            ->push(trans('cloud-backups.confirm_title'), route('sensitive.confirm')));
+    Route::post('backups/confirm', [SensitiveConfirmationController::class, 'store'])
+        ->middleware('throttle:two_factor')
+        ->name('sensitive.confirm.store');
+
+    Route::middleware('confirm.sensitive')->prefix('backups/cloud')->group(function () {
+        Route::get('/', [CloudBackupSettingsController::class, 'index'])
+            ->name('settings.cloud_backups.index')
+            ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.backups.index')
+                ->push(trans('cloud-backups.title'), route('settings.cloud_backups.index')));
+        Route::put('/', [CloudBackupSettingsController::class, 'update'])
+            ->name('settings.cloud_backups.save');
+        Route::post('/test/{destination}', [CloudBackupSettingsController::class, 'test'])
+            ->name('settings.cloud_backups.test');
     });
 
     Route::resource('groups', GroupsController::class);

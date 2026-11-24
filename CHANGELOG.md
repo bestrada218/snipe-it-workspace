@@ -34,6 +34,10 @@ The current number is in the [`VERSION`](VERSION) file.
 - Returns: the destinations read "<partner> warehouse" (the partner name set
   in Settings, for example Rippling) and "A clinic's storage"; choosing a
   clinic asks which one, from all the locations.
+- *Cloud copies* page (Settings → Backups): set up encrypted copies to
+  Amazon S3 or Google Drive from the app, test the connection and see how
+  the last copy went. Superadmins only, after typing their password and a
+  two-factor code again; two-factor is mandatory to open it.
 - *Changes by version* page: the version number in Settings and in the
   footer opens the list of changes of every version.
 

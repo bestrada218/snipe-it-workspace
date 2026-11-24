@@ -25,6 +25,7 @@ use App\Models\Statuslabel;
 use App\Models\User;
 use App\Notifications\MailTest;
 use App\Rules\CssColor;
+use App\Services\Backups\CloudBackupSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -1296,6 +1297,7 @@ class SettingsController extends Controller
             // checked) before the pre-restore backup and the wipe: a backup
             // without a dump, damaged or encrypted with another password
             // must leave the current data untouched.
+            CloudBackupSettings::apply();
             if ($problem = RestoreFromBackup::archiveProblem($absolutePath, config('backup.backup.password'))) {
                 Log::warning('Restore aborted before wiping the database: '.$problem);
 

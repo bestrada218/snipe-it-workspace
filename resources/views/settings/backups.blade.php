@@ -7,6 +7,9 @@
 @stop
 
 @section('header_right')
+    <a class="btn btn-default" href="{{ route('settings.cloud_backups.index') }}">
+        <x-icon type="locked" /> {{ trans('cloud-backups.open') }}
+    </a>
     <form method="POST" action="{{ route('settings.backups.create') }}" style="display: inline">
         @csrf
         <button class="btn btn-primary" @disabled(config('app.lock_passwords'))>

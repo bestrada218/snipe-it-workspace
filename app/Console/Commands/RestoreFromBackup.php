@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\FileStorage;
+use App\Services\Backups\CloudBackupSettings;
 use enshrined\svgSanitize\Sanitizer;
 use Exception;
 use Illuminate\Console\Command;
@@ -406,6 +407,7 @@ class RestoreFromBackup extends Command
         // Backups made with BACKUP_ARCHIVE_PASSWORD are AES-encrypted. The
         // password from the option wins over the configured one, so an old
         // backup can be restored after the password was rotated.
+        CloudBackupSettings::apply();
         $archivePassword = $this->option('password') ?: config('backup.backup.password');
         if ($problem = self::archiveProblem($filename, $archivePassword)) {
             return $this->failWith($problem);
