@@ -32,13 +32,16 @@ backups_folder() {
 sync_backups() {
     local folder server_list
     folder="$(backups_folder)"
+    # Backups carry the .env (keys and passwords): only this user may read them.
     mkdir -p "$folder"
+    chmod 700 "$folder"
     server_list="$(compose exec -T app sh -c "ls -1 $DUMPS 2>/dev/null" | tr -d '\r' | grep '\.zip$' || true)"
     local copied=0
     while IFS= read -r file; do
         [ -n "$file" ] || continue
         if [ ! -f "$folder/$file" ]; then
-            compose cp "app:$DUMPS/$file" "$folder/$file" >/dev/null
+            compose cp "app:$DUMPS/$file" "$folder/$file" >/dev/null 2>&1
+            chmod 600 "$folder/$file"
             copied=$((copied + 1))
         fi
     done <<< "$server_list"
@@ -50,6 +53,7 @@ sync_backups() {
             removed=$((removed + 1))
         fi
     done
+    chmod 600 "$folder"/*.zip 2>/dev/null || true
     echo "Backups folder: $folder ($copied new, $removed removed)"
 }
 
