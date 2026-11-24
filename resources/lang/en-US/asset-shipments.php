@@ -82,4 +82,11 @@ return [
     'step_assigned' => 'Assigned',
     'expected_short' => 'Due :date',
     'cancelled_on' => 'Shipment cancelled on :date.',
+    'tab_current' => 'In progress',
+    'tab_due' => 'Deliveries to confirm',
+    'tab_past' => 'Past shipments',
+    'empty_current' => 'No shipments in progress.',
+    'empty_due' => 'No deliveries to confirm.',
+    'empty_past' => 'No delivered or cancelled shipments yet.',
+    'closed_on' => 'Closed on',
 ];

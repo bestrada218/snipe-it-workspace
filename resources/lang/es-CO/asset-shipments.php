@@ -82,4 +82,11 @@ return [
     'step_assigned' => 'Asignado',
     'expected_short' => 'Llega el :date',
     'cancelled_on' => 'Envío cancelado el :date.',
+    'tab_current' => 'En curso',
+    'tab_due' => 'Entregas por confirmar',
+    'tab_past' => 'Envíos pasados',
+    'empty_current' => 'No hay envíos en curso.',
+    'empty_due' => 'No hay entregas por confirmar.',
+    'empty_past' => 'Todavía no hay envíos entregados ni cancelados.',
+    'closed_on' => 'Cerrado el',
 ];

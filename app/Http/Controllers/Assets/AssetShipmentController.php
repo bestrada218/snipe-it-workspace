@@ -20,15 +20,22 @@ class AssetShipmentController extends Controller
 {
     public function index(Request $request): View
     {
+        // Tabs: shipments still on their way (default), deliveries whose date
+        // has come, and past ones (delivered and assigned, or cancelled).
+        $view = $request->boolean('due') ? 'due' : (in_array($request->input('view'), ['due', 'past'], true) ? $request->input('view') : 'current');
+
         $shipments = AssetShipments::visibleTo($request->user())
-            ->when($request->boolean('due'), fn ($query) => $query->open()
-                ->whereNull('received_at')->whereDate('expected_on', '<=', today()))
+            ->when($view === 'current', fn ($query) => $query->open()->orderBy('expected_on'))
+            ->when($view === 'due', fn ($query) => $query->open()
+                ->whereNull('received_at')->whereDate('expected_on', '<=', today())->orderBy('expected_on'))
+            ->when($view === 'past', fn ($query) => $query
+                ->where(fn ($closed) => $closed->whereNotNull('assigned_at')->orWhereNotNull('cancelled_at'))
+                ->orderByRaw('COALESCE(assigned_at, cancelled_at) DESC'))
             ->when($request->integer('asset'), fn ($query, $id) => $query->where('asset_id', $id))
             ->with(['asset.model', 'recipient'])
-            ->orderByRaw('CASE WHEN assigned_at IS NULL AND cancelled_at IS NULL THEN 0 ELSE 1 END')
-            ->orderBy('expected_on')->orderByDesc('id')->paginate(25)->withQueryString();
+            ->orderByDesc('id')->paginate(25)->withQueryString();
 
-        return view('asset-shipments.index', compact('shipments'));
+        return view('asset-shipments.index', compact('shipments', 'view'));
     }
 
     public function create(?Asset $asset = null): View

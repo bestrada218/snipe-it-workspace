@@ -7,8 +7,10 @@
         <x-box>
             <div class="workspace-shipment-toolbar">
                 <nav class="workspace-shipment-filters" aria-label="{{ trans('asset-shipments.title') }}">
-                    <a class="btn {{ request()->boolean('due') ? 'btn-default' : 'btn-theme' }}" href="{{ route('shipments.index', request()->only('asset')) }}">{{ trans('asset-shipments.all') }}</a>
-                    <a class="btn {{ request()->boolean('due') ? 'btn-theme' : 'btn-default' }}" href="{{ route('shipments.index', request()->only('asset') + ['due' => 1]) }}">{{ trans('asset-shipments.due_title') }}</a>
+                    @foreach (['current' => [], 'due' => ['due' => 1], 'past' => ['view' => 'past']] as $tab => $query)
+                        <a class="btn {{ $view === $tab ? 'btn-theme' : 'btn-default' }}" href="{{ route('shipments.index', request()->only('asset') + $query) }}"
+                            @if ($view === $tab) aria-current="page" @endif>{{ trans('asset-shipments.tab_'.$tab) }}</a>
+                    @endforeach
                 </nav>
                 @can('checkout', \App\Models\Asset::class)
                     <a class="btn btn-theme" href="{{ route('shipments.new') }}">
@@ -16,7 +18,7 @@
                     </a>
                 @endcan
             </div>
-            @include('asset-shipments.table', ['rows' => $shipments])
+            @include('asset-shipments.table', ['rows' => $shipments, 'past' => $view === 'past', 'empty' => trans('asset-shipments.empty_'.$view)])
             {{ $shipments->links() }}
         </x-box>
     </x-container>
