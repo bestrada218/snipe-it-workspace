@@ -22,12 +22,8 @@ class SensitiveConfirmationController extends Controller
 {
     private const PENDING_SECRET = 'sensitive_2fa_pending_secret';
 
-    public function show(Request $request): View|RedirectResponse
+    public function show(Request $request): View
     {
-        if (RequireSensitiveConfirmation::isConfirmed($request)) {
-            return redirect($this->intended($request));
-        }
-
         $user = $request->user();
         $barcode = null;
         $secret = null;
@@ -87,7 +83,8 @@ class SensitiveConfirmationController extends Controller
             $request->session()->forget(self::PENDING_SECRET);
         }
 
-        $request->session()->put(RequireSensitiveConfirmation::SESSION_KEY, ['user' => $user->id, 'at' => now()->getTimestamp()]);
+        // A one-time pass: the page opens once, and asks again next time.
+        RequireSensitiveConfirmation::grant($request);
         Log::info("User {$user->id} confirmed their password and two-factor code for a sensitive page.");
 
         $response = redirect($this->intended($request));

@@ -36,6 +36,14 @@ class CloudBackupSettingsTest extends TestCase
         ]);
     }
 
+    /** A superuser on the open page, whose forms carry its token. */
+    private function onPage(User $user): static
+    {
+        return $this->actingAs($user)->withSession([
+            RequireSensitiveConfirmation::PAGE_TOKEN => ['user' => $user->id, 'at' => now()->getTimestamp(), 'token' => 'page-token'],
+        ]);
+    }
+
     public function test_page_renders(): void
     {
         $this->confirmed($this->enrolledSuperuser())
@@ -81,15 +89,42 @@ class CloudBackupSettingsTest extends TestCase
         $this->actingAs($user)->get(route('settings.cloud_backups.index'))->assertOk();
     }
 
-    public function test_the_confirmation_expires(): void
+    public function test_it_asks_again_every_time_the_page_is_opened(): void
     {
         $user = $this->enrolledSuperuser();
-        $this->confirmed($user)->get(route('settings.cloud_backups.index'))->assertOk();
+        $this->actingAs($user)->post(route('sensitive.confirm.store'), [
+            'password' => 'correct-password',
+            'two_factor_code' => Google2FA::getCurrentOtp($user->two_factor_secret),
+        ]);
 
+        $this->actingAs($user)->get(route('settings.cloud_backups.index'))->assertOk();
+        // Leaving and coming back a minute later, or reloading, asks again.
+        $this->actingAs($user)->get(route('settings.cloud_backups.index'))
+            ->assertRedirect(route('sensitive.confirm'));
+    }
+
+    public function test_a_pass_that_was_not_used_expires(): void
+    {
+        $user = $this->enrolledSuperuser();
+        $this->confirmed($user);
         $this->travel(RequireSensitiveConfirmation::MINUTES + 1)->minutes();
 
         $this->actingAs($user)->get(route('settings.cloud_backups.index'))
             ->assertRedirect(route('sensitive.confirm'));
+    }
+
+    public function test_forms_need_the_token_of_the_open_page(): void
+    {
+        $user = $this->enrolledSuperuser();
+
+        $this->onPage($user)->put(route('settings.cloud_backups.save'), ['_sensitive' => 'forged'])
+            ->assertRedirect(route('sensitive.confirm'));
+        $this->assertSame(0, BackupCloudSetting::count());
+
+        // Saving from the page goes back to it without asking again.
+        $this->onPage($user)->put(route('settings.cloud_backups.save'), ['_sensitive' => 'page-token', 'password' => 'a-long-backup-password', 'password_confirmation' => 'a-long-backup-password'])
+            ->assertRedirect(route('settings.cloud_backups.index'));
+        $this->actingAs($user)->get(route('settings.cloud_backups.index'))->assertOk();
     }
 
     public function test_someone_without_two_factor_has_to_enroll_to_get_in(): void
@@ -120,7 +155,8 @@ class CloudBackupSettingsTest extends TestCase
     {
         $user = $this->enrolledSuperuser();
 
-        $this->confirmed($user)->put(route('settings.cloud_backups.save'), [
+        $this->onPage($user)->put(route('settings.cloud_backups.save'), [
+            '_sensitive' => 'page-token',
             'password' => 'a-long-backup-password',
             'password_confirmation' => 'a-long-backup-password',
             's3' => ['enabled' => 1, 'key' => 'AKIAEXAMPLE', 'secret' => 'super-secret-value', 'region' => 'us-east-1', 'bucket' => 'workspace-backups'],
@@ -131,7 +167,8 @@ class CloudBackupSettingsTest extends TestCase
         $this->assertStringNotContainsString('a-long-backup-password', $raw);
 
         // Saving again without retyping the secrets keeps them.
-        $this->confirmed($user)->put(route('settings.cloud_backups.save'), [
+        $this->onPage($user)->put(route('settings.cloud_backups.save'), [
+            '_sensitive' => 'page-token',
             's3' => ['enabled' => 1, 'key' => 'AKIAEXAMPLE', 'region' => 'eu-west-1', 'bucket' => 'workspace-backups'],
         ])->assertSessionHasNoErrors();
 
@@ -148,7 +185,8 @@ class CloudBackupSettingsTest extends TestCase
 
     public function test_an_enabled_destination_needs_its_data_and_a_password(): void
     {
-        $this->confirmed($this->enrolledSuperuser())->put(route('settings.cloud_backups.save'), [
+        $this->onPage($this->enrolledSuperuser())->put(route('settings.cloud_backups.save'), [
+            '_sensitive' => 'page-token',
             's3' => ['enabled' => 1],
             'google' => ['enabled' => 1, 'service_account_json' => '{"type":"user"}'],
         ])->assertSessionHasErrors(['password', 's3.key', 's3.secret', 's3.bucket', 'google.folder_id', 'google.service_account_json']);

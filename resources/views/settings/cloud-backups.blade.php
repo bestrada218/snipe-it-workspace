@@ -51,6 +51,7 @@
                             @endif
                             <form method="POST" action="{{ route('settings.cloud_backups.test', $key) }}">
                                 @csrf
+                                <input type="hidden" name="{{ \App\Http\Middleware\RequireSensitiveConfirmation::FIELD }}" value="{{ request()->attributes->get(\App\Http\Middleware\RequireSensitiveConfirmation::FIELD) }}">
                                 <button class="btn btn-default btn-sm" type="submit">{{ trans('cloud-backups.test') }}</button>
                             </form>
                         @endif
@@ -67,6 +68,7 @@
         <form method="POST" action="{{ route('settings.cloud_backups.save') }}" class="form-horizontal" enctype="multipart/form-data" autocomplete="off">
             @csrf
             @method('PUT')
+            <input type="hidden" name="{{ \App\Http\Middleware\RequireSensitiveConfirmation::FIELD }}" value="{{ request()->attributes->get(\App\Http\Middleware\RequireSensitiveConfirmation::FIELD) }}">
 
             <x-box :header="trans('cloud-backups.password_title')">
                 <x-form.nested-field name="password" type="password" :label="trans('cloud-backups.password')" :placeholder="\App\Services\Backups\CloudBackupSettings::has('password') ? $secretPlaceholder : null" :help="trans('cloud-backups.what_is_password')" autocomplete="new-password" minlength="12" />
