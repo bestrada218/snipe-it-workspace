@@ -362,7 +362,6 @@ return [
     'shortcuts_enabled' => 'Habilitar accesos directos',
     'shortcuts_help_text' => '<strong>Windows</strong>: Alt + tecla de acceso, <strong>Mac</strong>: Control + Opción + Clave de acceso',
     'workspace_version' => 'Versión de Snipe-IT Workspace',
-    'workspace_version_help' => 'Lo que cambió en cada versión está en CHANGELOG.md.',
     'based_on_snipe_it' => 'basado en Snipe-IT',
     'snipe_version' => 'Basado en Snipe-IT',
     'fixed_assets' => 'Activos fijos',

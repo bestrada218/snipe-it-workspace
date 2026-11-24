@@ -31,6 +31,8 @@ The current number is in the [`VERSION`](VERSION) file.
 
 - The Snipe-IT Workspace version is shown next to the Snipe-IT version in
   Settings, and at the bottom of every page.
+- *Changes by version* page: the version number in Settings and in the
+  footer opens the list of changes of every version.
 
 ## 0.1 — 2026-11-24
 

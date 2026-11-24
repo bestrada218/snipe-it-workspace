@@ -964,7 +964,7 @@
                     <div class="pull-right">
                     {{-- Our version is always shown; the Snipe-IT version it is based on follows the "version in footer" setting. --}}
                     <span class="workspace-footer-version">
-                        Snipe-IT Workspace <strong>{{ config('workspace.version') }}</strong>
+                        <a href="{{ route('changelog') }}" data-tooltip="true" title="{{ trans('general.workspace_changelog') }}">Snipe-IT Workspace <strong>{{ config('workspace.version') }}</strong></a>
                         @if (($snipeSettings->version_footer=='on') || (($snipeSettings->version_footer=='admin') && (Auth::user()->isSuperUser()=='1')))
                             · {{ trans('admin/settings/general.based_on_snipe_it') }} {{ config('version.app_version') }}
                         @endif

@@ -5,6 +5,7 @@ use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
 use App\Http\Controllers\Assets\AssetReturnController;
 use App\Http\Controllers\Assets\AssetShipmentController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\AssetTagTypesController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -1106,6 +1107,11 @@ Route::get('/search', [SearchController::class, 'index'])->middleware('auth')
     ->name('search')
     ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
         ->push(trans('navigation.search_results'), route('search')));
+
+Route::get('/changelog', ChangelogController::class)->middleware('auth')
+    ->name('changelog')
+    ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
+        ->push(trans('general.workspace_changelog'), route('changelog')));
 
 Route::view('/guide/asset-tags', 'guide.asset-tags')->middleware('auth')
     ->name('guide.asset-tags')

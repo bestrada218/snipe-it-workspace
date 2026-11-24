@@ -2462,3 +2462,50 @@ body.workspace-ui,
     margin: 0 0 2px;
     white-space: pre-wrap;
 }
+
+/* Changes by version (CHANGELOG.md rendered in the app) */
+.workspace-changelog {
+    max-width: 72ch;
+    line-height: 1.6;
+}
+.workspace-changelog h1 {
+    display: none; /* the box header already names the page */
+}
+.workspace-changelog h2 {
+    margin: 32px 0 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--workspace-border);
+    font-size: 20px;
+    font-weight: 600;
+}
+.workspace-changelog h3 {
+    margin: 20px 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.workspace-changelog hr {
+    display: none;
+}
+.workspace-changelog ul {
+    padding-left: 20px;
+}
+.workspace-changelog li + li {
+    margin-top: 4px;
+}
+.workspace-changelog table {
+    width: 100%;
+    margin: 8px 0 16px;
+    border-collapse: collapse;
+}
+.workspace-changelog th,
+.workspace-changelog td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--workspace-border);
+    text-align: left;
+    vertical-align: top;
+}
+.workspace-changelog > h2:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}

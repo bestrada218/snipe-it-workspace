@@ -370,7 +370,7 @@
             </div>
             <div class="col-md-4">
               <strong>{{ config('workspace.version') }}</strong>
-              <div class="text-muted">{{ trans('admin/settings/general.workspace_version_help') }}</div>
+              <div><a href="{{ route('changelog') }}">{{ trans('general.workspace_changelog') }}</a></div>
             </div>
 
             <div class="col-md-2">

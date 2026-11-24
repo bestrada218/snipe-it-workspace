@@ -362,7 +362,6 @@ return [
     'shortcuts_enabled' => 'Enable Shortcuts',
     'shortcuts_help_text' => '<strong>Windows</strong>: Alt + Access key, <strong>Mac</strong>: Control + Option + Access key',
     'workspace_version' => 'Snipe-IT Workspace version',
-    'workspace_version_help' => 'What changed in each version is in CHANGELOG.md.',
     'based_on_snipe_it' => 'based on Snipe-IT',
     'snipe_version' => 'Based on Snipe-IT',
     'fixed_assets' => 'Fixed assets',

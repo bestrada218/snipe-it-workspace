@@ -918,4 +918,7 @@ return [
     'calendar_button_week' => 'Week',
     'calendar_button_day' => 'Day',
     'calendar_button_list' => 'List',
+    'workspace_changelog' => 'Changes by version',
+    'workspace_changelog_current' => 'You have Snipe-IT Workspace :version (based on Snipe-IT :upstream)',
+    'workspace_changelog_missing' => 'The list of changes is not available on this server.',
 ];
