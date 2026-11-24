@@ -27,6 +27,11 @@ The current number is in the [`VERSION`](VERSION) file.
 
 ---
 
+## Unreleased (next: 0.1.1)
+
+- The Snipe-IT Workspace version is shown next to the Snipe-IT version in
+  Settings, and at the bottom of every page.
+
 ## 0.1 — 2026-11-24
 
 Based on **Snipe-IT v8.8.3**. First version of Snipe-IT Workspace.

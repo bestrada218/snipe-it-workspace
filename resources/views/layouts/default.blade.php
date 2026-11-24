@@ -962,12 +962,13 @@
 
                     </div>
                     <div class="pull-right">
-                    @if ($snipeSettings->version_footer!='off')
+                    {{-- Our version is always shown; the Snipe-IT version it is based on follows the "version in footer" setting. --}}
+                    <span class="workspace-footer-version">
+                        Snipe-IT Workspace <strong>{{ config('workspace.version') }}</strong>
                         @if (($snipeSettings->version_footer=='on') || (($snipeSettings->version_footer=='admin') && (Auth::user()->isSuperUser()=='1')))
-                            &nbsp; Snipe-IT Workspace {{ config('workspace.version') }} ·
-                            {{ trans('admin/settings/general.based_on_snipe_it') }} {{ config('version.app_version') }}
+                            · {{ trans('admin/settings/general.based_on_snipe_it') }} {{ config('version.app_version') }}
                         @endif
-                    @endif
+                    </span>
 
                     @if (isset($user) && ($user->isSuperUser()) && (app()->environment('local')))
                        <a href="{{ url('telescope') }}" class="label label-default" rel="noopener">Open Telescope</a>
