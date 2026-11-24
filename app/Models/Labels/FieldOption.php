@@ -3,6 +3,7 @@
 namespace App\Models\Labels;
 
 use App\Models\Asset;
+use App\Models\Setting;
 use App\Models\User;
 
 class FieldOption
@@ -42,6 +43,12 @@ class FieldOption
             }
 
             return $assigned->name ?? $assigned->display_name ?? null;
+        }
+
+        // Assets without a company print the organisation (site) name, so
+        // a label set up to show the company never comes out blank.
+        if ($this->dataSource === 'company.name') {
+            return $asset->company?->name ?: (Setting::getSettings()?->site_name ?: null);
         }
 
         // Handle Laravel's stupid Carbon datetime casting

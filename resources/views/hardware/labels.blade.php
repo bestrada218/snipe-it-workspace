@@ -22,63 +22,72 @@ $qr_size = ($settings->alt_barcode_enabled=='1') && ($settings->label2_1d_type!=
         margin: {{ $settings->labels_pmargin_top }}in {{ $settings->labels_pmargin_right }}in {{ $settings->labels_pmargin_bottom }}in {{ $settings->labels_pmargin_left }}in;
         font-size: {{ $settings->labels_fontsize }}pt;
     }
+    /* Each label is a box: optional QR on the left, text on top and the
+       1D barcode in its own strip at the bottom, so nothing overlaps. */
     .label {
+        box-sizing: border-box;
         width: {{ $settings->labels_width }}in;
         height: {{ $settings->labels_height }}in;
-        padding: 0in;
+        padding: .03in .04in;
         margin-right: {{ $settings->labels_display_sgutter }}in; /* the gutter */
         margin-bottom: {{ $settings->labels_display_bgutter }}in;
-        display: inline-block;
+        display: inline-flex;
+        gap: .06in;
+        vertical-align: top;
         overflow: hidden;
     }
     .page-break  {
         page-break-after:always;
     }
     div.qr_img {
+        flex: none;
         width: {{ $qr_size }}in;
         height: {{ $qr_size }}in;
-
-        float: left;
-        display: inline-flex;
-        padding-right: .15in;
+        overflow: hidden;
     }
     img.qr_img {
-
-        width: 120.79%;
-        height: 120.79%;
-        margin-top: -6.9%;
-        margin-left: -6.9%;
-        padding-bottom: .04in;
-    }
-    img.barcode {
-        display:block;
-        margin-top:{{$settings->qr_code=='1' ? '-15px' : '-7px;'}};
+        display: block;
         width: 100%;
+        height: 100%;
+    }
+    .label-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .label-text {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        line-height: 1.15;
+    }
+    .label-line {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .label-tag {
+        font-size: 1.25em;
+        font-weight: 700;
+        letter-spacing: .02em;
     }
     div.label-logo {
         float: right;
-        display: inline-block;
+        margin-left: .04in;
     }
     img.label-logo {
-        height: 0.5in;
-    }
-    .qr_text {
-        width: {{ $settings->labels_width }}in;
-        height: {{ $settings->labels_height }}in;
-        padding-top: {{$settings->labels_display_bgutter}}in;
-        font-family: arial, helvetica, sans-serif;
-        font-size: {{$settings->labels_fontsize}}pt;
-        padding-right: .0001in;
-        overflow: hidden !important;
-        display: inline;
-        word-wrap: break-word;
-        word-break: break-all;
+        height: 0.4in;
     }
     div.barcode_container {
-
+        flex: none;
+        height: .26in;
+        margin-top: .02in;
+    }
+    img.barcode {
+        display: block;
         width: 100%;
-        display: inline;
-        overflow: hidden;
+        height: 100%;
     }
     .next-padding {
         margin: {{ $settings->labels_pmargin_top }}in {{ $settings->labels_pmargin_right }}in {{ $settings->labels_pmargin_bottom }}in {{ $settings->labels_pmargin_left }}in;
@@ -116,53 +125,41 @@ $qr_size = ($settings->alt_barcode_enabled=='1') && ($settings->label2_1d_type!=
             </div>
         @endif
 
-        <div class="qr_text">
-            @if ($settings->label_logo)
-                <div class="label-logo">
-                    <img class="label-logo" src="{{ Storage::disk('public')->url('').e($snipeSettings->label_logo) }}" alt="">
-                </div>
-            @endif
-            @if ($settings->qr_text!='')
-                <div class="pull-left">
-                    <strong>{{ $settings->qr_text }}</strong>
-                    <br>
-                </div>
-            @endif
-            @if (($settings->labels_display_company_name=='1') && ($asset->company))
-                <div class="pull-left">
-                    C: {{ $asset->company->name }}
-                </div>
-            @endif
-            @if (($settings->labels_display_name=='1') && ($asset->name!=''))
-                <div class="pull-left">
-                    N: {{ $asset->name }}
-                </div>
-            @endif
-            @if (($settings->labels_display_tag=='1') && ($asset->asset_tag!=''))
-                <div class="pull-left">
-                    T: {{ $asset->asset_tag }}
-                </div>
-            @endif
-            @if (($settings->labels_display_serial=='1') && ($asset->serial!=''))
-                <div class="pull-left">
-                    S: {{ $asset->serial }}
-                </div>
-            @endif
-            @if (($settings->labels_display_model=='1') && ($asset->model->name!=''))
-                <div class="pull-left">
-                    M: {{ $asset->model->name }} {{ $asset->model->model_number }}
-                </div>
-            @endif
-
-        </div>
-
-        @if ((($settings->alt_barcode_enabled=='1') && $settings->label2_1d_type!='') && isset($barcode_urls[$asset->id]['barcode']))
-            <div class="barcode_container">
-                <img src="{{ $barcode_urls[$asset->id]['barcode'] }}" class="barcode" alt="">
+        <div class="label-body">
+            <div class="label-text">
+                @if ($settings->label_logo)
+                    <div class="label-logo">
+                        <img class="label-logo" src="{{ Storage::disk('public')->url('').e($snipeSettings->label_logo) }}" alt="">
+                    </div>
+                @endif
+                {{-- The asset tag is what people look for: first and in bold. --}}
+                @if (($settings->labels_display_tag=='1') && ($asset->asset_tag!=''))
+                    <div class="label-line label-tag">{{ $asset->asset_tag }}</div>
+                @endif
+                @if ($settings->qr_text!='')
+                    <div class="label-line"><strong>{{ $settings->qr_text }}</strong></div>
+                @endif
+                @if (($settings->labels_display_name=='1') && ($asset->name!=''))
+                    <div class="label-line">N: {{ $asset->name }}</div>
+                @endif
+                @if (($settings->labels_display_model=='1') && ($asset->model?->name!=''))
+                    <div class="label-line">M: {{ $asset->model->name }} {{ $asset->model->model_number }}</div>
+                @endif
+                @if (($settings->labels_display_serial=='1') && ($asset->serial!=''))
+                    <div class="label-line">S: {{ $asset->serial }}</div>
+                @endif
+                {{-- Assets without a company print the organisation (site) name. --}}
+                @if (($settings->labels_display_company_name=='1') && ($asset->company?->name ?: $snipeSettings->site_name))
+                    <div class="label-line">C: {{ $asset->company?->name ?: $snipeSettings->site_name }}</div>
+                @endif
             </div>
-        @endif
 
-
+            @if ((($settings->alt_barcode_enabled=='1') && $settings->label2_1d_type!='') && isset($barcode_urls[$asset->id]['barcode']))
+                <div class="barcode_container">
+                    <img src="{{ $barcode_urls[$asset->id]['barcode'] }}" class="barcode" alt="">
+                </div>
+            @endif
+        </div>
 
     </div>
 

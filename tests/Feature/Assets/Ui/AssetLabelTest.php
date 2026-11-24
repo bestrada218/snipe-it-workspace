@@ -30,4 +30,22 @@ class AssetLabelTest extends TestCase
             ])->assertStatus(302)
             ->assertRedirect(route('hardware.index'));
     }
+
+    public function test_classic_labels_print_the_tag_first_and_the_company(): void
+    {
+        $this->settings->set([
+            'label2_enable' => 0,
+            'site_name' => 'Acme IT',
+            'labels_display_tag' => 1,
+            'labels_display_name' => 1,
+            'labels_display_company_name' => 1,
+        ]);
+        $asset = Asset::factory()->create(['asset_tag' => 'NY-001-LP-W11', 'name' => 'Reception laptop', 'company_id' => null]);
+
+        $this->actingAs(User::factory()->viewAssets()->create())->post('/hardware/bulkedit', [
+            'ids' => [$asset->id],
+            'bulk_actions' => 'labels',
+        ])->assertOk()
+            ->assertSeeInOrder(['label-tag', 'NY-001-LP-W11', 'N: Reception laptop', 'C: Acme IT'], false);
+    }
 }

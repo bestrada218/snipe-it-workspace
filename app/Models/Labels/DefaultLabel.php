@@ -200,7 +200,7 @@ class DefaultLabel extends RectangleSheet
 
     public function getSupportAssetTag()
     {
-        return false;
+        return true;
     }
 
     public function getSupport1DBarcode()
@@ -295,11 +295,29 @@ class DefaultLabel extends RectangleSheet
 
         $textW = $textX2 - $textX1;
 
+        // Text stops above the 1D barcode strip so the two never overlap.
+        $textBottom = $this->getLabelHeight() - ($record->get('barcode1d') ? self::BARCODE1D_SIZE + self::TEXT_MARGIN : 0);
+        $fits = fn (float $height) => $textY + $height <= $textBottom + 0.001;
+
+        // Asset tag: the most important datum, first and in bold.
+        $tag = (string) $record->get('tag');
+        if ($tag !== '') {
+            $tagSize = $this->textSize * 1.25;
+            static::writeText(
+                $pdf, $tag,
+                $textX1, $textY,
+                'freesans', 'b', $tagSize, 'L',
+                $textW, $tagSize,
+                true, 0
+            );
+            $textY += $tagSize + self::TEXT_MARGIN;
+        }
+
         // Title
-        if ($record->get('title')) {
+        if ($record->get('title') && $fits($this->textSize)) {
             static::writeText(
                 $pdf, $record->get('title'),
-                $textX1, 0,
+                $textX1, $textY,
                 Helper::isCjk($record->get('title')) ? 'cid0cs' : 'freesans', 'b', $this->textSize, 'L',
                 $textW, $this->textSize,
                 true, 0
@@ -312,6 +330,13 @@ class DefaultLabel extends RectangleSheet
         if ($fieldsDone < $this->getSupportFields()) {
 
             foreach ($record->get('fields') as $field) {
+                // The tag is already printed at the top.
+                if ($tag !== '' && trim((string) $field['value']) === $tag) {
+                    continue;
+                }
+                if (! $fits($this->textSize)) {
+                    break;
+                }
 
                 // Actually write the selected fields and their matching values
                 static::writeText(
