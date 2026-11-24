@@ -39,7 +39,11 @@ main() {
     fi
 
     say "1/5 Installing system packages (git, curl, openssl, cron)"
-    sudo apt-get update -qq
+    # A broken third-party source (an expired key, for example) must not
+    # stop the install: Ubuntu's own sources still refresh.
+    if ! sudo apt-get update -qq; then
+        echo "Warning: some package sources could not be refreshed (see above); continuing." >&2
+    fi
     sudo apt-get install -y -qq ca-certificates curl git openssl cron >/dev/null
 
     say "2/5 Installing Docker"
