@@ -26,7 +26,7 @@
             </dl>
 
             @if ($canManage)
-                <details class="return-edit return-edit-details" @if ($errors->hasAny(['reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'carrier', 'tracking_number'])) open @endif>
+                <details class="return-details-edit" @if ($errors->hasAny(['reason', 'ticket_number', 'ticket_owner_id', 'return_owner_id', 'carrier', 'tracking_number'])) open @endif>
                     <summary>{{ trans('asset-returns.edit_details') }}</summary>
                     <form method="POST" action="{{ route('returns.update', $return) }}" class="form-horizontal">
                         @csrf
@@ -35,7 +35,7 @@
                             <label class="col-md-3 control-label">{{ trans('asset-returns.reason') }}</label>
                             <div class="col-md-7 return-reasons">
                                 @foreach (\App\Models\AssetReturn::REASONS as $reason)
-                                    <label><input type="radio" name="reason" value="{{ $reason }}" @checked(old('reason', $return->reason) === $reason) required> {{ trans('asset-returns.reasons.'.$reason) }}</label>
+                                    <label><input type="radio" name="reason" value="{{ $reason }}" @checked(old('reason', $return->reason) === $reason)> {{ trans('asset-returns.reasons.'.$reason) }}</label>
                                 @endforeach
                             </div>
                         </div>
@@ -87,17 +87,19 @@
                                 </label>
                                 <label>
                                     <span>{{ trans('asset-returns.date') }}</span>
-                                    <input class="form-control" type="date" name="date" value="{{ now()->toDateString() }}" min="{{ $return->created_at->toDateString() }}" max="{{ now()->toDateString() }}" required>
+                                    <input class="form-control" type="date" name="date" value="{{ now()->toDateString() }}" min="{{ $return->created_at->toDateString() }}" max="{{ now()->toDateString() }}">
                                 </label>
                                 <button class="btn btn-theme" type="submit">{{ trans('asset-returns.record') }}</button>
                             </form>
-                            <p class="help-block">{{ trans('asset-returns.record_help', ['partner' => $partner]) }}</p>
                         @endif
                         @if (($last = $return->lastShippingStep()) && $last !== 'warehouse_arrived_at')
-                            <form method="POST" action="{{ route('returns.undo', $return) }}">
+                            <form method="POST" action="{{ route('returns.undo', $return) }}" class="return-undo-form">
                                 @csrf
-                                <button class="btn btn-link btn-sm return-undo" type="submit">{{ trans('asset-returns.undo', ['step' => $stepLabel($last)]) }}</button>
+                                <button class="btn btn-link return-undo" type="submit"><x-icon type="undo" /> {{ trans('asset-returns.undo', ['step' => $stepLabel($last)]) }}</button>
                             </form>
+                        @endif
+                        @if ($next)
+                            <p class="return-step-help">{{ trans('asset-returns.record_help', ['partner' => $partner]) }}</p>
                         @endif
                     </div>
                 @endif
@@ -188,7 +190,7 @@
                                         @if ($canUndoItems && ($itemLast = $item->lastPartnerStep()))
                                             <form method="POST" action="{{ route('returns.items.undo', [$return, $item]) }}">
                                                 @csrf
-                                                <button class="btn btn-link btn-sm return-undo" type="submit">{{ trans('asset-returns.undo', ['step' => $stepLabel($itemLast)]) }}</button>
+                                                <button class="btn btn-link return-undo" type="submit"><x-icon type="undo" /> {{ trans('asset-returns.undo', ['step' => $stepLabel($itemLast)]) }}</button>
                                             </form>
                                         @endif
                                     @else

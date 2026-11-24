@@ -2548,36 +2548,112 @@ body.workspace-ui,
 }
 
 /* Returns: steps are recorded by hand, with their date */
-.return-step-actions {
-    display: grid;
-    gap: 6px;
+.workspace-ui .shipment-progress li {
+    /* Steps with and without a date stay aligned at the top. */
+    align-content: start;
 }
-.return-step-form {
+.workspace-ui .return-step-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
     align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 10px;
+    background: var(--workspace-navigation);
 }
-.return-step-form label {
-    display: grid;
-    gap: 4px;
+.workspace-ui .return-step-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
     margin: 0;
+}
+.workspace-ui .return-step-form label {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    color: var(--workspace-muted);
+    font-size: 12.5px;
     font-weight: 600;
 }
-.return-step-form .form-control {
+.workspace-ui .return-step-form .form-control,
+.workspace-ui .return-step-form .btn {
+    height: 36px;
+}
+.workspace-ui .return-step-form .form-control {
     width: auto;
+    min-width: 200px;
+    padding-block: 6px;
+    line-height: 22px;
+}
+.workspace-ui .return-step-form input[type="date"].form-control {
     min-width: 160px;
 }
-.return-step-form-sm {
+.workspace-ui .return-step-help {
+    flex-basis: 100%;
+    margin: 0;
+    color: var(--workspace-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+.workspace-ui .return-undo-form {
+    margin: 0;
+}
+.workspace-ui .btn.return-undo {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-    margin-top: 8px;
+    height: 36px;
+    padding: 0;
+    color: var(--workspace-accent);
+    font-size: 13px;
+    font-weight: 600;
 }
-.return-step-form-sm .form-control {
+.workspace-ui .btn.return-undo:hover,
+.workspace-ui .btn.return-undo:focus {
+    color: var(--workspace-primary-hover);
+    text-decoration: underline;
+}
+
+/* The same controls, compact, inside the items table */
+.workspace-ui .return-step-form-sm {
+    gap: 6px;
+    margin-top: 10px;
+}
+.workspace-ui .return-step-form-sm .form-control,
+.workspace-ui .return-step-form-sm .btn {
+    height: 32px;
+}
+.workspace-ui .return-step-form-sm .form-control {
     min-width: 0;
+    padding-block: 4px;
+    font-size: 13px;
 }
-.return-undo {
-    padding-left: 0;
+.workspace-ui .return-step-form-sm input[type="date"].form-control {
+    min-width: 140px;
 }
-.return-edit-details {
-    margin: 8px 0 16px;
+.workspace-ui td .btn.return-undo {
+    height: auto;
+    margin-top: 6px;
+    font-size: 12.5px;
+}
+
+/* Edit return details */
+.workspace-ui .return-details-edit {
+    margin: 4px 0 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--workspace-border);
+}
+.workspace-ui .return-details-edit summary {
+    color: var(--workspace-accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+.workspace-ui .return-details-edit[open] summary {
+    margin-bottom: 14px;
+}
+.workspace-ui .return-details-edit .return-reasons label {
+    margin-right: 14px;
 }
