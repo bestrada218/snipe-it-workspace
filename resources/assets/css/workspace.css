@@ -2657,3 +2657,50 @@ body.workspace-ui,
 .workspace-ui .return-details-edit .return-reasons label {
     margin-right: 14px;
 }
+
+/* Cloud copies: how-to guides */
+.workspace-ui .cloud-guide-box {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 10px;
+    background: var(--workspace-navigation);
+}
+.workspace-ui .cloud-guide-box > p {
+    margin: 0 0 8px;
+}
+.workspace-ui .cloud-guide {
+    margin: 8px 0 12px;
+}
+.workspace-ui .cloud-guide summary {
+    color: var(--workspace-accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+.workspace-ui .cloud-guide[open] summary {
+    margin-bottom: 8px;
+}
+.workspace-ui .cloud-guide ol,
+.workspace-ui .cloud-guide ul {
+    margin: 0 0 8px;
+    padding-left: 22px;
+    line-height: 1.55;
+}
+.workspace-ui .cloud-guide li + li {
+    margin-top: 6px;
+}
+.workspace-ui .cloud-guide-label {
+    margin: 12px 0 6px;
+    font-weight: 600;
+}
+.workspace-ui .cloud-guide-code {
+    max-width: 640px;
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border: 1px solid var(--workspace-border);
+    border-radius: 8px;
+    background: var(--workspace-surface);
+    font-size: 12.5px;
+    white-space: pre;
+}

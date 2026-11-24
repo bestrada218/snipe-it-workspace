@@ -46,7 +46,9 @@ The current number is in the [`VERSION`](VERSION) file.
 - *Cloud copies* page (Settings → Backups): set up encrypted copies to
   Amazon S3 or Google Drive from the app, test the connection and see how
   the last copy went. Superadmins only, after typing their password and a
-  two-factor code again; two-factor is mandatory to open it.
+  two-factor code again; two-factor is mandatory to open it. Each
+  destination has a step-by-step guide (AWS and Google Cloud) and every
+  field explains what it is and where it comes from.
 - *Changes by version* page: the version number in Settings and in the
   footer opens the list of changes of every version.
 
