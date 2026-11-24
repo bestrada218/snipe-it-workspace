@@ -45,8 +45,8 @@
                     @if ($items->isEmpty())
                         <p>{{ trans('asset-returns.no_items') }}</p>
                     @else
-                        @if ($storageLocations->isEmpty())
-                            <p class="callout callout-warning">{{ trans('asset-returns.no_storage_locations') }}</p>
+                        @if ($clinicLocations->isEmpty())
+                            <p class="callout callout-warning">{{ trans('asset-returns.no_locations') }}</p>
                         @endif
                         <div class="table-responsive">
                             <table class="table return-items-table">
@@ -81,7 +81,7 @@
                                                 <div data-when="storage">
                                                     <select class="form-control" name="items[{{ $key }}][location_id]" aria-label="{{ trans('asset-returns.storage_location') }}">
                                                         <option value="">{{ trans('asset-returns.choose_location') }}</option>
-                                                        @foreach ($storageLocations as $location)
+                                                        @foreach ($clinicLocations as $location)
                                                             <option value="{{ $location->id }}" @selected((string) old('items.'.$key.'.location_id') === (string) $location->id)>{{ $location->name }}</option>
                                                         @endforeach
                                                     </select>

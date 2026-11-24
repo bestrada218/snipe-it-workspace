@@ -92,7 +92,7 @@
                                                 <div data-when="storage">
                                                     <select class="form-control" name="location_id" aria-label="{{ trans('asset-returns.storage_location') }}">
                                                         <option value="">{{ trans('asset-returns.choose_location') }}</option>
-                                                        @foreach ($storageLocations as $location)
+                                                        @foreach ($clinicLocations as $location)
                                                             <option value="{{ $location->id }}" @selected($item->location_id === $location->id)>{{ $location->name }}</option>
                                                         @endforeach
                                                     </select>

@@ -31,6 +31,9 @@ The current number is in the [`VERSION`](VERSION) file.
 
 - The Snipe-IT Workspace version is shown next to the Snipe-IT version in
   Settings, and at the bottom of every page.
+- Returns: the destinations read "<partner> warehouse" (the partner name set
+  in Settings, for example Rippling) and "A clinic's storage"; choosing a
+  clinic asks which one, from all the locations.
 - *Changes by version* page: the version number in Settings and in the
   footer opens the list of changes of every version.
 

@@ -42,7 +42,7 @@ class AssetReturnController extends Controller
         return view('asset-returns.create', [
             'person' => $person,
             'items' => $person ? AssetReturns::returnableItems($person) : collect(),
-            'storageLocations' => AssetReturns::storageLocations(),
+            'clinicLocations' => AssetReturns::clinicLocations(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }
@@ -64,7 +64,7 @@ class AssetReturnController extends Controller
 
         return view('asset-returns.show', [
             'return' => $return,
-            'storageLocations' => AssetReturns::storageLocations(),
+            'clinicLocations' => AssetReturns::clinicLocations(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }

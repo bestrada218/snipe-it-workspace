@@ -36,7 +36,7 @@ class AssetReturnFlowTest extends TestCase
         $this->monitor = Asset::factory()->assignedToUser($this->person)->create(['asset_tag' => 'NY-302-TV']);
         $headset = Accessory::factory()->create(['qty' => 5, 'asset_tag' => 'NY-303-HS']);
         $this->headsetCheckout = AccessoryCheckout::create(['accessory_id' => $headset->id, 'assigned_to' => $this->person->id, 'assigned_type' => User::class]);
-        $this->storage = Location::factory()->create(['name' => 'Clinic store room', 'is_storage' => true]);
+        $this->storage = Location::factory()->create(['name' => 'Midtown clinic']);
     }
 
     private function createReturn(array $overrides = []): AssetReturn
@@ -93,7 +93,7 @@ class AssetReturnFlowTest extends TestCase
             ->assertSee(trans('asset-returns.no_items'));
     }
 
-    public function test_storing_an_item_assigns_it_to_the_storage_location_not_as_a_fixed_asset(): void
+    public function test_storing_an_item_assigns_it_to_the_chosen_clinic(): void
     {
         $return = $this->createReturn();
         $item = $return->items()->where('item_id', $this->monitor->id)->where('item_type', Asset::class)->firstOrFail();
@@ -103,7 +103,6 @@ class AssetReturnFlowTest extends TestCase
         $this->monitor->refresh();
         $this->assertSame(Location::class, $this->monitor->assigned_type);
         $this->assertSame($this->storage->id, (int) $this->monitor->assigned_to);
-        $this->assertFalse(Asset::inInventoryLocationModule(null)->whereKey($this->monitor->id)->exists());
 
         $headsetItem = $return->items()->where('item_type', Accessory::class)->firstOrFail();
         $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $headsetItem]))->assertSessionHasNoErrors();
@@ -143,7 +142,7 @@ class AssetReturnFlowTest extends TestCase
         $this->actingAs($this->admin)->post(route('returns.store'), [
             'user_id' => $this->person->id,
             'reason' => 'change',
-            'items' => ['asset-'.$this->laptop->id => ['include' => 1, 'destination' => 'storage', 'location_id' => Location::factory()->create(['is_storage' => false])->id]],
+            'items' => ['asset-'.$this->laptop->id => ['include' => 1, 'destination' => 'storage', 'location_id' => 0]],
         ])->assertSessionHasErrors();
 
         $this->actingAs($this->admin)->post(route('returns.store'), [
@@ -153,6 +152,23 @@ class AssetReturnFlowTest extends TestCase
         ])->assertSessionHasErrors();
 
         $this->assertSame(0, AssetReturn::count());
+    }
+
+    public function test_any_location_except_the_partner_warehouse_can_keep_items(): void
+    {
+        $warehouse = Location::factory()->create(['is_storage' => true]);
+        $this->settings->set(['return_partner_location_id' => $warehouse->id]);
+
+        $this->actingAs($this->admin)->get(route('returns.create', ['user_id' => $this->person->id]))
+            ->assertOk()
+            ->assertSee('Rippling')
+            ->assertSee('Midtown clinic');
+
+        $this->actingAs($this->admin)->post(route('returns.store'), [
+            'user_id' => $this->person->id,
+            'reason' => 'change',
+            'items' => ['asset-'.$this->monitor->id => ['include' => 1, 'destination' => 'storage', 'location_id' => $warehouse->id]],
+        ])->assertSessionHasErrors();
     }
 
     public function test_a_return_can_be_cancelled_until_something_is_checked_in(): void

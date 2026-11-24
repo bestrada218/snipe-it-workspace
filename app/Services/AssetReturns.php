@@ -47,6 +47,18 @@ final class AssetReturns
     }
 
     /**
+     * Where items that do not go to the partner can be kept: any location
+     * (each clinic), except the partner's own warehouse.
+     */
+    public static function clinicLocations(): Collection
+    {
+        return Location::query()
+            ->when(self::partnerLocation(), fn ($query, Location $partner) => $query->whereKeyNot($partner->id))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Assets and accessories the person holds that are not already part of
      * an open return.
      *
@@ -138,8 +150,8 @@ final class AssetReturns
         $previously = null;
         if ($destination === 'storage') {
             $locationId = (int) ($item['location_id'] ?? 0);
-            if (! Location::whereKey($locationId)->where('is_storage', true)->exists()) {
-                throw ValidationException::withMessages([$errorKey => trans('asset-returns.choose_storage')]);
+            if (! self::clinicLocations()->contains('id', $locationId)) {
+                throw ValidationException::withMessages([$errorKey => trans('asset-returns.choose_storage', ['partner' => self::partnerName()])]);
             }
         } else {
             if (! in_array((string) ($item['previously_with_partner'] ?? ''), ['0', '1'], true)) {
