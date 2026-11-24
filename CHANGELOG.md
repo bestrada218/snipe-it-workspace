@@ -34,6 +34,10 @@ The current number is in the [`VERSION`](VERSION) file.
 - Returns: the destinations read "<partner> warehouse" (the partner name set
   in Settings, for example Rippling) and "A clinic's storage"; choosing a
   clinic asks which one, from all the locations.
+- Returned items are no longer assigned to the warehouse location: they are
+  checked in, ready to deploy, and their location is the clinic or the
+  partner warehouse. The asset page shows "In the <place> warehouse" with a
+  link to the return until the asset is checked out again.
 - *Cloud copies* page (Settings → Backups): set up encrypted copies to
   Amazon S3 or Google Drive from the app, test the connection and see how
   the last copy went. Superadmins only, after typing their password and a

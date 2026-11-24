@@ -9,6 +9,7 @@ use App\Models\Asset;
 use App\Models\AssetReturn;
 use App\Models\Location;
 use App\Models\User;
+use App\Services\AssetReturns;
 use Tests\TestCase;
 
 class AssetReturnFlowTest extends TestCase
@@ -93,7 +94,7 @@ class AssetReturnFlowTest extends TestCase
             ->assertSee(trans('asset-returns.no_items'));
     }
 
-    public function test_storing_an_item_assigns_it_to_the_chosen_clinic(): void
+    public function test_storing_an_item_leaves_it_available_in_the_clinic_warehouse(): void
     {
         $return = $this->createReturn();
         $item = $return->items()->where('item_id', $this->monitor->id)->where('item_type', Asset::class)->firstOrFail();
@@ -101,13 +102,21 @@ class AssetReturnFlowTest extends TestCase
         $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $item]))->assertSessionHasNoErrors();
 
         $this->monitor->refresh();
-        $this->assertSame(Location::class, $this->monitor->assigned_type);
-        $this->assertSame($this->storage->id, (int) $this->monitor->assigned_to);
+        $this->assertNull($this->monitor->assigned_to);
+        $this->assertSame($this->storage->id, (int) $this->monitor->location_id);
+        $this->assertSame(trans('asset-returns.in_warehouse', ['place' => 'Midtown clinic']), AssetReturns::storageFor($this->monitor)['label']);
+        $this->actingAs($this->admin)->get(route('hardware.show', $this->monitor))
+            ->assertOk()
+            ->assertSee(trans('asset-returns.in_warehouse', ['place' => 'Midtown clinic']));
+
+        // Checked out again: it is no longer waiting in the warehouse.
+        $this->monitor->checkOut($this->person, $this->admin, now()->addMinute()->format('Y-m-d H:i:s'));
+        $this->assertNull(AssetReturns::storageFor($this->monitor->fresh()));
 
         $headsetItem = $return->items()->where('item_type', Accessory::class)->firstOrFail();
         $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $headsetItem]))->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('accessories_checkout', ['id' => $this->headsetCheckout->id]);
-        $this->assertDatabaseHas('accessories_checkout', ['accessory_id' => $this->headsetCheckout->accessory_id, 'assigned_type' => Location::class, 'assigned_to' => $this->storage->id]);
+        $this->assertDatabaseMissing('accessories_checkout', ['accessory_id' => $this->headsetCheckout->accessory_id]);
     }
 
     public function test_partner_shipment_steps_check_the_item_in_and_need_setup_when_it_was_not_with_the_partner(): void
@@ -122,7 +131,9 @@ class AssetReturnFlowTest extends TestCase
 
         $return->refresh();
         $this->assertNotNull($return->warehouse_arrived_at);
-        $this->assertSame($warehouse->id, (int) $this->laptop->fresh()->assigned_to);
+        $this->assertNull($this->laptop->fresh()->assigned_to);
+        $this->assertSame($warehouse->id, (int) $this->laptop->fresh()->location_id);
+        $this->assertSame(trans('asset-returns.in_warehouse', ['place' => 'Rippling']), AssetReturns::storageFor($this->laptop->fresh())['label']);
         $this->assertNull($return->completed_at);
 
         $item = $return->items()->where('item_id', $this->laptop->id)->where('item_type', Asset::class)->firstOrFail();

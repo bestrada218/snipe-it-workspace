@@ -55,6 +55,8 @@ return [
         'partner_configured_at' => ':partner set it up',
     ],
     'mark' => 'Mark ":step"',
+    'in_warehouse' => 'In the :place warehouse',
+    'from_return' => 'Return #:id',
     'stored_state' => 'Stored',
     'stored_at_location' => 'Stored at :location',
     'pending_store' => 'To be stored at :location',

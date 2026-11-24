@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Events\CheckoutableCheckedIn;
-use App\Events\CheckoutableCheckedOut;
 use App\Models\Accessory;
 use App\Models\AccessoryCheckout;
 use App\Models\Actionlog;
@@ -14,6 +13,7 @@ use App\Models\LicenseSeat;
 use App\Models\Location;
 use App\Models\Setting;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -305,11 +305,9 @@ final class AssetReturns
                 $asset->location_id = $location->id;
             }
             $asset->save();
+            // Back in stock, ready to deploy and assigned to nobody; its
+            // location says which warehouse holds it (see storageFor()).
             event(new CheckoutableCheckedIn($asset, $person, $actor, $note, now()->format('Y-m-d H:i:s'), $original));
-
-            if ($location) {
-                $asset->checkOut($location, $actor, now()->format('Y-m-d H:i:s'), null, $note, $asset->name, $location->id);
-            }
 
             return;
         }
@@ -319,20 +317,51 @@ final class AssetReturns
         if (! $checkout || ! $accessory) {
             return;
         }
+        // Accessories go back to stock; the return keeps where the unit is.
         $checkout->delete();
         event(new CheckoutableCheckedIn($accessory, $person, $actor, $note, now()->format('Y-m-d H:i:s')));
+    }
 
-        if ($location) {
-            $stored = new AccessoryCheckout([
-                'accessory_id' => $accessory->id,
-                'assigned_to' => $location->id,
-                'assigned_type' => Location::class,
-                'note' => $note,
-            ]);
-            $stored->created_by = $actor->id;
-            $stored->save();
-            event(new CheckoutableCheckedOut($accessory, $location, $actor, $note));
+    /**
+     * The warehouse a returned asset is waiting in: the clinic it was stored
+     * at, or the partner warehouse. Null once it was checked out again or
+     * moved somewhere else.
+     *
+     * @return array{label: string, location: Location, return: AssetReturn}|null
+     */
+    public static function storageFor(Asset $asset): ?array
+    {
+        if ($asset->assigned_to || ! $asset->location_id) {
+            return null;
         }
+
+        $item = AssetReturnItem::query()
+            ->where('item_type', Asset::class)
+            ->where('item_id', $asset->id)
+            ->with(['assetReturn', 'location'])
+            ->latest('id')
+            ->first();
+        if (! $item || ! $item->assetReturn) {
+            return null;
+        }
+
+        $partner = $item->goesToPartner();
+        $since = $partner ? $item->assetReturn->warehouse_arrived_at : $item->stored_at;
+        $location = $partner ? self::partnerLocation() : $item->location;
+        if (! $since || ! $location || (int) $location->id !== (int) $asset->location_id) {
+            return null;
+        }
+        if ($asset->last_checkout && Carbon::parse($asset->last_checkout)->greaterThan($since)) {
+            return null;
+        }
+
+        return [
+            'label' => $partner
+                ? trans('asset-returns.in_warehouse', ['place' => self::partnerName()])
+                : trans('asset-returns.in_warehouse', ['place' => $location->name]),
+            'location' => $location,
+            'return' => $item->assetReturn,
+        ];
     }
 
     /**

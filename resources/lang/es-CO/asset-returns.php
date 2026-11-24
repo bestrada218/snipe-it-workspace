@@ -55,6 +55,8 @@ return [
         'partner_configured_at' => ':partner lo configuró',
     ],
     'mark' => 'Marcar «:step»',
+    'in_warehouse' => 'En la bodega de :place',
+    'from_return' => 'Devolución #:id',
     'stored_state' => 'Guardado en bodega',
     'stored_at_location' => 'Guardado en la bodega de :location',
     'pending_store' => 'Pendiente de guardar en la bodega de :location',
