@@ -3,6 +3,7 @@
 use App\Actions\Breadcrumbs\BuildAcceptanceBreadcrumbs;
 use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
+use App\Http\Controllers\Assets\AssetReturnController;
 use App\Http\Controllers\Assets\AssetShipmentController;
 use App\Http\Controllers\AssetTagTypesController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -1151,4 +1152,25 @@ Route::middleware('auth')->group(function () {
     Route::post('shipments/{shipment}/reschedule', [AssetShipmentController::class, 'reschedule'])->name('shipments.reschedule');
     Route::post('shipments/{shipment}/cancel', [AssetShipmentController::class, 'cancel'])->name('shipments.cancel');
     Route::get('shipments/{shipment}/approval', [AssetShipmentController::class, 'approval'])->name('shipments.approval');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('returns', [AssetReturnController::class, 'index'])
+        ->name('returns.index')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')->push(trans('asset-returns.title'), route('returns.index')));
+    Route::get('returns/create', [AssetReturnController::class, 'create'])
+        ->name('returns.create')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('returns.index')->push(trans('asset-returns.create'), route('returns.create')));
+    Route::post('returns', [AssetReturnController::class, 'store'])->name('returns.store');
+    Route::get('returns/{return}', [AssetReturnController::class, 'show'])
+        ->whereNumber('return')
+        ->name('returns.show')
+        ->breadcrumbs(fn (Trail $trail, $return) => $trail->parent('returns.index')
+            ->push(trans('asset-returns.number', ['id' => $return instanceof \App\Models\AssetReturn ? $return->id : $return]), ''));
+    Route::post('returns/{return}/advance', [AssetReturnController::class, 'advance'])->whereNumber('return')->name('returns.advance');
+    Route::post('returns/{return}/notes', [AssetReturnController::class, 'addNote'])->whereNumber('return')->name('returns.notes');
+    Route::post('returns/{return}/cancel', [AssetReturnController::class, 'cancel'])->whereNumber('return')->name('returns.cancel');
+    Route::post('returns/{return}/items/{item}/advance', [AssetReturnController::class, 'advanceItem'])->whereNumber(['return', 'item'])->name('returns.items.advance');
+    Route::post('returns/{return}/items/{item}/store', [AssetReturnController::class, 'storeItem'])->whereNumber(['return', 'item'])->name('returns.items.store');
+    Route::put('returns/{return}/items/{item}', [AssetReturnController::class, 'updateItem'])->whereNumber(['return', 'item'])->name('returns.items.update');
 });

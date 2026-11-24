@@ -101,7 +101,9 @@ class SettingsController extends Controller
         $approvalCategories = Category::orderBy('name')->get(['id', 'name', 'category_type']);
         $damageStatusCandidates = Statuslabel::where('deployable', 0)->where('pending', 0)->where('archived', 0)->orderBy('name')->get(['id', 'name']);
 
-        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates', 'approvalCategories', 'damageStatusCandidates'));
+        $assetCategories = \App\Models\Category::where('category_type', 'asset')->orderBy('name')->pluck('name', 'id');
+
+        return view('settings/general', compact('setting', 'inventoryLocations', 'approvalCandidates', 'approvalCategories', 'damageStatusCandidates', 'assetCategories'));
     }
 
     /**
@@ -158,6 +160,16 @@ class SettingsController extends Controller
             ]);
 
             $setting->purchase_approvers = array_map('intval', $purchaseSettings['purchase_approvers'] ?? []);
+        }
+
+        if ($request->boolean('return_settings_configured')) {
+            abort_unless($request->user()->isSuperUser(), 403);
+            $returnSettings = $request->validate([
+                'return_partner_name' => ['nullable', 'string', 'max:60'],
+                'return_partner_location_id' => ['nullable', 'integer', Rule::exists('locations', 'id')->where('is_storage', true)->whereNull('deleted_at')],
+            ]);
+            $setting->return_partner_name = $returnSettings['return_partner_name'] ?? null;
+            $setting->return_partner_location_id = $returnSettings['return_partner_location_id'] ?? null;
         }
 
         $setting->modellist_displays = '';
@@ -230,7 +242,9 @@ class SettingsController extends Controller
             'inventory_module_labels' => 'sometimes|array:'.implode(',', array_keys(Setting::INVENTORY_MODULES)),
             'inventory_module_labels.*' => 'nullable|string|max:60',
             'inventory_location_modules' => 'sometimes|array:'.$allowedKeys,
-            'inventory_location_modules.*' => 'array:name,location_id,enabled',
+            'inventory_location_modules.*' => 'array:name,location_id,enabled,category_ids',
+            'inventory_location_modules.*.category_ids' => 'sometimes|array',
+            'inventory_location_modules.*.category_ids.*' => ['integer', Rule::exists('categories', 'id')->where('category_type', 'asset')->whereNull('deleted_at')],
             'inventory_location_modules.*.enabled' => 'sometimes|boolean',
             'inventory_location_modules.*.name' => 'nullable|string|max:60',
             'inventory_location_modules.*.location_id' => ['nullable', 'integer', Rule::exists('locations', 'id')->whereNull('deleted_at')],
@@ -261,6 +275,7 @@ class SettingsController extends Controller
                     'name' => $name,
                     'location_id' => $module['location_id'] ?? null,
                     'enabled' => (bool) ($module['enabled'] ?? $locationModules[$key]['enabled'] ?? true),
+                    'category_ids' => array_values(array_map('intval', $module['category_ids'] ?? [])),
                 ];
             }
             $setting->inventory_location_modules = $locationModules;

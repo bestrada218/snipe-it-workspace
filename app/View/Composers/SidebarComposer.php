@@ -9,6 +9,7 @@
 namespace App\View\Composers;
 
 use App\Models\Asset;
+use App\Models\AssetReturn;
 use App\Models\Setting;
 use App\Services\AssetReplacement;
 use App\Services\AssetShipments;
@@ -54,19 +55,20 @@ class SidebarComposer
      * shipments (amber when one is due or late) and assets whose mandatory
      * replacement is overdue or due within 15 days.
      *
-     * @return array{nav_open_shipments: int, nav_due_shipments: int, nav_replacement_due: int}
+     * @return array{nav_open_shipments: int, nav_due_shipments: int, nav_replacement_due: int, nav_open_returns: int}
      */
     private function trackingCounts(): array
     {
         $user = auth()->user();
         if (! $user || ! Setting::inventoryModuleEnabled('assets') || Gate::denies('index', Asset::class)) {
-            return ['nav_open_shipments' => 0, 'nav_due_shipments' => 0, 'nav_replacement_due' => 0];
+            return ['nav_open_shipments' => 0, 'nav_due_shipments' => 0, 'nav_replacement_due' => 0, 'nav_open_returns' => 0];
         }
 
         return [
             'nav_open_shipments' => AssetShipments::visibleTo($user)->open()->count(),
             'nav_due_shipments' => AssetShipments::dueFor($user)->count(),
             'nav_replacement_due' => AssetReplacement::query([null, today()->addDays(15)->toDateString()])->count(),
+            'nav_open_returns' => AssetReturn::open()->count(),
         ];
     }
 }

@@ -675,5 +675,6 @@ return [
         'notifications' => 'alerts, email, notifications, audit, threshold, email alerts, cc',
         'oauth' => 'oauth, oath, api, personal access keys, tokens',
     ],
-
+    'inventory_location_categories' => 'Categorías',
+    'inventory_location_categories_help' => 'Solo los activos de estas categorías asignados a la ubicación entran en este módulo (por ejemplo, equipos fijos). Vacío: todos los activos asignados a una ubicación.',
 ];

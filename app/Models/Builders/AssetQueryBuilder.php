@@ -3,6 +3,7 @@
 namespace App\Models\Builders;
 
 use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\AssetShipment;
 use App\Models\Company;
 use App\Models\Location;
@@ -24,11 +25,26 @@ class AssetQueryBuilder extends Builder
         return $this->where('physical', '=', '1');
     }
 
-    public function inInventoryLocationModule(?int $locationId): self
+    /**
+     * Assets installed at a location that belong to an inventory location
+     * module (for example fixed assets). Assets assigned to a storage
+     * location are stored, not installed, and never count. When the module
+     * lists categories, only assets of those categories count.
+     *
+     * @param  list<int>  $categoryIds
+     */
+    public function inInventoryLocationModule(?int $locationId, array $categoryIds = []): self
     {
         return $this->where('assets.assigned_type', Location::class)
             ->whereNotNull('assets.assigned_to')
-            ->when($locationId !== null, fn (self $query) => $query->where('assets.assigned_to', $locationId));
+            ->when($locationId !== null, fn (self $query) => $query->where('assets.assigned_to', $locationId))
+            // Assets kept in a storage location are stored, not installed.
+            ->whereNotIn('assets.assigned_to', Location::where('is_storage', true)->pluck('id')->whenEmpty(fn ($ids) => $ids->push(0)))
+            // Pluck then whereIn, as pending() does: no correlated EXISTS per row.
+            ->when($categoryIds !== [], fn (self $query) => $query->whereIn(
+                'assets.model_id',
+                AssetModel::whereIn('category_id', $categoryIds)->pluck('id')->whenEmpty(fn ($ids) => $ids->push(0))
+            ));
     }
 
     public function pending(): self

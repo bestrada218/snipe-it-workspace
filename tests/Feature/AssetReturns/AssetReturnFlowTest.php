@@ -1,0 +1,176 @@
+<?php
+
+namespace Tests\Feature\AssetReturns;
+
+use App\Models\Accessory;
+use App\Models\AccessoryCheckout;
+use App\Models\Actionlog;
+use App\Models\Asset;
+use App\Models\AssetReturn;
+use App\Models\Location;
+use App\Models\User;
+use Tests\TestCase;
+
+class AssetReturnFlowTest extends TestCase
+{
+    private User $person;
+
+    private User $admin;
+
+    private Asset $laptop;
+
+    private Asset $monitor;
+
+    private AccessoryCheckout $headsetCheckout;
+
+    private Location $storage;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->settings->set(['return_partner_name' => 'Rippling']);
+        $this->person = User::factory()->create();
+        $this->admin = User::factory()->superuser()->create();
+        $this->laptop = Asset::factory()->assignedToUser($this->person)->create(['asset_tag' => 'NY-301-LP-W11']);
+        $this->monitor = Asset::factory()->assignedToUser($this->person)->create(['asset_tag' => 'NY-302-TV']);
+        $headset = Accessory::factory()->create(['qty' => 5, 'asset_tag' => 'NY-303-HS']);
+        $this->headsetCheckout = AccessoryCheckout::create(['accessory_id' => $headset->id, 'assigned_to' => $this->person->id, 'assigned_type' => User::class]);
+        $this->storage = Location::factory()->create(['name' => 'Clinic store room', 'is_storage' => true]);
+    }
+
+    private function createReturn(array $overrides = []): AssetReturn
+    {
+        $this->actingAs($this->admin)->post(route('returns.store'), array_replace_recursive([
+            'user_id' => $this->person->id,
+            'reason' => 'termination',
+            'ticket_number' => 'INC-4321',
+            'ticket_owner_id' => $this->admin->id,
+            'return_owner_id' => $this->admin->id,
+            'note' => 'Charger missing',
+            'items' => [
+                'asset-'.$this->laptop->id => ['include' => 1, 'destination' => 'partner', 'previously_with_partner' => '0'],
+                'asset-'.$this->monitor->id => ['include' => 1, 'destination' => 'storage', 'location_id' => $this->storage->id],
+                'accessory-'.$this->headsetCheckout->id => ['include' => 1, 'destination' => 'storage', 'location_id' => $this->storage->id],
+            ],
+        ], $overrides))->assertSessionHasNoErrors();
+
+        return AssetReturn::latest('id')->firstOrFail();
+    }
+
+    public function test_choosing_a_person_loads_what_they_hold(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('returns.create', ['user_id' => $this->person->id]))
+            ->assertOk()
+            ->assertSee('NY-301-LP-W11')
+            ->assertSee('NY-302-TV')
+            ->assertSee('NY-303-HS');
+    }
+
+    public function test_a_return_records_items_owners_and_copies_the_note_to_each_item(): void
+    {
+        $return = $this->createReturn();
+
+        $this->assertSame(3, $return->items()->count());
+        $this->assertSame($this->admin->id, $return->ticket_owner_id);
+        foreach ([$this->laptop, $this->monitor] as $asset) {
+            $this->assertTrue(Actionlog::where('item_type', Asset::class)->where('item_id', $asset->id)
+                ->where('action_type', 'note added')->where('note', 'like', '%Charger missing%')->exists());
+        }
+
+        $this->actingAs($this->admin)->post(route('returns.notes', $return), ['note' => 'Boxes requested'])->assertSessionHasNoErrors();
+        $this->assertSame(2, Actionlog::where('item_type', Asset::class)->where('item_id', $this->laptop->id)->where('action_type', 'note added')->count());
+    }
+
+    public function test_items_already_in_an_open_return_are_not_offered_again(): void
+    {
+        $this->createReturn();
+
+        $this->actingAs($this->admin)
+            ->get(route('returns.create', ['user_id' => $this->person->id]))
+            ->assertDontSee('NY-301-LP-W11')
+            ->assertSee(trans('asset-returns.no_items'));
+    }
+
+    public function test_storing_an_item_assigns_it_to_the_storage_location_not_as_a_fixed_asset(): void
+    {
+        $return = $this->createReturn();
+        $item = $return->items()->where('item_id', $this->monitor->id)->where('item_type', Asset::class)->firstOrFail();
+
+        $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $item]))->assertSessionHasNoErrors();
+
+        $this->monitor->refresh();
+        $this->assertSame(Location::class, $this->monitor->assigned_type);
+        $this->assertSame($this->storage->id, (int) $this->monitor->assigned_to);
+        $this->assertFalse(Asset::inInventoryLocationModule(null)->whereKey($this->monitor->id)->exists());
+
+        $headsetItem = $return->items()->where('item_type', Accessory::class)->firstOrFail();
+        $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $headsetItem]))->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('accessories_checkout', ['id' => $this->headsetCheckout->id]);
+        $this->assertDatabaseHas('accessories_checkout', ['accessory_id' => $this->headsetCheckout->accessory_id, 'assigned_type' => Location::class, 'assigned_to' => $this->storage->id]);
+    }
+
+    public function test_partner_shipment_steps_check_the_item_in_and_need_setup_when_it_was_not_with_the_partner(): void
+    {
+        $warehouse = Location::factory()->create(['is_storage' => true]);
+        $this->settings->set(['return_partner_location_id' => $warehouse->id]);
+        $return = $this->createReturn();
+
+        foreach (range(1, 4) as $step) {
+            $this->actingAs($this->admin)->post(route('returns.advance', $return))->assertSessionHasNoErrors();
+        }
+
+        $return->refresh();
+        $this->assertNotNull($return->warehouse_arrived_at);
+        $this->assertSame($warehouse->id, (int) $this->laptop->fresh()->assigned_to);
+        $this->assertNull($return->completed_at);
+
+        $item = $return->items()->where('item_id', $this->laptop->id)->where('item_type', Asset::class)->firstOrFail();
+        $this->actingAs($this->admin)->post(route('returns.items.advance', [$return, $item]))->assertSessionHasNoErrors();
+        $this->actingAs($this->admin)->post(route('returns.items.advance', [$return, $item]))->assertSessionHasNoErrors();
+        $this->assertNotNull($item->fresh()->partner_configured_at);
+
+        foreach ($return->items()->where('destination', 'storage')->get() as $storageItem) {
+            $this->actingAs($this->admin)->post(route('returns.items.store', [$return, $storageItem]));
+        }
+
+        $this->assertNotNull($return->fresh()->completed_at);
+    }
+
+    public function test_each_destination_asks_what_it_needs(): void
+    {
+        $this->actingAs($this->admin)->post(route('returns.store'), [
+            'user_id' => $this->person->id,
+            'reason' => 'change',
+            'items' => ['asset-'.$this->laptop->id => ['include' => 1, 'destination' => 'storage', 'location_id' => Location::factory()->create(['is_storage' => false])->id]],
+        ])->assertSessionHasErrors();
+
+        $this->actingAs($this->admin)->post(route('returns.store'), [
+            'user_id' => $this->person->id,
+            'reason' => 'change',
+            'items' => ['asset-'.$this->laptop->id => ['include' => 1, 'destination' => 'partner']],
+        ])->assertSessionHasErrors();
+
+        $this->assertSame(0, AssetReturn::count());
+    }
+
+    public function test_a_return_can_be_cancelled_until_something_is_checked_in(): void
+    {
+        $return = $this->createReturn();
+        $this->actingAs($this->admin)->post(route('returns.cancel', $return))->assertSessionHasNoErrors();
+        $this->assertNotNull($return->fresh()->cancelled_at);
+        $this->assertSame($this->person->id, (int) $this->laptop->fresh()->assigned_to);
+
+        $second = $this->createReturn();
+        $item = $second->items()->where('destination', 'storage')->firstOrFail();
+        $this->actingAs($this->admin)->post(route('returns.items.store', [$second, $item]));
+        $this->actingAs($this->admin)->post(route('returns.cancel', $second))->assertSessionHasErrors('return');
+    }
+
+    public function test_only_people_who_can_check_in_manage_returns(): void
+    {
+        $this->actingAs(User::factory()->viewAssets()->create())->get(route('returns.create'))->assertForbidden();
+        $this->actingAs(User::factory()->viewAssets()->create())->get(route('returns.index'))->assertOk();
+    }
+}

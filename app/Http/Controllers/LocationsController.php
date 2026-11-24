@@ -93,6 +93,7 @@ class LocationsController extends Controller
         $location->fax = request('fax');
         $location->tag_color = $request->input('tag_color');
         $location->notes = $request->input('notes');
+        $location->is_storage = $request->boolean('is_storage');
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
         } else {
@@ -178,6 +179,7 @@ class LocationsController extends Controller
         $location->manager_id = $request->input('manager_id');
         $location->tag_color = $request->input('tag_color');
         $location->notes = $request->input('notes');
+        $location->is_storage = $request->boolean('is_storage');
 
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));

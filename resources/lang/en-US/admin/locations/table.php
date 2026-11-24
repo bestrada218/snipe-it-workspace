@@ -41,4 +41,6 @@ return [
     'signed_by_location_manager' => 'Signed By (Location Manager):',
     'signed_by' => 'Signed Off By:',
     'clone' => 'Clone Location',
+    'is_storage' => 'Storage / warehouse',
+    'is_storage_help' => 'Mark warehouses and store rooms. Anything assigned here shows as stored, not as a fixed asset in use.',
 ];

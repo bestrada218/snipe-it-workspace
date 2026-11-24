@@ -675,5 +675,6 @@ return [
         'notifications' => 'alerts, email, notifications, audit, threshold, email alerts, cc',
         'oauth' => 'oauth, oath, api, personal access keys, tokens',
     ],
-
+    'inventory_location_categories' => 'Categories',
+    'inventory_location_categories_help' => 'Only assets of these categories assigned to the location belong to this module (for example, fixed equipment). Empty: every asset assigned to a location.',
 ];

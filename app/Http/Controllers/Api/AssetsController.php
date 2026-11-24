@@ -239,7 +239,7 @@ class AssetsController extends Controller
         // their API integration code
         if ($request->has('inventory_view')) {
             $inventoryView = Setting::inventoryLocationModule($request->input('inventory_view'));
-            $assets->inInventoryLocationModule($inventoryView['location_id']);
+            $assets->inInventoryLocationModule($inventoryView['location_id'], $inventoryView['category_ids'] ?? []);
         }
 
         $status_type_key = null;

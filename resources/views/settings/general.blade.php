@@ -101,6 +101,33 @@
                                         </div>
                                     </div>
                                 </fieldset>
+
+                                <fieldset>
+                                    <x-form.legend>{{ trans('asset-returns.settings_title') }}</x-form.legend>
+                                    <input type="hidden" name="return_settings_configured" value="1">
+                                    <div class="form-group">
+                                        <label for="return_partner_name" class="col-md-3 control-label">{{ trans('asset-returns.settings_partner_name') }}</label>
+                                        <div class="col-md-7">
+                                            <input class="form-control" type="text" id="return_partner_name" name="return_partner_name" maxlength="60"
+                                                value="{{ old('return_partner_name', $setting->return_partner_name) }}" aria-describedby="return-partner-name-help">
+                                            <p class="help-block" id="return-partner-name-help">{{ trans('asset-returns.settings_partner_name_help') }}</p>
+                                            <x-form.error name="return_partner_name" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="return_partner_location_id" class="col-md-3 control-label">{{ trans('asset-returns.settings_partner_location') }}</label>
+                                        <div class="col-md-7">
+                                            <select class="form-control" id="return_partner_location_id" name="return_partner_location_id" aria-describedby="return-partner-location-help">
+                                                <option value="">—</option>
+                                                @foreach (\App\Services\AssetReturns::storageLocations() as $storageLocation)
+                                                    <option value="{{ $storageLocation->id }}" @selected((string) old('return_partner_location_id', $setting->return_partner_location_id) === (string) $storageLocation->id)>{{ $storageLocation->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <p class="help-block" id="return-partner-location-help">{{ trans('asset-returns.settings_partner_location_help') }}</p>
+                                            <x-form.error name="return_partner_location_id" />
+                                        </div>
+                                    </div>
+                                </fieldset>
                             @endcan
 
                             <fieldset>
@@ -169,6 +196,16 @@
                                                     @endforeach
                                                 </select>
                                                 <x-form.error :name="'inventory_location_modules.'.$key.'.location_id'" />
+                                                <label for="inventory-location-categories-{{ $key }}">{{ trans('admin/settings/general.inventory_location_categories') }}</label>
+                                                @php($moduleCategories = array_map('intval', (array) old('inventory_location_modules.'.$key.'.category_ids', $module['category_ids'] ?? [])))
+                                                <select class="form-control select2" id="inventory-location-categories-{{ $key }}" name="inventory_location_modules[{{ $key }}][category_ids][]" multiple style="width: 100%;"
+                                                    aria-describedby="inventory-location-categories-help-{{ $key }}">
+                                                    @foreach ($assetCategories as $categoryId => $categoryName)
+                                                        <option value="{{ $categoryId }}" @selected(in_array((int) $categoryId, $moduleCategories, true))>{{ $categoryName }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <p class="help-block" id="inventory-location-categories-help-{{ $key }}">{{ trans('admin/settings/general.inventory_location_categories_help') }}</p>
+                                                <x-form.error :name="'inventory_location_modules.'.$key.'.category_ids'" />
                                                 @if ($key !== 'new')
                                                     <input type="hidden" name="inventory_location_modules[{{ $key }}][enabled]" value="0">
                                                     <label class="inventory-module-option">

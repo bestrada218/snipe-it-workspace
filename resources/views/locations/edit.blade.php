@@ -131,6 +131,13 @@
                     </x-slot:input>
                 </x-form.row>
 
+                <x-form.checkbox-row
+                    name="is_storage"
+                    :label="trans('admin/locations/table.is_storage')"
+                    :help_text="trans('admin/locations/table.is_storage_help')"
+                    :item="$item"
+                />
+
                 <x-form.address :item="$item" />
 
                 @if ($snipeSettings->ldap_enabled == 1)

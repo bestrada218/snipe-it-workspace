@@ -41,4 +41,6 @@ return [
     'signed_by_location_manager' => 'Firmado por (Supervisor de la ubicación):',
     'signed_by' => 'Firmado por:',
     'clone' => 'Clonar localización',
+    'is_storage' => 'Bodega / almacenamiento',
+    'is_storage_help' => 'Marca las bodegas o cuartos de almacenamiento. Lo que quede asignado aquí se muestra como guardado en bodega, no como un activo fijo en uso.',
 ];

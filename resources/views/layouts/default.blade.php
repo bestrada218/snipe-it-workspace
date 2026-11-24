@@ -493,6 +493,13 @@
                                     <x-nav.count :value="($nav_open_shipments ?? 0) ?: null" :tone="($nav_due_shipments ?? 0) > 0 ? 'warn' : null" />
                                 </a>
                             </li>
+                            <li @class(['active' => request()->routeIs('returns.*')])>
+                                <a href="{{ route('returns.index') }}" @if (request()->routeIs('returns.*')) aria-current="page" @endif>
+                                    <x-icon type="checkin" class="fa-fw" />
+                                    <span>{{ trans('asset-returns.title') }}</span>
+                                    <x-nav.count :value="($nav_open_returns ?? 0) ?: null" />
+                                </a>
+                            </li>
                             <li @class(['active' => request()->routeIs('hardware.replacement-alerts')])>
                                 <a class="workspace-replacement-nav" href="{{ route('hardware.replacement-alerts') }}" @if (request()->routeIs('hardware.replacement-alerts')) aria-current="page" @endif>
                                     <x-icon type="due" class="fa-fw" />

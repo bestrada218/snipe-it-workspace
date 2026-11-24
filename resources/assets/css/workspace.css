@@ -2359,3 +2359,106 @@ body.workspace-ui,
 .workspace-ui .tag-types-warning {
     margin-bottom: 14px;
 }
+
+/* Returns (terminations and equipment changes). */
+.workspace-ui .return-tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: .01em;
+    white-space: nowrap;
+}
+
+.workspace-ui .return-item-category {
+    display: block;
+    color: var(--workspace-muted);
+    font-size: 12px;
+}
+
+.workspace-ui .return-items-table td {
+    vertical-align: top;
+}
+
+.workspace-ui .return-destination,
+.workspace-ui .return-edit form {
+    display: grid;
+    gap: 6px;
+    min-width: 240px;
+}
+
+.workspace-ui .return-destination [hidden],
+.workspace-ui .return-edit [hidden] {
+    display: none;
+}
+
+.workspace-ui .return-question {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.workspace-ui .return-destination label,
+.workspace-ui .return-edit label,
+.workspace-ui .return-reasons label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 14px 0 0;
+    font-weight: 500;
+}
+
+.workspace-ui .return-reasons {
+    padding-top: 7px;
+}
+
+.workspace-ui .return-edit summary {
+    margin-top: 6px;
+    color: var(--workspace-accent);
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.workspace-ui .return-section-title {
+    margin: 18px 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.workspace-ui .return-step-action {
+    margin-top: 10px;
+}
+
+.workspace-ui .return-item-progress {
+    margin: 0 0 6px;
+}
+
+.workspace-ui .return-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.workspace-ui .return-note-form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.workspace-ui .return-note-form .btn {
+    justify-self: start;
+}
+
+.workspace-ui .return-notes {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.workspace-ui .return-notes li {
+    padding: 10px 0;
+    border-top: 1px solid var(--workspace-border);
+}
+
+.workspace-ui .return-notes p {
+    margin: 0 0 2px;
+    white-space: pre-wrap;
+}

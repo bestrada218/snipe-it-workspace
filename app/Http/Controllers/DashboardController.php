@@ -57,7 +57,7 @@ class DashboardController extends Controller
             if ($fixedModule !== null && ($fixedModule['enabled'] ?? true) && Gate::allows('index', Asset::class)) {
                 $fixedAssetMetric = [
                     'label' => Setting::inventoryLocationModuleLabel($fixedModule),
-                    'count' => Asset::inInventoryLocationModule($fixedModule['location_id'])
+                    'count' => Asset::inInventoryLocationModule($fixedModule['location_id'], $fixedModule['category_ids'] ?? [])
                         ->join('status_labels', 'status_labels.id', '=', 'assets.status_id')
                         ->when(Setting::getSettings()->show_archived_in_list != 1, fn ($assets) => $assets->where('status_labels.archived', 0))
                         ->count(),
