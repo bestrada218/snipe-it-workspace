@@ -30,12 +30,18 @@ backups_folder() {
 # Copies new backups to the folder and removes the ones the server already
 # cleaned up, so the folder mirrors what the server keeps.
 sync_backups() {
+    # Right after our own backup command every zip is finished; otherwise
+    # skip zips touched in the last 2 minutes.
+    local min_age="${1:-+2}"
     local folder server_list
     folder="$(backups_folder)"
     # Backups carry the .env (keys and passwords): only this user may read them.
     mkdir -p "$folder"
     chmod 700 "$folder"
+    # Every backup the server keeps (to mirror deletions) and the finished
+    # ones: a zip touched in the last 2 minutes may still be being written.
     server_list="$(compose exec -T app sh -c "ls -1 $DUMPS 2>/dev/null" | tr -d '\r' | grep '\.zip$' || true)"
+    finished="$(compose exec -T app sh -c "cd $DUMPS 2>/dev/null && find . -maxdepth 1 -name '*.zip' -mmin $min_age | sed 's|^\./||'" | tr -d '\r' || true)"
     local copied=0
     while IFS= read -r file; do
         [ -n "$file" ] || continue
@@ -44,7 +50,7 @@ sync_backups() {
             chmod 600 "$folder/$file"
             copied=$((copied + 1))
         fi
-    done <<< "$server_list"
+    done <<< "$finished"
     local removed=0
     for local_file in "$folder"/*.zip; do
         [ -e "$local_file" ] || continue
@@ -57,11 +63,10 @@ sync_backups() {
     echo "Backups folder: $folder ($copied new, $removed removed)"
 }
 
-# Copy every 10 minutes, so backups made from Settings > Backups in the
-# browser show up in Documents too. Rewritten on every run, so older
-# installs (nightly only) move to this schedule.
+# Copy every 6 hours (it only copies finished backup files; it never makes
+# a backup). Rewritten when it differs, so older installs move to it.
 ensure_backup_sync_schedule() {
-    local entry="*/10 * * * * $DIR/scripts/snipe-it-workspace sync-backups >> $HOME/.local/state/snipe-it-workspace-backups.log 2>&1 $SYNC_MARK"
+    local entry="0 */6 * * * $DIR/scripts/snipe-it-workspace sync-backups >> $HOME/.local/state/snipe-it-workspace-backups.log 2>&1 $SYNC_MARK"
     if crontab -l 2>/dev/null | grep -qxF "$entry"; then
         return
     fi
@@ -86,7 +91,7 @@ case "${1:-help}" in
         ;;
     backup)
         compose exec -T --user docker app php artisan snipeit:backup
-        sync_backups
+        sync_backups -100000
         ;;
     backups)
         compose exec -T app sh -c "ls -lh $DUMPS"
