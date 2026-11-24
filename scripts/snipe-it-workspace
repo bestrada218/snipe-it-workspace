@@ -9,6 +9,59 @@ docker_cmd() { if docker info >/dev/null 2>&1; then docker "$@"; else sudo docke
 compose() { docker_cmd compose -f compose.workspace.yml "$@"; }
 port() { grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"" | grep . || echo 8000; }
 CRON_MARK="# snipe-it-workspace auto-update"
+SYNC_MARK="# snipe-it-workspace backups-folder"
+DUMPS=/var/lib/snipeit/dumps
+
+# Backups are also kept in a normal folder of the user's Documents, so they
+# can be opened from the Files app without administrator access.
+backups_folder() {
+    if [ -n "${WORKSPACE_BACKUP_DIR:-}" ]; then
+        echo "$WORKSPACE_BACKUP_DIR"
+        return
+    fi
+    local documents
+    documents="$(xdg-user-dir DOCUMENTS 2>/dev/null || true)"
+    if [ -z "$documents" ] || [ "$documents" = "$HOME" ]; then
+        documents="$HOME/Documents"
+    fi
+    echo "$documents/Snipe-IT Workspace backups"
+}
+
+# Copies new backups to the folder and removes the ones the server already
+# cleaned up, so the folder mirrors what the server keeps.
+sync_backups() {
+    local folder server_list
+    folder="$(backups_folder)"
+    mkdir -p "$folder"
+    server_list="$(compose exec -T app sh -c "ls -1 $DUMPS 2>/dev/null" | tr -d '\r' | grep '\.zip$' || true)"
+    local copied=0
+    while IFS= read -r file; do
+        [ -n "$file" ] || continue
+        if [ ! -f "$folder/$file" ]; then
+            compose cp "app:$DUMPS/$file" "$folder/$file" >/dev/null
+            copied=$((copied + 1))
+        fi
+    done <<< "$server_list"
+    local removed=0
+    for local_file in "$folder"/*.zip; do
+        [ -e "$local_file" ] || continue
+        if ! grep -qxF "$(basename "$local_file")" <<< "$server_list"; then
+            rm -f "$local_file"
+            removed=$((removed + 1))
+        fi
+    done
+    echo "Backups folder: $folder ($copied new, $removed removed)"
+}
+
+# Nightly copy after the 01:30 backup; added once, kept on updates.
+ensure_backup_sync_schedule() {
+    if crontab -l 2>/dev/null | grep -qF "$SYNC_MARK"; then
+        return
+    fi
+    mkdir -p "$HOME/.local/state"
+    { crontab -l 2>/dev/null || true
+      echo "15 2 * * * $DIR/scripts/snipe-it-workspace sync-backups >> $HOME/.local/state/snipe-it-workspace-backups.log 2>&1 $SYNC_MARK"; } | crontab -
+}
 
 case "${1:-help}" in
     update)
@@ -26,9 +79,15 @@ case "${1:-help}" in
         ;;
     backup)
         compose exec -T --user docker app php artisan snipeit:backup
+        sync_backups
         ;;
     backups)
-        compose exec -T app sh -c 'ls -lh /var/lib/snipeit/dumps 2>/dev/null || ls -lh storage/app/backups'
+        compose exec -T app sh -c "ls -lh $DUMPS"
+        echo "Also in: $(backups_folder)"
+        ;;
+    sync-backups)
+        sync_backups
+        ensure_backup_sync_schedule
         ;;
     logs)
         compose logs -f --tail=100 app
@@ -69,6 +128,7 @@ Snipe-IT Workspace ($(git log -1 --format=%h))
   snipe-it-workspace update              install the latest version (backs up first)
   snipe-it-workspace backup              make a backup now
   snipe-it-workspace backups             list the backups on this server
+  snipe-it-workspace sync-backups        copy them now to $(backups_folder)
   snipe-it-workspace logs                follow the application log
   snipe-it-workspace restart|start|stop  control the application
   snipe-it-workspace auto-update on|off  nightly automatic updates

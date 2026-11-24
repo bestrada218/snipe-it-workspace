@@ -49,6 +49,8 @@ port="$(grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"")"
 for _ in $(seq 1 60); do
     if curl -fsS "http://localhost:${port:-8000}/health" >/dev/null 2>&1; then
         echo "Updated and running."
+        # Copy the backups (the pre-update one included) to Documents.
+        scripts/snipe-it-workspace sync-backups || true
         exit 0
     fi
     sleep 5
