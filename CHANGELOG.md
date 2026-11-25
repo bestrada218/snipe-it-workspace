@@ -56,6 +56,15 @@ New features and noticeable changes since 0.1, so the next version is 0.2.
   an index, each section with its own table of contents, search across all
   the text, and links straight to the screens it talks about. English and
   Spanish.
+- *Email* page (Settings → Email, superadmins, password and two-factor
+  every time): set up the outgoing mail server from the app, with a
+  step-by-step guide for Google, Microsoft 365, SendGrid, Amazon SES and
+  Mailgun, an explanation for every field and a test email.
+- Daily email summary of what needs attention (shipments to confirm,
+  replacements coming up, returns not moving, backup problems), sent at the
+  chosen hour only when something is pending.
+- Returns not moving: an open return with nothing recorded for a few days
+  (7 by default) shows in "Needs attention" and in a new "Not moving" tab.
 - The daily backup check (mail when a backup is missing or older than a
   day) also watches the cloud destinations set up in the app.
 - Faster pages: the side menu counters are kept for a few minutes per

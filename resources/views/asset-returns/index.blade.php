@@ -7,9 +7,9 @@
         <x-box>
             <div class="workspace-shipment-toolbar">
                 <nav class="workspace-shipment-filters" aria-label="{{ trans('asset-returns.title') }}">
-                    @foreach (['open' => [], 'closed' => ['view' => 'closed']] as $tab => $query)
+                    @foreach (['open' => [], 'stalled' => ['view' => 'stalled'], 'closed' => ['view' => 'closed']] as $tab => $query)
                         <a class="btn {{ $view === $tab ? 'btn-theme' : 'btn-default' }}" href="{{ route('returns.index', $query) }}"
-                            @if ($view === $tab) aria-current="page" @endif>{{ trans('asset-returns.tab_'.$tab) }}</a>
+                            @if ($view === $tab) aria-current="page" @endif>{{ trans('asset-returns.tab_'.$tab) }}@if ($tab === 'stalled' && $stalledCount) <span class="nav-count nav-count-warn">{{ $stalledCount }}</span>@endif</a>
                     @endforeach
                 </nav>
                 @can('checkin', \App\Models\Asset::class)
@@ -27,7 +27,7 @@
                             <th scope="col">{{ trans('asset-returns.ticket') }}</th>
                             <th scope="col">{{ trans('asset-returns.return_owner') }}</th>
                             <th scope="col">{{ trans('asset-returns.progress') }}</th>
-                            <th scope="col">{{ $view === 'closed' ? trans('asset-returns.closed_on') : trans('asset-returns.created_on') }}</th>
+                            <th scope="col">{{ ['closed' => trans('asset-returns.closed_on'), 'stalled' => trans('asset-returns.last_activity')][$view] ?? trans('asset-returns.created_on') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -46,7 +46,15 @@
                                         <span class="workspace-shipment-status" data-status="{{ $return->status() === 'completed' ? 'received' : 'cancelled' }}">{{ trans('asset-returns.statuses.'.$return->status()) }}</span>
                                     @endif
                                 </td>
-                                <td>{{ Helper::getFormattedDateObject($view === 'closed' ? ($return->completed_at ?? $return->cancelled_at) : $return->created_at, 'date', false) }}</td>
+                                <td>
+                                    @if ($view === 'stalled')
+                                        @php($last = $return->lastActivityAt())
+                                        {{ Helper::getFormattedDateObject($last, 'date', false) }}
+                                        <span class="return-item-category">{{ trans('asset-returns.days_without_progress', ['days' => (int) $last->diffInDays(now())]) }}</span>
+                                    @else
+                                        {{ Helper::getFormattedDateObject($view === 'closed' ? ($return->completed_at ?? $return->cancelled_at) : $return->created_at, 'date', false) }}
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="7">{{ trans('asset-returns.empty_'.$view) }}</td></tr>

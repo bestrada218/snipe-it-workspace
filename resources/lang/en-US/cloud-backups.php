@@ -51,7 +51,7 @@ return [
     'test_failed' => 'Could not write to :destination: :error',
 
     'confirm_title' => 'Confirm it is you',
-    'confirm_intro' => 'This section holds the keys to your backups. Type your password and the code from your authenticator app. It is asked every time you come in.',
+    'confirm_intro' => 'This section holds passwords and access keys of the system. Type your password and the code from your authenticator app. It is asked every time you come in.',
     'enroll_intro' => 'Two-factor authentication is required here. Scan this code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…) and type the code it shows.',
     'enroll_manual' => 'If you cannot scan it, type this key in the app:',
     'your_password' => 'Your password',

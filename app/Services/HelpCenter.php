@@ -29,6 +29,7 @@ class HelpCenter
         'labels',
         'activity-and-history',
         'backups',
+        'email-and-summary',
         'security',
         'server-and-updates',
     ];

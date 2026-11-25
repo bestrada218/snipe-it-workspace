@@ -127,6 +127,17 @@
                                             <x-form.error name="return_partner_location_id" />
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="return_stalled_days" class="col-md-3 control-label">{{ trans('asset-returns.settings_stalled_days') }}</label>
+                                        <div class="col-md-2">
+                                            <input class="form-control" type="number" min="1" max="90" id="return_stalled_days" name="return_stalled_days"
+                                                value="{{ old('return_stalled_days', $setting->return_stalled_days ?? 7) }}" aria-describedby="return-stalled-days-help">
+                                        </div>
+                                        <div class="col-md-7 col-md-offset-3">
+                                            <p class="help-block" id="return-stalled-days-help">{{ trans('asset-returns.settings_stalled_days_help') }}</p>
+                                            <x-form.error name="return_stalled_days" />
+                                        </div>
+                                    </div>
                                 </fieldset>
                             @endcan
 

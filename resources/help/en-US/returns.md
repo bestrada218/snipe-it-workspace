@@ -74,6 +74,16 @@ When an item reaches its destination (arrival at Rippling or stored at the clini
 
 The return is marked **Completed** on its own when every item reached its destination (and, those that need it, were set up by Rippling).
 
+## Returns not moving
+
+Since everything is recorded by hand, a return can sit still without anyone noticing. So when an open return goes several days **with no step, change or note**:
+
+- it shows in the dashboard's **Needs attention**;
+- it shows in the **Not moving** tab of the returns list, with the date of the last progress and how many days it has been still;
+- it is included in the [daily email summary](help:email-and-summary#the-daily-summary).
+
+The default is **7 days**; change it in **Settings → General → Returns → Days without progress before an alert**. Adding a note (e.g. "Called the person, ships on Monday") counts as progress.
+
 ## Notes
 
 Under **Notes** you can add comments at any time (in English). **Every note is also copied to the history of each item** in the return, with the return number, so the trail stays on the asset.
@@ -88,5 +98,6 @@ Under **Notes** you can add comments at any time (in English). **Every note is a
 
 In **Settings → General → Returns** (superadmins):
 
+- **Days without progress before an alert**: how many still days before warning (7 by default).
 - **Partner warehouse name**: the name shown in every step, e.g. Rippling.
 - **Partner warehouse location**: where items that arrive there stay. It must be marked as storage in Locations.

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A person returning what they hold, because they leave (termination) or
@@ -60,6 +61,31 @@ class AssetReturn extends Model
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNull('completed_at')->whereNull('cancelled_at');
+    }
+
+    /**
+     * Open returns with nothing recorded for a while: no step, item change
+     * or note in the last $days days (Settings → General → Returns).
+     */
+    public function scopeStalled(Builder $query, ?int $days = null): Builder
+    {
+        $cutoff = now()->subDays($days ?? self::stalledDays());
+
+        return $query->open()
+            ->where('updated_at', '<', $cutoff)
+            ->whereDoesntHave('items', fn (Builder $items) => $items->where('updated_at', '>=', $cutoff))
+            ->whereDoesntHave('notes', fn (Builder $notes) => $notes->where('created_at', '>=', $cutoff));
+    }
+
+    public static function stalledDays(): int
+    {
+        return max(1, (int) (Setting::getSettings()?->return_stalled_days ?: 7));
+    }
+
+    /** When anything was last recorded on this return. */
+    public function lastActivityAt(): ?Carbon
+    {
+        return collect([$this->updated_at, $this->items->max('updated_at'), $this->notes->max('created_at')])->filter()->max();
     }
 
     public function isOpen(): bool

@@ -74,6 +74,16 @@ Los **accesorios** vuelven al inventario disponible; dónde quedó cada uno se v
 
 La devolución se marca **Completada** sola cuando todos sus elementos llegaron a su destino (y, los que lo necesitan, fueron configurados por Rippling).
 
+## Devoluciones sin avance
+
+Como todo se registra a mano, una devolución puede quedarse quieta sin que nadie lo note. Por eso, cuando una devolución en curso pasa varios días **sin pasos, cambios ni notas**:
+
+- aparece en **Requiere atención** del tablero;
+- aparece en la pestaña **Sin avance** de la lista de devoluciones, con la fecha del último avance y cuántos días lleva quieta;
+- se incluye en el [resumen diario por correo](help:email-and-summary#el-resumen-diario).
+
+Por defecto son **7 días**; se cambia en **Configuraciones → General → Devoluciones → Días sin avance para alertar**. Agregar una nota (por ejemplo «Llamé a la persona, envía el lunes») cuenta como avance.
+
 ## Notas
 
 En **Notas** puedes agregar comentarios en cualquier momento (en inglés). **Cada nota se copia también al historial de cada equipo** de la devolución, con el número de la devolución, para que quede el rastro en el activo.
@@ -88,5 +98,6 @@ En **Notas** puedes agregar comentarios en cualquier momento (en inglés). **Cad
 
 En **Configuraciones → General → Devoluciones** (superadministradores):
 
+- **Días sin avance para alertar**: cuántos días sin movimiento antes de avisar (7 por defecto).
 - **Nombre de la bodega del proveedor**: el nombre que se muestra en todos los pasos, por ejemplo Rippling.
 - **Ubicación de la bodega del proveedor**: la ubicación donde quedan los equipos que llegan allá. Debe estar marcada como bodega en Ubicaciones.

@@ -51,7 +51,7 @@ return [
     'test_failed' => 'No se pudo escribir en :destination: :error',
 
     'confirm_title' => 'Confirma que eres tú',
-    'confirm_intro' => 'Esta sección guarda las llaves de acceso a tus backups. Escribe tu contraseña y el código de tu aplicación de autenticación. Se pide cada vez que entras.',
+    'confirm_intro' => 'Esta sección guarda contraseñas y llaves de acceso del sistema. Escribe tu contraseña y el código de tu aplicación de autenticación. Se pide cada vez que entras.',
     'enroll_intro' => 'Para entrar aquí es obligatorio el segundo factor. Escanea este código con tu aplicación de autenticación (Google Authenticator, Microsoft Authenticator, 1Password…) y escribe el código que te muestre.',
     'enroll_manual' => 'Si no puedes escanearlo, escribe esta clave en la aplicación:',
     'your_password' => 'Tu contraseña',

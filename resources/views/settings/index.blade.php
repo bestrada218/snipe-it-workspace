@@ -281,6 +281,23 @@
           </div>
         </div>
 
+        @if (auth()->user()->isSuperUser())
+          <div class="col-md-4 col-lg-3 col-sm-6 col-xl-1">
+            <div class="admin box box-default">
+              <div class="box-body text-center">
+                <h5>
+                  <a href="{{ route('settings.mail.index') }}" class="settings_button">
+                    <x-icon type="email" class="fa-4x"/>
+                    <br><br>
+                    <span class="name">{{ trans('mail-settings.title') }}</span>
+                  </a>
+                </h5>
+                <p class="index-block">{{ trans('mail-settings.card_help') }}</p>
+              </div>
+            </div>
+          </div>
+        @endif
+
 
       <div class="col-md-4 col-lg-3 col-sm-6 col-xl-1">
         <div class="admin box box-default">

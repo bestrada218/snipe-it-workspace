@@ -25,6 +25,7 @@ The dashboard opens with the **Needs attention** list: everything that needs an 
 
 - an asset passed its **mandatory replacement** date or is due within 15 days;
 - a **shipment** arrives today or is late and its delivery has to be confirmed;
+- a **return** has not moved for days;
 - an asset should have been **checked in** and is still assigned;
 - an asset's **audit** is overdue or it is past its **end of life**;
 - a **maintenance** is past its completion date;
@@ -32,7 +33,7 @@ The dashboard opens with the **Needs attention** list: everything that needs an 
 - a **license** is about to expire;
 - there are pending **requests** or **acceptances**.
 
-When there is nothing, it says "All clear".
+When there is nothing, it says "All clear". The same can arrive every morning by email with the [daily summary](help:email-and-summary).
 
 ## Search
 

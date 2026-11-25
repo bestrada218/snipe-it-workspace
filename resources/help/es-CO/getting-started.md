@@ -25,6 +25,7 @@ Al entrar, el tablero muestra la lista **Requiere atención**: todo lo que neces
 
 - un activo superó su fecha de **reemplazo obligatorio** o vence en los próximos 15 días;
 - un **envío** llega hoy o está atrasado y hay que confirmar la entrega;
+- una **devolución** lleva días sin avanzar;
 - un activo debió **ingresarse** y sigue asignado;
 - un activo tiene la **auditoría** vencida o superó su **fin de vida**;
 - un **mantenimiento** pasó su fecha de finalización;
@@ -32,7 +33,7 @@ Al entrar, el tablero muestra la lista **Requiere atención**: todo lo que neces
 - una **licencia** está por vencer;
 - hay **solicitudes** o **aceptaciones** pendientes.
 
-Si no hay nada, verás «Todo al día».
+Si no hay nada, verás «Todo al día». Lo mismo puede llegar cada mañana por correo con el [resumen diario](help:email-and-summary).
 
 ## Buscar
 

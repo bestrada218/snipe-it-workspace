@@ -102,4 +102,10 @@ return [
     'carrier_placeholder' => 'E.g. FedEx',
     'tracking_number' => 'Tracking number',
     'only_last_level' => 'Only clinics can be chosen: the last level of locations.',
+    'tab_stalled' => 'Not moving',
+    'empty_stalled' => 'No return is stuck. All of them have recent progress.',
+    'last_activity' => 'Last progress',
+    'days_without_progress' => ':days days without progress',
+    'settings_stalled_days' => 'Days without progress before an alert',
+    'settings_stalled_days_help' => 'An open return with no step, change or note for this many days shows in "Needs attention" and in the daily email summary.',
 ];

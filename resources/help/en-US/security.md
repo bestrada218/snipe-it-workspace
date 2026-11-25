@@ -30,7 +30,7 @@ Requiring it at least for administrators is recommended.
 
 ## Sections that always ask for confirmation
 
-The [Cloud copies](help:backups#cloud-copies) section holds the keys to every backup. So:
+The [Cloud copies](help:backups#cloud-copies) and [Email](help:email-and-summary) sections hold keys and passwords of the system. So:
 
 - Only **superadmins** can open it.
 - **Every time it is opened**, it asks for the **password** and a **two-factor code**, even if you were there a minute ago. Reloading the page or coming back also asks.

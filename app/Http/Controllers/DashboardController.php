@@ -6,6 +6,7 @@ use App\Helpers\Helper;
 use App\Livewire\NeedsAttention;
 use App\Models\Accessory;
 use App\Models\Asset;
+use App\Models\AssetReturn;
 use App\Models\Company;
 use App\Models\Component;
 use App\Models\Consumable;
@@ -143,6 +144,12 @@ class DashboardController extends Controller
             }
 
             if (Gate::allows('checkin', Asset::class)) {
+                $stalledReturns = AssetReturn::stalled()->count();
+                if ($stalledReturns > 0) {
+                    $items[] = $this->attentionItem('warn', 'returns_stalled', $stalledReturns,
+                        route('returns.index', ['view' => 'stalled']), 'review');
+                }
+
                 $overdueCheckins = Asset::OverdueForCheckin()->count();
                 if ($overdueCheckins > 0) {
                     $items[] = $this->attentionItem('warn', 'checkins_overdue', $overdueCheckins,

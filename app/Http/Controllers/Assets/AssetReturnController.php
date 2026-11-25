@@ -23,17 +23,20 @@ class AssetReturnController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('index', Asset::class);
-        $view = $request->input('view') === 'closed' ? 'closed' : 'open';
+        $view = in_array($request->input('view'), ['closed', 'stalled'], true) ? $request->input('view') : 'open';
 
         $returns = AssetReturn::query()
             ->when($view === 'open', fn ($query) => $query->open()->orderByDesc('id'))
+            ->when($view === 'stalled', fn ($query) => $query->stalled()->orderBy('updated_at'))
             ->when($view === 'closed', fn ($query) => $query->where(fn ($closed) => $closed->whereNotNull('completed_at')->orWhereNotNull('cancelled_at'))
                 ->orderByRaw('COALESCE(completed_at, cancelled_at) DESC'))
-            ->with(['person', 'returnOwner', 'items.assetReturn'])
+            ->with(['person', 'returnOwner', 'items.assetReturn', 'notes'])
             ->withCount('items')
             ->paginate(25)->withQueryString();
 
-        return view('asset-returns.index', compact('returns', 'view'));
+        $stalledCount = AssetReturn::stalled()->count();
+
+        return view('asset-returns.index', compact('returns', 'view', 'stalledCount'));
     }
 
     public function create(Request $request): View

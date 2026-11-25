@@ -29,6 +29,7 @@ use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\LabelsController;
+use App\Http\Controllers\MailSettingsController;
 use App\Http\Controllers\MaintenanceTypesController;
 use App\Http\Controllers\ManufacturersController;
 use App\Http\Controllers\ModalController;
@@ -544,13 +545,25 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
 
     // Cloud copies of the backups: credentials, so a fresh password and
     // two-factor check (mandatory) comes first.
-    Route::get('backups/confirm', [SensitiveConfirmationController::class, 'show'])
+    Route::get('confirm', [SensitiveConfirmationController::class, 'show'])
         ->name('sensitive.confirm')
-        ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.backups.index')
+        ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.index')
             ->push(trans('cloud-backups.confirm_title'), route('sensitive.confirm')));
-    Route::post('backups/confirm', [SensitiveConfirmationController::class, 'store'])
+    Route::post('confirm', [SensitiveConfirmationController::class, 'store'])
         ->middleware('throttle:two_factor')
         ->name('sensitive.confirm.store');
+
+    // Outgoing mail: holds the mail account's password, same protection.
+    Route::middleware('confirm.sensitive')->prefix('mail')->group(function () {
+        Route::get('/', [MailSettingsController::class, 'index'])
+            ->name('settings.mail.index')
+            ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.index')
+                ->push(trans('mail-settings.title'), route('settings.mail.index')));
+        Route::put('/', [MailSettingsController::class, 'update'])->name('settings.mail.save');
+        Route::post('/test', [MailSettingsController::class, 'test'])->name('settings.mail.test');
+        Route::put('/digest', [MailSettingsController::class, 'updateDigest'])->name('settings.mail.digest');
+        Route::post('/digest/send', [MailSettingsController::class, 'sendDigest'])->name('settings.mail.digest.send');
+    });
 
     Route::middleware('confirm.sensitive')->prefix('backups/cloud')->group(function () {
         Route::get('/', [CloudBackupSettingsController::class, 'index'])

@@ -102,4 +102,10 @@ return [
     'carrier_placeholder' => 'Ej.: FedEx',
     'tracking_number' => 'Número de guía',
     'only_last_level' => 'Solo se pueden elegir clínicas: el último nivel de las ubicaciones.',
+    'tab_stalled' => 'Sin avance',
+    'empty_stalled' => 'Ninguna devolución está detenida. Todas tienen avance reciente.',
+    'last_activity' => 'Último avance',
+    'days_without_progress' => 'Hace :days días sin avance',
+    'settings_stalled_days' => 'Días sin avance para alertar',
+    'settings_stalled_days_help' => 'Una devolución en curso sin pasos, cambios ni notas durante estos días aparece en «Requiere atención» y en el resumen diario por correo.',
 ];

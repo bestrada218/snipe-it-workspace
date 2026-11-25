@@ -31,6 +31,8 @@ class Kernel extends ConsoleKernel
         // Warns by mail (MAIL_BACKUP_NOTIFICATION_*) when the newest backup on
         // any destination is missing or older than a day.
         $schedule->command('snipeit:backup-monitor')->dailyAt('08:00');
+        // Sends once a day, at the hour chosen in Settings → Email.
+        $schedule->command('snipeit:daily-digest')->hourlyAt(5)->withoutOverlapping();
         $schedule->command('auth:clear-resets')->everyFifteenMinutes();
         $schedule->command('saml:clear_expired_nonces')->weekly();
 

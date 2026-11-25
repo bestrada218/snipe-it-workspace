@@ -13,6 +13,8 @@ return [
     'shipments_due_detail' => 'Confirm delivery with the recipient so the item gets assigned.',
     'replacement_soon' => '{1} 1 asset must be replaced in the next 15 days|[2,*] :count assets must be replaced in the next 15 days',
     'replacement_soon_detail' => 'Plan the purchase before the deadline passes.',
+    'returns_stalled' => '{1} 1 return has not moved for days|[2,*] :count returns have not moved for days',
+    'returns_stalled_detail' => 'Nothing has been recorded on them lately. Check with the person or the carrier and record the progress.',
     'checkins_overdue' => '{1} 1 asset was due back and is still assigned|[2,*] :count assets were due back and are still assigned',
     'checkins_overdue_detail' => 'The expected check-in date has passed.',
     'audits_overdue' => '{1} 1 asset is overdue for audit|[2,*] :count assets are overdue for audit',

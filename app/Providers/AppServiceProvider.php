@@ -28,6 +28,7 @@ use App\Observers\MaintenanceObserver;
 use App\Observers\SettingObserver;
 use App\Observers\UserObserver;
 use App\Services\Backups\GoogleDriveDisk;
+use App\Services\Mail\MailSettings;
 use App\View\Composers\ImpersonationBannerComposer;
 use App\View\Composers\SidebarComposer;
 use Illuminate\Http\Client\Response as HttpClientResponse;
@@ -63,6 +64,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Google Drive as an optional off-site backup destination (backup_google disk).
         Storage::extend('google', fn ($app, array $config) => GoogleDriveDisk::make($config));
+
+        // Outgoing mail set up in Settings → Email, when it is turned on.
+        MailSettings::apply();
 
         // The side menu counts are cached; changes to what they count reset them.
         foreach ([Asset::class, AssetShipment::class, AssetReturn::class, AssetReturnItem::class, Setting::class] as $counted) {

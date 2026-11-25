@@ -30,7 +30,7 @@ Se recomienda exigirlo, al menos, a los administradores.
 
 ## Secciones que siempre piden confirmación
 
-La sección [Copia en la nube](help:backups#copia-en-la-nube) guarda las llaves de acceso a todos los backups. Por eso:
+Las secciones [Copia en la nube](help:backups#copia-en-la-nube) y [Correo](help:email-and-summary) guardan llaves y contraseñas del sistema. Por eso:
 
 - Solo pueden entrar **superadministradores**.
 - **Cada vez que se entra**, se pide la **contraseña** y un **código de doble factor**, aunque hayas entrado hace un minuto. Recargar la página o volver a ella también lo pide.

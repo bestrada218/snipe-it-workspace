@@ -13,6 +13,8 @@ return [
     'shipments_due_detail' => 'Confirme la entrega con el destinatario para que el equipo quede asignado.',
     'replacement_soon' => '{1} 1 activo debe reemplazarse en los próximos 15 días|[2,*] :count activos deben reemplazarse en los próximos 15 días',
     'replacement_soon_detail' => 'Planee la compra antes de que se venza el plazo.',
+    'returns_stalled' => '{1} 1 devolución lleva días sin avanzar|[2,*] :count devoluciones llevan días sin avanzar',
+    'returns_stalled_detail' => 'Nada se ha registrado en ellas en los últimos días. Revise con la persona o la transportadora y registre el avance.',
     'checkins_overdue' => '{1} 1 activo debió ingresarse y sigue asignado|[2,*] :count activos debieron ingresarse y siguen asignados',
     'checkins_overdue_detail' => 'La fecha esperada de devolución ya pasó.',
     'audits_overdue' => '{1} 1 activo tiene la auditoría vencida|[2,*] :count activos tienen la auditoría vencida',

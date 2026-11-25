@@ -168,7 +168,9 @@ class SettingsController extends Controller
             $returnSettings = $request->validate([
                 'return_partner_name' => ['nullable', 'string', 'max:60'],
                 'return_partner_location_id' => ['nullable', 'integer', Rule::exists('locations', 'id')->where('is_storage', true)->whereNull('deleted_at')],
+                'return_stalled_days' => ['nullable', 'integer', 'min:1', 'max:90'],
             ]);
+            $setting->return_stalled_days = $returnSettings['return_stalled_days'] ?? 7;
             $setting->return_partner_name = $returnSettings['return_partner_name'] ?? null;
             $setting->return_partner_location_id = $returnSettings['return_partner_location_id'] ?? null;
         }
