@@ -5,6 +5,7 @@ namespace Tests\Feature\Navigation;
 use App\Models\Asset;
 use App\Models\AssetShipment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SidebarSectionsTest extends TestCase
@@ -67,5 +68,23 @@ class SidebarSectionsTest extends TestCase
             ->assertOk()
             ->assertViewHas('statusFilters', fn (array $filters) => collect($filters)
                 ->where('active', true)->pluck('label')->all() === [trans('general.pending')]);
+    }
+
+    public function test_menu_counts_are_cached_but_follow_changes_right_away(): void
+    {
+        $admin = User::factory()->superuser()->create();
+        AssetShipment::factory()->create();
+        $pattern = fn (int $count) => '/'.preg_quote(e(trans('asset-shipments.title')), '/').'<\/span>\s*<span class="pull-right-container">\s*<small class="label pull-right nav-count[^"]*">'.$count.'<\/small>/';
+
+        $this->assertMatchesRegularExpression($pattern(1), $this->actingAs($admin)->get(route('home'))->getContent());
+
+        // A second page reuses the counts instead of querying again.
+        DB::enableQueryLog();
+        $this->actingAs($admin)->get(route('hardware.index'))->assertOk();
+        $this->assertFalse(collect(DB::getQueryLog())->contains(fn (array $query) => str_contains($query['query'], 'asset_shipments') && str_contains(strtolower($query['query']), 'count(')));
+
+        // A new shipment shows on the next page, without waiting.
+        AssetShipment::factory()->create();
+        $this->assertMatchesRegularExpression($pattern(2), $this->actingAs($admin)->get(route('home'))->getContent());
     }
 }

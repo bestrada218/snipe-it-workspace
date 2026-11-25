@@ -13,6 +13,7 @@ use App\Models\AssetReturn;
 use App\Models\Setting;
 use App\Services\AssetReplacement;
 use App\Services\AssetShipments;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -31,23 +32,47 @@ class SidebarComposer
         }
 
         try {
-            $due_for_checkin = Asset::DueForCheckin($settings)->count();
-            $overdue_for_checkin = Asset::OverdueForCheckin()->count();
-            $due_for_audit = Asset::DueForAudit($settings)->count();
-            $overdue_for_audit = Asset::OverdueForAudit()->count();
-
-            $view->with([
-                'total_assets' => Asset::AssetsForShow()->count(),
-                'total_due_for_audit' => $due_for_audit,
-                'total_overdue_for_audit' => $overdue_for_audit,
-                'total_due_for_checkin' => $due_for_checkin,
-                'total_overdue_for_checkin' => $overdue_for_checkin,
-                'total_due_and_overdue_for_checkin' => $due_for_checkin + $overdue_for_checkin,
-                'total_due_and_overdue_for_audit' => $due_for_audit + $overdue_for_audit,
-            ] + $this->trackingCounts());
+            // Nine counts run on every page: keep them a few minutes per
+            // person (what each one sees depends on their permissions and
+            // company). Saving an asset, shipment or return starts afresh.
+            $key = 'sidebar-counts:'.(auth()->id() ?? 0).':'.Cache::get(self::VERSION_KEY, 0);
+            $view->with(Cache::remember($key, now()->addMinutes(self::MINUTES), fn () => $this->counts($settings)));
         } catch (\Exception $e) {
             Log::debug($e);
         }
+    }
+
+    /** Cache key whose value changes whenever the counted records change. */
+    public const VERSION_KEY = 'sidebar-counts-version';
+
+    /** Minutes the counts are kept (dates move on even when nothing is saved). */
+    public const MINUTES = 5;
+
+    /** Make every person's next page count again. */
+    public static function forget(): void
+    {
+        Cache::forever(self::VERSION_KEY, (string) microtime(true));
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function counts(Setting $settings): array
+    {
+        $due_for_checkin = Asset::DueForCheckin($settings)->count();
+        $overdue_for_checkin = Asset::OverdueForCheckin()->count();
+        $due_for_audit = Asset::DueForAudit($settings)->count();
+        $overdue_for_audit = Asset::OverdueForAudit()->count();
+
+        return [
+            'total_assets' => Asset::AssetsForShow()->count(),
+            'total_due_for_audit' => $due_for_audit,
+            'total_overdue_for_audit' => $overdue_for_audit,
+            'total_due_for_checkin' => $due_for_checkin,
+            'total_overdue_for_checkin' => $overdue_for_checkin,
+            'total_due_and_overdue_for_checkin' => $due_for_checkin + $overdue_for_checkin,
+            'total_due_and_overdue_for_audit' => $due_for_audit + $overdue_for_audit,
+        ] + $this->trackingCounts();
     }
 
     /**

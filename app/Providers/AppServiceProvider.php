@@ -6,6 +6,9 @@ use App\Exceptions\SyncAdapterVendorException;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\AssetModel;
+use App\Models\AssetReturn;
+use App\Models\AssetReturnItem;
+use App\Models\AssetShipment;
 use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
@@ -60,6 +63,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Google Drive as an optional off-site backup destination (backup_google disk).
         Storage::extend('google', fn ($app, array $config) => GoogleDriveDisk::make($config));
+
+        // The side menu counts are cached; changes to what they count reset them.
+        foreach ([Asset::class, AssetShipment::class, AssetReturn::class, AssetReturnItem::class, Setting::class] as $counted) {
+            $counted::saved(fn () => SidebarComposer::forget());
+            $counted::deleted(fn () => SidebarComposer::forget());
+        }
 
         /**
          * This is a workaround for proxies/reverse proxies that don't always pass the proper headers.

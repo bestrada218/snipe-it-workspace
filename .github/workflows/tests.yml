@@ -2,8 +2,10 @@ name: Tests (MariaDB)
 
 on:
   push:
+    # develop: every change is tested before it can be released to main.
     branches:
       - main
+      - develop
   pull_request:
   workflow_dispatch:
 

@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Services\Backups\CloudBackupSettings;
 use Google2FA;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Backup\Events\UnhealthyBackupWasFound;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -243,5 +245,26 @@ class CloudBackupSettingsTest extends TestCase
 
         $this->assertTrue(CloudBackupSettings::results()['backup_s3']['ok']);
         File::deleteDirectory($workDir);
+    }
+
+    public function test_the_daily_monitor_also_watches_cloud_destinations_set_up_in_the_ui(): void
+    {
+        Event::fake([UnhealthyBackupWasFound::class]);
+        Storage::fake('backup');
+        Storage::disk('backup')->put('backups/2026-11-25-01-30-00.zip', 'zip');
+
+        CloudBackupSettings::save([
+            'password' => 'a-long-backup-password',
+            // An S3 destination nobody can reach: it must be reported.
+            's3' => ['enabled' => 1, 'key' => 'AKIAEXAMPLE', 'secret' => 'secret', 'bucket' => 'workspace-backups', 'endpoint' => 'http://127.0.0.1:9'],
+        ], $this->enrolledSuperuser());
+        config(['backup.backup.destination.disks' => ['backup'], 'backup.monitor_backups.0.disks' => ['backup']]);
+
+        $this->artisan('snipeit:backup-monitor')
+            ->expectsOutputToContain('backups on the backup disk are considered healthy')
+            ->expectsOutputToContain('backups on the backup_s3 disk are considered unhealthy')
+            ->assertFailed();
+
+        Event::assertDispatched(UnhealthyBackupWasFound::class, fn ($event) => $event->backupDestinationStatus->backupDestination()->diskName() === 'backup_s3');
     }
 }

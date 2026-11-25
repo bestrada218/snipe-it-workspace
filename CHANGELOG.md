@@ -27,7 +27,9 @@ The current number is in the [`VERSION`](VERSION) file.
 
 ---
 
-## Unreleased (next: 0.1.1)
+## Unreleased (next: 0.2)
+
+New features and noticeable changes since 0.1, so the next version is 0.2.
 
 - The Snipe-IT Workspace version is shown next to the Snipe-IT version in
   Settings, and at the bottom of every page.
@@ -54,6 +56,12 @@ The current number is in the [`VERSION`](VERSION) file.
   an index, each section with its own table of contents, search across all
   the text, and links straight to the screens it talks about. English and
   Spanish.
+- The daily backup check (mail when a backup is missing or older than a
+  day) also watches the cloud destinations set up in the app.
+- Faster pages: the side menu counters are kept for a few minutes per
+  person instead of being counted on every page, and refresh right away
+  when an asset, shipment, return or setting changes.
+- Automated tests run on every change, before a version is released.
 - *Changes by version* page: the version number in Settings and in the
   footer opens the list of changes of every version.
 
