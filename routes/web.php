@@ -5,7 +5,6 @@ use App\Http\Controllers\Account;
 use App\Http\Controllers\ActionlogController;
 use App\Http\Controllers\Assets\AssetReturnController;
 use App\Http\Controllers\Assets\AssetShipmentController;
-use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\AssetTagTypesController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -19,6 +18,7 @@ use App\Http\Controllers\BulkManufacturersController;
 use App\Http\Controllers\BulkStatuslabelsController;
 use App\Http\Controllers\BulkSuppliersController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CloudBackupSettingsController;
 use App\Http\Controllers\CompaniesController;
 use App\Http\Controllers\DashboardController;
@@ -27,6 +27,7 @@ use App\Http\Controllers\DepreciationsController;
 use App\Http\Controllers\DuplicateAssignmentsController;
 use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\LabelsController;
 use App\Http\Controllers\MaintenanceTypesController;
 use App\Http\Controllers\ManufacturersController;
@@ -52,6 +53,7 @@ use App\Http\Controllers\ViewAssetsController;
 use App\Livewire\Importer;
 use App\Models\MaintenanceType;
 use App\Models\ReportTemplate;
+use App\Services\HelpCenter;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
@@ -1130,6 +1132,17 @@ Route::get('/search', [SearchController::class, 'index'])->middleware('auth')
     ->name('search')
     ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
         ->push(trans('navigation.search_results'), route('search')));
+
+Route::get('/help', [HelpController::class, 'index'])->middleware('auth')
+    ->name('help.index')
+    ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
+        ->push(trans('general.help_center'), route('help.index')));
+
+Route::get('/help/{section}', [HelpController::class, 'show'])->middleware('auth')
+    ->where('section', '[a-z-]+')
+    ->name('help.show')
+    ->breadcrumbs(fn (Trail $trail, string $section) => $trail->parent('help.index')
+        ->push(HelpCenter::section($section)['title'] ?? $section, route('help.show', $section)));
 
 Route::get('/changelog', ChangelogController::class)->middleware('auth')
     ->name('changelog')

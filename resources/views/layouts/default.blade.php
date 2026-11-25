@@ -812,6 +812,12 @@
                         </x-nav.group>
                         <x-nav.group :label="trans('navigation.help')">
                         @auth
+                            <li @class(['active' => request()->routeIs('help.*')])>
+                                <a href="{{ route('help.index') }}" @if (request()->routeIs('help.*')) aria-current="page" @endif>
+                                    <x-icon type="help" class="fa-fw" />
+                                    <span>{{ trans('general.help_center') }}</span>
+                                </a>
+                            </li>
                             <li @class(['active' => request()->routeIs('guide.asset-tags')])>
                                 <a href="{{ route('guide.asset-tags') }}" @if (request()->routeIs('guide.asset-tags')) aria-current="page" @endif>
                                     <x-icon type="info" class="fa-fw" />

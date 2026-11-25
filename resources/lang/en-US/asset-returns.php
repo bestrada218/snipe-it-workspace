@@ -87,7 +87,7 @@ return [
     'settings_partner_name' => 'Partner warehouse name',
     'settings_partner_name_help' => 'e.g. Rippling. Used in the return shipment steps.',
     'settings_partner_location' => 'Partner warehouse location',
-    'settings_partner_location_help' => 'Items that reach the partner warehouse are assigned to this storage location.',
+    'settings_partner_location_help' => 'Items that reach the partner warehouse stay at this location, unassigned and ready to deploy. It must be marked as storage.',
     'what_happened' => 'What happened?',
     'date' => 'Date',
     'record' => 'Record',

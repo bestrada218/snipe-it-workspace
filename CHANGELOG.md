@@ -50,6 +50,10 @@ The current number is in the [`VERSION`](VERSION) file.
   reloading asks again); two-factor is mandatory to open it. Each
   destination has a step-by-step guide (AWS and Google Cloud) and every
   field explains what it is and where it comes from.
+- *Help center* (Help menu): how every feature works, in 13 sections with
+  an index, each section with its own table of contents, search across all
+  the text, and links straight to the screens it talks about. English and
+  Spanish.
 - *Changes by version* page: the version number in Settings and in the
   footer opens the list of changes of every version.
 

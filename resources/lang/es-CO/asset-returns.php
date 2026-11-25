@@ -87,7 +87,7 @@ return [
     'settings_partner_name' => 'Nombre de la bodega del proveedor',
     'settings_partner_name_help' => 'Ej.: Rippling. Se usa en los pasos del envío de devolución.',
     'settings_partner_location' => 'Ubicación de la bodega del proveedor',
-    'settings_partner_location_help' => 'Los equipos que llegan a la bodega del proveedor quedan asignados a esta ubicación de bodega.',
+    'settings_partner_location_help' => 'Los equipos que llegan a la bodega del proveedor quedan en esta ubicación, sin asignar y listos para desplegar. Debe estar marcada como bodega.',
     'what_happened' => '¿Qué pasó?',
     'date' => 'Fecha',
     'record' => 'Registrar',
