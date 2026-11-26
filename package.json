@@ -97,6 +97,9 @@
         },
         "webpack-dev-server": {
             "webpack-dev-middleware": "^7.4.6"
+        },
+        "selfsigned": {
+            "@peculiar/x509": "1.14.0"
         }
     }
 }
