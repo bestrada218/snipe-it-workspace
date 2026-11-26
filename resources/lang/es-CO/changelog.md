@@ -1,5 +1,12 @@
 # Cambios por versión
 
+## 0.2.1
+
+### Mantenimiento
+
+- Se corrigen los avisos de severidad alta de las dependencias JavaScript de la 0.2 y se limita el servidor de recarga automática a la máquina local.
+- La prueba del filtro de próximas bajas utiliza fechas de terminación explícitas para evitar fallos intermitentes.
+
 ## 0.2
 
 Basada en **Snipe-IT v8.8.3**.

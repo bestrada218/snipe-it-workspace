@@ -68,7 +68,9 @@
     },
     "overrides": {
         "laravel-mix": {
-            "css-loader": "$css-loader"
+            "css-loader": "$css-loader",
+            "webpack-dev-server": "5.2.7",
+            "webpack-cli": "5.1.4"
         },
         "pbkdf2": {
             "sha.js": ">=2.4.12"
@@ -86,6 +88,15 @@
         "postcss": "^8.5.12",
         "shell-quote": "^1.10.0",
         "jspdf": "^4.2.1",
-        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+        "admin-lte": {
+            "chart.js": "$chart.js"
+        },
+        "external-editor": {
+            "tmp": "^0.2.6"
+        },
+        "webpack-dev-server": {
+            "webpack-dev-middleware": "^7.4.6"
+        }
     }
 }

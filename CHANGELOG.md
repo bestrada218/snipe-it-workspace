@@ -31,6 +31,15 @@ publication status come from this file.
 
 ---
 
+## Unreleased (next: 0.2.1)
+
+### Maintenance
+
+- Resolve the high-severity JavaScript dependency findings from 0.2 and keep
+  the hot-reload development server restricted to the local machine.
+- Make the test for the upcoming departures filter independent of randomly
+  generated employment end dates.
+
 ## 0.2 — 2026-11-25
 
 Based on **Snipe-IT v8.8.3**.
