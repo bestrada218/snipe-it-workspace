@@ -9,6 +9,7 @@ use App\Http\Requests\ImageUploadRequest;
 use App\Http\Traits\HandlesAdjustQuantity;
 use App\Models\Accessory;
 use App\Models\Company;
+use App\Services\AccessoryStockLocations;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -325,7 +326,8 @@ class AccessoriesController extends Controller
         $accessory->loadCount('checkouts as checkouts_count');
         $accessory->load(['adminuser' => fn ($query) => $query->withTrashed()]);
 
-        return view('accessories.view', compact('accessory'));
+        return view('accessories.view', compact('accessory'))
+            ->with('stockBalances', AccessoryStockLocations::balances($accessory));
     }
 
     /**

@@ -60,13 +60,3 @@ curl -fsSL https://raw.githubusercontent.com/bestrada218/snipe-it-workspace/main
 ```
 
 The installer sets up everything, starts the app and asks whether you want automatic updates and whether the machine should never sleep. When it finishes, open the address it shows and create the first administrator.
-
-## The .env file
-
-`/opt/snipe-it-workspace/.env` holds the server settings and the **encryption key** (`APP_KEY`). **Keep a copy outside the server**, for example in a password manager: without that key, backups cannot be restored on another machine.
-
-## Moving to another server
-
-1. Install Snipe-IT Workspace on the new computer with the command above.
-2. Copy the old `.env` over the new one and run `snipe-it-workspace restart`.
-3. Bring a backup: upload it in Settings → Backups (or pull it from the cloud) and restore it.

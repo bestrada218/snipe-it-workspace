@@ -12,10 +12,13 @@ use App\Models\AssetReturnItem;
 use App\Models\LicenseSeat;
 use App\Models\Location;
 use App\Models\Setting;
+use App\Models\Statuslabel;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -47,15 +50,14 @@ final class AssetReturns
     }
 
     /**
-     * Every location as a tree (country → state → clinic), in order, for
-     * the clinic picker. Only the deepest level (the clinics) can receive
-     * items, and never the partner's own warehouse.
+     * Location hierarchy for choosing internal warehouses at the deepest
+     * available level.
      *
      * @return Collection<int, array{location: Location, depth: int, selectable: bool}>
      */
-    public static function clinicLocationTree(): Collection
+    public static function ownWarehouseTree(): Collection
     {
-        $locations = Location::query()->orderBy('name')->get(['id', 'name', 'parent_id']);
+        $locations = Location::query()->orderBy('name')->get(['id', 'name', 'parent_id', 'is_external']);
         $ids = $locations->pluck('id')->all();
         $byParent = $locations->groupBy(fn (Location $location) => in_array($location->parent_id, $ids, true) ? $location->parent_id : 0);
         $partnerId = self::partnerLocation()?->id;
@@ -66,28 +68,69 @@ final class AssetReturns
                 $rows->push([
                     'location' => $location,
                     'depth' => $depth,
-                    'selectable' => ! $byParent->has($location->id) && $location->id !== $partnerId,
+                    'selectable' => ! $byParent->has($location->id) && ! $location->is_external && $location->id !== $partnerId,
                 ]);
                 $walk($location->id, $depth + 1);
             }
         };
         $walk(0, 0);
 
-        // Clinics are the deepest level: a state with no clinics yet is a
-        // leaf too, but it is not a place that keeps equipment.
-        $deepest = $rows->max('depth') ?? 0;
+        // Even when an upper level has no children, it remains ineligible
+        // if another branch goes deeper.
+        $deepest = $rows->where('selectable', true)->max('depth') ?? 0;
 
         return $rows->map(fn (array $row) => ['selectable' => $row['selectable'] && $row['depth'] === $deepest] + $row);
     }
 
     /**
-     * The locations that can keep returned items (see clinicLocationTree()).
+     * The locations that can keep returned items (see ownWarehouseTree()).
      *
      * @return Collection<int, Location>
      */
-    public static function clinicLocations(): Collection
+    public static function ownWarehouseLocations(): Collection
     {
-        return self::clinicLocationTree()->where('selectable', true)->pluck('location')->values();
+        return self::ownWarehouseTree()->where('selectable', true)->pluck('location')->values();
+    }
+
+    public static function warehouseEditOptions(): Collection
+    {
+        $partner = self::partnerLocation();
+        $options = self::ownWarehouseLocations()->keyBy('id')
+            ->union(self::storageLocations()->keyBy('id'))
+            ->map(fn (Location $location) => $location->name)
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE);
+
+        if ($partner) {
+            $options->put($partner->id, trans('asset-returns.destinations.partner', ['partner' => self::partnerName()]));
+        }
+
+        return $options;
+    }
+
+    /** @return array{location_id?: int, warehouse_location_id?: int} */
+    public static function warehouseEditAttributes(Request $request): array
+    {
+        if (! $request->filled('warehouse_location_id')) {
+            return [];
+        }
+
+        $validated = $request->validate([
+            'warehouse_location_id' => ['integer', Rule::in(self::warehouseEditOptions()->keys()->all())],
+        ], [
+            'warehouse_location_id.in' => trans('asset-returns.warehouse_edit_invalid'),
+        ]);
+        $id = (int) $validated['warehouse_location_id'];
+
+        return ['location_id' => $id, 'warehouse_location_id' => $id];
+    }
+
+    public static function requireUnassignedForWarehouseEdit(iterable $assets): void
+    {
+        foreach ($assets as $asset) {
+            if (filled($asset->assigned_to)) {
+                throw ValidationException::withMessages(['warehouse_location_id' => trans('asset-returns.warehouse_edit_assigned')]);
+            }
+        }
     }
 
     /**
@@ -98,7 +141,8 @@ final class AssetReturns
      */
     public static function returnableItems(User $person): Collection
     {
-        $pending = AssetReturnItem::whereHas('assetReturn', fn ($query) => $query->open())->get(['item_type', 'item_id', 'accessory_checkout_id']);
+        $pending = AssetReturnItem::whereHas('assetReturn', fn ($query) => $query->withoutGlobalScopes([AssetReturn::COMPANY_SCOPE, AssetReturn::ACCESSORY_SCOPE])
+            ->open())->get(['item_type', 'item_id', 'accessory_checkout_id']);
         $pendingAssets = $pending->where('item_type', Asset::class)->pluck('item_id')->all();
         $pendingCheckouts = $pending->where('item_type', Accessory::class)->pluck('accessory_checkout_id')->all();
 
@@ -113,6 +157,10 @@ final class AssetReturns
                 'name' => (string) ($asset->name ?: $asset->model?->name),
                 'category' => $asset->model?->category?->name,
             ]);
+
+        if (Gate::denies('checkin', Accessory::class) || Gate::denies('index', Accessory::class)) {
+            return $assets->values();
+        }
 
         $accessories = AccessoryCheckout::where('assigned_type', User::class)->where('assigned_to', $person->id)
             ->whereNotIn('id', $pendingCheckouts)->with('accessory.category')->get()
@@ -182,7 +230,7 @@ final class AssetReturns
         $previously = null;
         if ($destination === 'storage') {
             $locationId = (int) ($item['location_id'] ?? 0);
-            if (! self::clinicLocations()->contains('id', $locationId)) {
+            if (! self::ownWarehouseLocations()->contains('id', $locationId)) {
                 throw ValidationException::withMessages([$errorKey => trans('asset-returns.choose_storage', ['partner' => self::partnerName()])]);
             }
         } else {
@@ -281,23 +329,30 @@ final class AssetReturns
      */
     public static function markPartnerStep(AssetReturnItem $item, ?string $step = null, ?Carbon $date = null): void
     {
-        $return = $item->assetReturn;
-        $step ??= $item->nextPartnerStep();
-        if (! $return->isOpen() || $item->nextPartnerStep() === null || ! in_array($step, AssetReturnItem::PARTNER_STEPS, true) || $item->{$step} !== null) {
-            throw ValidationException::withMessages(['step' => trans('asset-returns.step_not_available')]);
-        }
+        DB::transaction(function () use ($item, $step, $date): void {
+            $return = AssetReturn::whereKey($item->asset_return_id)->lockForUpdate()->firstOrFail();
+            $item = AssetReturnItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
+            $item->setRelation('assetReturn', $return);
+            $step ??= $item->nextPartnerStep();
+            if (! $return->isOpen() || $item->nextPartnerStep() === null || ! in_array($step, AssetReturnItem::PARTNER_STEPS, true) || $item->{$step} !== null) {
+                throw ValidationException::withMessages(['step' => trans('asset-returns.step_not_available')]);
+            }
 
-        $date = self::stepDate($date, $return);
-        foreach (AssetReturnItem::PARTNER_STEPS as $each) {
-            if ($item->{$each} === null) {
-                $item->{$each} = $date;
+            $date = self::stepDate($date, $return);
+            foreach (AssetReturnItem::PARTNER_STEPS as $each) {
+                if ($item->{$each} === null) {
+                    $item->{$each} = $date;
+                }
+                if ($each === $step) {
+                    break;
+                }
             }
-            if ($each === $step) {
-                break;
+            if ($step === 'partner_configured_at') {
+                self::transitionPartnerSetup($item, false);
             }
-        }
-        $item->save();
-        self::completeIfDone($return->fresh('items'));
+            $item->save();
+            self::completeIfDone($return->fresh('items'));
+        });
     }
 
     public static function advancePartnerStep(AssetReturnItem $item): void
@@ -308,17 +363,62 @@ final class AssetReturns
     /** Undo the last partner step of an item; a completed return opens again. */
     public static function undoPartnerStep(AssetReturnItem $item): void
     {
-        $return = $item->assetReturn;
-        $step = $item->lastPartnerStep();
-        if ($return->cancelled_at !== null || $step === null) {
-            throw ValidationException::withMessages(['step' => trans('asset-returns.cannot_undo')]);
+        DB::transaction(function () use ($item): void {
+            $return = AssetReturn::whereKey($item->asset_return_id)->lockForUpdate()->firstOrFail();
+            $item = AssetReturnItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
+            $item->setRelation('assetReturn', $return);
+            $step = $item->lastPartnerStep();
+            if ($return->cancelled_at !== null || $step === null) {
+                throw ValidationException::withMessages(['step' => trans('asset-returns.cannot_undo')]);
+            }
+
+            if ($step === 'partner_configured_at') {
+                self::transitionPartnerSetup($item, true);
+            }
+            $item->{$step} = null;
+            $item->save();
+            if ($return->completed_at !== null) {
+                $return->completed_at = null;
+                $return->save();
+            }
+        });
+    }
+
+    private static function workflowStatusId(string $key): int
+    {
+        $status = Statuslabel::where('workflow_key', $key)->first();
+        $type = $key === 'ready' ? 'deployable' : 'pending';
+        if (! $status || $status->getStatuslabelType() !== $type) {
+            throw ValidationException::withMessages(['step' => trans('asset-returns.workflow_status_unavailable')]);
         }
 
-        $item->{$step} = null;
-        $item->save();
-        if ($return->completed_at !== null) {
-            $return->completed_at = null;
-            $return->save();
+        return (int) $status->id;
+    }
+
+    private static function transitionPartnerSetup(AssetReturnItem $item, bool $undo): void
+    {
+        if ($item->item_type !== Asset::class) {
+            return;
+        }
+
+        $asset = Asset::whereKey($item->item_id)->lockForUpdate()->first();
+        if (! $asset) {
+            return;
+        }
+        if ($undo && filled($asset->assigned_to)) {
+            throw ValidationException::withMessages(['step' => trans('asset-returns.cannot_undo_assigned_setup')]);
+        }
+
+        $from = self::workflowStatusId($undo ? 'ready' : 'setup');
+        if (filled($asset->assigned_to) || (int) $asset->status_id !== $from
+            || (int) $asset->location_id !== (int) self::partnerLocation()?->id
+            || (int) AssetReturnItem::where('item_type', Asset::class)->where('item_id', $asset->id)->max('id') !== $item->id) {
+            return;
+        }
+
+        $asset->status_id = self::workflowStatusId($undo ? 'setup' : 'ready');
+        if (! $asset->save()) {
+            throw ValidationException::withMessages($asset->getErrors()->toArray());
         }
     }
 
@@ -346,11 +446,18 @@ final class AssetReturns
         return [
             'reason' => ['required', Rule::in(AssetReturn::REASONS)],
             'ticket_number' => ['nullable', 'string', 'max:100'],
-            'ticket_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
-            'return_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'ticket_owner_id' => ['nullable', 'bail', 'integer', self::accessibleUser(...)],
+            'return_owner_id' => ['nullable', 'bail', 'integer', self::accessibleUser(...)],
             'carrier' => ['nullable', 'string', 'max:100'],
             'tracking_number' => ['nullable', 'string', 'max:100'],
         ];
+    }
+
+    private static function accessibleUser(string $attribute, mixed $value, \Closure $fail): void
+    {
+        if (! User::whereKey($value)->exists()) {
+            $fail('validation.exists')->translate();
+        }
     }
 
     /**
@@ -369,7 +476,7 @@ final class AssetReturns
         return $date->copy()->setTime(12, 0);
     }
 
-    /** Check the item in from the person: back in stock at the clinic it is stored in. */
+    /** Check the item in from the person: back in stock at the receiving warehouse. */
     public static function store(AssetReturnItem $item, User $actor, ?Carbon $date = null): void
     {
         DB::transaction(function () use ($item, $actor, $date) {
@@ -447,27 +554,37 @@ final class AssetReturns
             $asset->licenseseats->each(fn (LicenseSeat $seat) => $seat->update(['assigned_to' => null]));
             if ($location) {
                 $asset->location_id = $location->id;
+                $asset->warehouse_location_id = $location->id;
             }
-            $asset->save();
-            // Back in stock, ready to deploy and assigned to nobody; its
-            // location says which warehouse holds it (see storageFor()).
+            if ($asset->status?->getStatuslabelType() === 'deployable') {
+                $key = $item->goesToPartner() ? ($item->needsPartnerSetup() ? 'setup' : 'ready') : 'review';
+                $asset->status_id = self::workflowStatusId($key);
+            }
+            if (! $asset->save()) {
+                throw ValidationException::withMessages($asset->getErrors()->toArray());
+            }
+            // Physical receipt and readiness for assignment are separate.
             event(new CheckoutableCheckedIn($asset, $person, $actor, $note, now()->format('Y-m-d H:i:s'), $original));
 
             return;
         }
 
-        $checkout = AccessoryCheckout::find($item->accessory_checkout_id);
-        $accessory = Accessory::find($item->item_id);
-        if (! $checkout || ! $accessory) {
+        $accessory = Accessory::whereKey($item->item_id)->lockForUpdate()->first();
+        $checkout = AccessoryCheckout::whereKey($item->accessory_checkout_id)->lockForUpdate()->first();
+        if (! $accessory || ! $checkout || (int) $checkout->accessory_id !== (int) $accessory->id
+            || $checkout->assigned_type !== User::class || (int) $checkout->assigned_to !== (int) $person->id) {
             return;
         }
-        // Accessories go back to stock; the return keeps where the unit is.
+
         $checkout->delete();
+        if ($location) {
+            AccessoryStockLocations::putAway($accessory, $location);
+        }
         event(new CheckoutableCheckedIn($accessory, $person, $actor, $note, now()->format('Y-m-d H:i:s')));
     }
 
     /**
-     * The warehouse a returned asset is waiting in: the clinic it was stored
+     * The warehouse where a returned asset is waiting: the internal location it was stored
      * at, or the partner warehouse. Null once it was checked out again or
      * moved somewhere else.
      *
@@ -514,11 +631,11 @@ final class AssetReturns
     public static function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'user_id' => ['required', 'bail', 'integer', self::accessibleUser(...)],
             'reason' => ['required', Rule::in(AssetReturn::REASONS)],
             'ticket_number' => ['nullable', 'string', 'max:100'],
-            'ticket_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
-            'return_owner_id' => ['nullable', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'ticket_owner_id' => ['nullable', 'bail', 'integer', self::accessibleUser(...)],
+            'return_owner_id' => ['nullable', 'bail', 'integer', self::accessibleUser(...)],
             'note' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array'],
         ];

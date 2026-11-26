@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Backups;
 
+use App\Services\Backups\CloudBackupSettings;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Masbug\Flysystem\GoogleDriveAdapter;
+use Mockery;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -46,11 +49,12 @@ class CloudBackupTest extends TestCase
             'backup.backup.password' => 'correct horse battery',
         ]);
 
-        $this->artisan('backup:run', ['--only-files' => true, '--disable-notifications' => true])->assertSuccessful();
+        $this->artisan('snipeit:backup', ['--filename' => 'verified-copy'])->assertSuccessful();
 
         $localFiles = Storage::disk('backup')->files('backups');
         $this->assertCount(1, $localFiles);
         $this->assertSame($localFiles, Storage::disk('backup_s3')->files('backups'));
+        $this->assertSame(Storage::disk('backup')->get($localFiles[0]), Storage::disk('backup_s3')->get($localFiles[0]));
 
         $zip = new ZipArchive;
         $this->assertTrue($zip->open(Storage::disk('backup')->path($localFiles[0])));
@@ -112,6 +116,55 @@ class CloudBackupTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_a_password_setting_without_actual_encryption_never_sends_a_cloud_copy(): void
+    {
+        Storage::fake('backup');
+        Storage::fake('backup_s3');
+        File::put($this->workDir.'/source/evidence.pdf', 'approval evidence');
+
+        config([
+            'backup.backup.source.files.include' => [$this->workDir.'/source'],
+            'backup.backup.source.databases' => [],
+            'backup.backup.destination.disks' => ['backup', 'backup_s3'],
+            'backup.backup.password' => 'correct horse battery',
+            'backup.backup.encryption' => (string) ZipArchive::EM_NONE,
+        ]);
+
+        $this->artisan('snipeit:backup', ['--filename' => 'missing-encryption'])
+            ->expectsOutputToContain('Backup failed on: backup_s3.')
+            ->assertFailed();
+        $this->assertCount(1, Storage::disk('backup')->files('backups'));
+        $this->assertSame([], Storage::disk('backup_s3')->files('backups'));
+    }
+
+    public function test_cloud_copy_fails_if_the_uploaded_bytes_do_not_match(): void
+    {
+        $local = Storage::fake('backup');
+        $returned = fopen('php://temp', 'w+b');
+        fwrite($returned, 'unexpected contents');
+        rewind($returned);
+
+        $cloud = Mockery::mock(FilesystemAdapter::class);
+        $cloud->shouldReceive('writeStream')->once()->andReturnTrue();
+        $cloud->shouldReceive('readStream')->once()->andReturn($returned);
+        $cloud->shouldReceive('size')->once()->andReturn(strlen('unexpected contents'));
+        Storage::set('backup_s3', $cloud);
+        File::put($this->workDir.'/source/evidence.pdf', 'approval evidence');
+
+        config([
+            'backup.backup.source.files.include' => [$this->workDir.'/source'],
+            'backup.backup.source.databases' => [],
+            'backup.backup.destination.disks' => ['backup', 'backup_s3'],
+            'backup.backup.password' => 'correct horse battery',
+        ]);
+
+        $this->artisan('snipeit:backup', ['--filename' => 'corrupt-upload'])
+            ->expectsOutputToContain('Backup failed on: backup_s3.')
+            ->assertFailed();
+        $this->assertCount(1, $local->files('backups'));
+        $this->assertFalse(CloudBackupSettings::results()['backup_s3']['ok']);
+    }
+
     public function test_google_drive_without_credentials_does_not_cost_the_local_copy(): void
     {
         Storage::fake('backup');
@@ -164,11 +217,12 @@ class CloudBackupTest extends TestCase
     {
         Storage::fake('backup');
         Storage::fake('backup_s3');
-        config(['backup.backup.destination.disks' => ['backup', 'backup_s3']]);
+        config(['backup.backup.destination.disks' => ['backup', 'backup_s3'], 'backup.backup.password' => 'archive-password']);
 
         $cloud = Storage::disk('backup_s3');
-        $cloud->put('backups/snipe-it-older.zip', 'older');
-        $cloud->put('backups/snipe-it-newest.zip', 'newest');
+        $archive = file_get_contents($this->encryptedBackup('archive-password'));
+        $cloud->put('backups/snipe-it-older.zip', $archive);
+        $cloud->put('backups/snipe-it-newest.zip', $archive);
         touch($cloud->path('backups/snipe-it-older.zip'), now()->subDay()->getTimestamp());
 
         $this->artisan('snipeit:backup-pull', ['disk' => 'backup_s3'])
@@ -177,10 +231,25 @@ class CloudBackupTest extends TestCase
         Storage::disk('backup')->assertMissing('backups/snipe-it-newest.zip');
 
         $this->artisan('snipeit:backup-pull', ['disk' => 'backup_s3', '--latest' => true])->assertSuccessful();
-        $this->assertSame('newest', Storage::disk('backup')->get('backups/snipe-it-newest.zip'));
+        $this->assertSame($archive, Storage::disk('backup')->get('backups/snipe-it-newest.zip'));
 
         $this->artisan('snipeit:backup-pull', ['disk' => 'backup_s3', 'file' => 'snipe-it-older.zip'])->assertSuccessful();
-        $this->assertSame('older', Storage::disk('backup')->get('backups/snipe-it-older.zip'));
+        $this->assertSame($archive, Storage::disk('backup')->get('backups/snipe-it-older.zip'));
+    }
+
+    public function test_pull_does_not_publish_an_invalid_archive_or_overwrite_a_local_backup(): void
+    {
+        $local = Storage::fake('backup');
+        $cloud = Storage::fake('backup_s3');
+        $cloud->put('backups/corrupt.zip', 'truncated');
+        $cloud->put('backups/existing.zip', 'another copy');
+        $local->put('backups/existing.zip', 'local copy');
+
+        $this->artisan('snipeit:backup-pull', ['disk' => 'backup_s3', 'file' => 'corrupt.zip'])->assertFailed();
+        $this->artisan('snipeit:backup-pull', ['disk' => 'backup_s3', 'file' => 'existing.zip'])->assertFailed();
+
+        $this->assertSame(['backups/existing.zip'], $local->allFiles());
+        $this->assertSame('local copy', $local->get('backups/existing.zip'));
     }
 
     public function test_pull_rejects_a_disk_that_is_not_a_cloud_backup_disk(): void

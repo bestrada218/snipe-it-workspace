@@ -26,6 +26,17 @@ class CreateLocationsTest extends TestCase
             ->assertOk();
     }
 
+    public function test_external_warehouse_form_defaults_to_storage_without_a_parent(): void
+    {
+        $this->settings->set(['return_partner_name' => 'Example Provider']);
+
+        $this->actingAs(User::factory()->superuser()->create())
+            ->get(route('locations.create', ['partner_warehouse' => 1]))
+            ->assertOk()
+            ->assertViewHas('item', fn (Location $location): bool => $location->name === 'Example Provider'
+                && $location->is_storage && $location->parent_id === null);
+    }
+
     public function test_user_can_create_locations()
     {
         $this->assertFalse(Location::where('name', 'Test Location')->exists());

@@ -14,6 +14,7 @@ $config = [
     */
 
     'default' => env('PRIVATE_FILESYSTEM_DISK', 'local'),
+    'public_proxy' => env('PUBLIC_S3_PROXY', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -181,7 +182,7 @@ $config['disks']['public'] = $config['disks'][env('PUBLIC_FILESYSTEM_DISK', 'loc
 // /storage-proxy route, not because of any per-object ACL, so we drop the
 // visibility that would otherwise send ACL: private and be rejected by
 // buckets configured with Object Ownership = Bucket owner enforced.
-if (env('PUBLIC_S3_PROXY', false)) {
+if ($config['public_proxy']) {
     $config['disks']['public']['url'] = env('APP_URL').'/storage-proxy';
 }
 

@@ -56,7 +56,7 @@ return new class extends Migration
         });
 
         Schema::table('settings', function (Blueprint $table) {
-            // Name shown for the hardware partner warehouse (e.g. Rippling)
+            // Name shown for the external warehouse
             // and the location its returned items are assigned to.
             $table->string('return_partner_name', 60)->nullable();
             $table->integer('return_partner_location_id')->nullable();

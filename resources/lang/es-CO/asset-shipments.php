@@ -68,7 +68,7 @@ return [
     'received_at' => 'Fecha de recepción',
     'receive_help' => 'Al confirmar la entrega, el equipo quedará asignado a tu cuenta si la asignación está autorizada.',
     'create_help' => 'Al registrar el envío, el activo se reserva hasta que el destinatario confirme la recepción.',
-    'platform_placeholder' => 'En inglés, p. ej. «Rippling» o «Amazon»',
+    'platform_placeholder' => 'En inglés, p. ej. «Supplier portal»',
     'carrier_placeholder' => 'En inglés, p. ej. «FedEx»',
     'approval_reference_placeholder' => 'En inglés, p. ej. «Approved by email on Nov 18 by the IT manager»',
     'receipt_note_placeholder' => 'En inglés, p. ej. «Confirmed by phone with the recipient»',

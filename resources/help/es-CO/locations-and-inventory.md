@@ -4,21 +4,23 @@ Cómo se organizan las ubicaciones, qué es una bodega, cómo se activan y renom
 
 ## Ubicaciones en jerarquía
 
-Las ubicaciones se organizan como un árbol: **país → estado → clínica**. Cada ubicación puede tener una **ubicación padre**. Se administran en [Configuraciones → Ubicaciones](route:locations.index).
+Las ubicaciones se pueden organizar en una jerarquía, por ejemplo **región → sede → bodega**. Cada ubicación puede tener una **ubicación padre**. [Configuraciones → Ubicaciones](route:locations.index)
 
 Esta jerarquía se usa en varios lugares:
 
 - La parte **XX** de la [placa](help:asset-tags) es la ubicación padre, normalmente el estado.
-- En las [devoluciones](help:returns) solo se pueden elegir clínicas, el último nivel.
-- Un [grupo limitado a una ubicación](#grupos-limitados-a-una-ubicacion) también ve las ubicaciones que dependen de ella.
+- Si guardas una [devolución](help:returns) en una bodega propia, elige una ubicación habilitada del nivel más bajo.
+- Un grupo limitado a una ubicación también ve las ubicaciones que dependen de ella.
 
 ## Bodegas
 
 Al editar una ubicación, la casilla **Bodega / almacenamiento** la marca como bodega o cuarto de almacenamiento. Lo que esté en una bodega se considera **guardado**, no **instalado en uso**.
 
-Esto importa porque un activo fijo puede estar en uso en una clínica (un televisor colgado en una sala) o guardado en bodega porque no se está usando. Los equipos asignados a una bodega **no aparecen** en los módulos por ubicación como activos en uso.
+Un activo fijo puede estar instalado en una sede o guardado en una bodega. Los módulos por ubicación muestran los activos instalados por separado del inventario en bodega.
 
-La ubicación de la bodega de Rippling, para las devoluciones, debe estar marcada como bodega.
+La ubicación de la bodega del proveedor externo, para las devoluciones, debe estar marcada como bodega.
+
+<!-- admin-only -->
 
 ## Módulos de inventario
 
@@ -41,8 +43,10 @@ El módulo muestra los activos **asignados a una ubicación** que cumplen esas c
 
 ## Grupos limitados a una ubicación
 
-En la página de administración (el engranaje de arriba a la derecha) → **Grupos**, al editar un grupo, el campo **Alcance por ubicación** limita lo que sus miembros pueden ver y hacer a una ubicación y las que dependen de ella. Por ejemplo, el equipo de la clínica de Edgewater solo trabaja con lo de Edgewater.
+En la página de administración (el engranaje de arriba a la derecha) → **Grupos**, al editar un grupo, el campo **Alcance por ubicación** limita lo que sus miembros pueden ver y hacer a una ubicación y las que dependen de ella.
 
 - Déjalo vacío para no limitar por ubicación.
 - Los permisos del grupo (ver, crear, asignar…) se definen abajo, como siempre.
 - Si alguien intenta elegir una ubicación fuera de su alcance, el sistema lo rechaza.
+
+<!-- end-admin-only -->

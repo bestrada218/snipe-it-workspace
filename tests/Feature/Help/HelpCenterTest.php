@@ -43,6 +43,33 @@ class HelpCenterTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('help.show', 'nothing-here'))->assertNotFound();
     }
 
+    public function test_administrative_guides_and_topics_are_hidden_from_the_index_and_direct_access(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->get(route('help.index'))->assertOk()
+            ->assertDontSee(route('help.show', 'server-and-updates'))
+            ->assertDontSee('snipeit:asset-tag-duplicates')
+            ->assertDontSee('Cloud copies');
+
+        foreach (['backups', 'email-and-summary', 'server-and-updates'] as $section) {
+            $this->get(route('help.show', $section))->assertNotFound();
+        }
+
+        $this->get(route('help.show', 'security'))->assertOk()
+            ->assertSee('Turning it on for your account')
+            ->assertDontSee('Sections that always ask for confirmation');
+    }
+
+    public function test_superadmins_can_read_administrative_help(): void
+    {
+        $this->actingAs(User::factory()->superuser()->create());
+
+        $this->get(route('help.index'))->assertOk()->assertSee(route('help.show', 'backups'));
+        $this->get(route('help.show', 'asset-tags'))->assertOk()->assertSee('snipeit:asset-tag-duplicates');
+        $this->get(route('help.show', 'server-and-updates'))->assertOk()->assertSee('snipe-it-workspace update');
+    }
+
     public function test_every_section_exists_in_every_language_and_its_links_resolve(): void
     {
         foreach (['en-US', 'es-CO'] as $locale) {
@@ -65,6 +92,8 @@ class HelpCenterTest extends TestCase
 
     public function test_links_to_anchors_of_other_sections_point_to_real_headings(): void
     {
+        $this->actingAs(User::factory()->superuser()->create());
+
         foreach (['en-US', 'es-CO'] as $locale) {
             app()->setLocale($locale);
             $sections = collect(HelpCenter::SECTIONS)->mapWithKeys(fn (string $slug) => [$slug => HelpCenter::section($slug)]);

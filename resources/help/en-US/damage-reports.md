@@ -21,6 +21,10 @@ Assets in those statuses **cannot be assigned** to anyone.
 
 The report is saved in the **asset history** as "Damage reported", with the status change, the date and who made it. Even if the asset is repaired later, the record of what happened stays.
 
+<!-- admin-only -->
+
 ## Setting up damage statuses
 
 In **Settings → General**, field **Statuses that require a damage report**, a superadmin chooses one or more statuses. Choose statuses that mean broken or damaged equipment that can no longer be assigned.
+
+<!-- end-admin-only -->

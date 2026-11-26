@@ -21,6 +21,7 @@ use App\Models\Statuslabel;
 use App\Models\User;
 use App\Observers\AssetObserver;
 use App\Services\AssetReplacement;
+use App\Services\AssetReturns;
 use App\Services\AssetShipments;
 use App\Services\DuplicateAssignments;
 use App\View\Label;
@@ -602,6 +603,10 @@ class AssetsController extends Controller
     {
 
         $this->authorize($asset);
+        $warehouse = AssetReturns::warehouseEditAttributes($request);
+        if ($warehouse !== []) {
+            AssetReturns::requireUnassignedForWarehouseEdit([$asset]);
+        }
         $asset->forceFill(AssetReplacement::attributes($request, $asset));
 
         $asset->status_id = $request->input('status_id', null);
@@ -642,6 +647,7 @@ class AssetsController extends Controller
         if ($request->has('location_id')) {
             $asset->location_id = $request->input('location_id');
         }
+        $asset->forceFill($warehouse);
         $asset->byod = $request->input('byod', 0);
 
         $status = Statuslabel::find($request->input('status_id'));
@@ -1070,6 +1076,11 @@ class AssetsController extends Controller
         session()->put('redirect_option', $request->input('redirect_option'));
         session()->put('other_redirect', 'audit');
 
+        $warehouse = AssetReturns::warehouseEditAttributes($request);
+        if ($warehouse !== []) {
+            AssetReturns::requireUnassignedForWarehouseEdit([$asset]);
+        }
+
         $originalValues = $asset->getRawOriginal();
 
         $asset->next_audit_date = $request->input('next_audit_date');
@@ -1079,7 +1090,11 @@ class AssetsController extends Controller
         // not just note it in the audit notes
         if ($request->input('update_location') == '1') {
             $asset->location_id = $request->input('location_id');
+            if ($asset->isDirty('location_id')) {
+                $asset->warehouse_location_id = null;
+            }
         }
+        $asset->forceFill($warehouse);
 
         // Update custom fields in the database
         if (($asset->model) && ($asset->model->fieldset)) {
@@ -1142,7 +1157,7 @@ class AssetsController extends Controller
                 $file_name = $request->handleFile(FileStorage::Audits->privateStorageKey(), 'audit-'.$asset->id, $request->file('file.0'));
             }
 
-            $asset->logAudit($request->input('note'), $request->input('location_id'), $file_name, $originalValues);
+            $asset->logAudit($request->input('note'), $warehouse['location_id'] ?? $request->input('location_id'), $file_name, $originalValues);
 
             return Helper::getRedirectOption($request, $asset->id, 'Assets')->with('success', trans('admin/hardware/message.audit.success'));
         }

@@ -17,6 +17,27 @@ use Tests\TestCase;
  */
 class EnforceApiTwoFactorEnrollmentTest extends TestCase
 {
+    public function test_superadmin_mode_does_not_require_enrollment_for_other_users(): void
+    {
+        $this->settings->set(['two_factor_enabled' => '3']);
+
+        Passport::actingAs(User::factory()->admin()->create(['two_factor_enrolled' => '0']));
+        $this->getJson(route('api.users.me'))->assertOk();
+
+        Passport::actingAs(User::factory()->superuser()->create(['two_factor_enrolled' => '0']));
+        $this->getJson(route('api.users.me'))->assertForbidden();
+    }
+
+    public function test_superadmin_mode_requires_web_enrollment(): void
+    {
+        $this->settings->set(['two_factor_enabled' => '3']);
+
+        $user = User::factory()->superuser()->create(['two_factor_enrolled' => '0']);
+
+        $this->actingAs($user)->get(route('home'))->assertRedirect(route('two-factor-enroll'));
+        $this->actingAs(User::factory()->admin()->create())->get(route('home'))->assertOk();
+    }
+
     public function test_disabled_two_factor_lets_any_pat_through()
     {
         // '' == disabled globally. Even an unenrolled superuser's PAT works,

@@ -50,6 +50,11 @@ trait AdjustsQuantity
         return 0;
     }
 
+    protected function validateAvailableQuantityAfterAdjustment(int $available): void
+    {
+        // Models with separately tracked available stock may enforce a floor.
+    }
+
     /**
      * Every QuantityAdjust action_log row for this model. Used by the
      * history tab to render replenishment / decrement events in
@@ -121,6 +126,10 @@ trait AdjustsQuantity
                 throw new DomainException(
                     "Adjustment would take on-hand quantity ({$current}) below the {$inUse} unit(s) currently in use (delta={$delta})"
                 );
+            }
+
+            if ($delta < 0) {
+                $locked->validateAvailableQuantityAfterAdjustment($current + $delta - $inUse);
             }
 
             // Use the query builder directly (not $this->increment) so

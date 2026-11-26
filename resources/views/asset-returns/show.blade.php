@@ -3,9 +3,9 @@
 @section('title', trans('asset-returns.number', ['id' => $return->id]))
 
 @php
-    $canManage = auth()->user()->can('checkin', \App\Models\Asset::class) && $return->isOpen();
+    $canManage = $canUpdate && $return->isOpen();
     // A partner step marked by mistake can be undone even after the return completed.
-    $canUndoItems = auth()->user()->can('checkin', \App\Models\Asset::class) && $return->cancelled_at === null;
+    $canUndoItems = $canUpdate && $return->cancelled_at === null;
     $stepLabel = fn (string $step) => trans('asset-returns.steps.'.$step, ['partner' => $partner]);
 @endphp
 
@@ -152,7 +152,7 @@
                                                     @endforeach
                                                 </div>
                                                 <div data-when="storage">
-                                                    <x-input.clinic-location-select name="location_id" :tree="$clinicLocations" :selected="$item->location_id" :aria-label="trans('asset-returns.storage_location')" />
+                                                    <x-input.warehouse-location-select name="location_id" :tree="$ownWarehouseTree" :selected="$item->location_id" :aria-label="trans('asset-returns.storage_location')" />
                                                 </div>
                                                 <button class="btn btn-default btn-sm" type="submit">{{ trans('general.save') }}</button>
                                             </form>
@@ -218,7 +218,7 @@
         {{-- Notes are copied to the history of every returned item. --}}
         <x-box :header="trans('asset-returns.notes')" id="notes">
             <p class="help-block">{{ trans('asset-returns.notes_help') }}</p>
-            @can('checkin', \App\Models\Asset::class)
+            @if ($canUpdate)
                 <form method="POST" action="{{ route('returns.notes', $return) }}" class="return-note-form">
                     @csrf
                     <label for="return-note" class="sr-only">{{ trans('asset-returns.add_note') }}</label>
@@ -226,7 +226,7 @@
                     <x-form.error name="note" />
                     <button class="btn btn-theme" type="submit">{{ trans('asset-returns.add_note') }}</button>
                 </form>
-            @endcan
+            @endif
             <ul class="return-notes">
                 @forelse ($return->notes as $note)
                     <li>

@@ -135,7 +135,7 @@ return [
     |
     */
 
-    'debug' => env('APP_DEBUG', false),
+    'debug' => in_array(env('APP_ENV', 'production'), ['local', 'testing'], true) && env('APP_DEBUG', false),
     'warn_debug' => env('WARN_DEBUG', true),
 
     /*
@@ -606,6 +606,7 @@ return [
    */
 
     'allow_backup_delete' => env('ALLOW_BACKUP_DELETE', false),
+    'allow_backup_api' => env('ALLOW_BACKUP_API', false),
 
     /*
   |--------------------------------------------------------------------------

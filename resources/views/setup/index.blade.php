@@ -229,6 +229,8 @@ Create a User ::
 
             $.ajax({
                 url: "{{ route('setup.mailtest') }}",
+                method: 'POST',
+                data: { _token: @json(csrf_token()) },
 
                 success: function (result) {
                     if (result.status == 'success') {
@@ -261,9 +263,7 @@ Create a User ::
                     $("#mailtesticon").html('<i class="fas fa-exclamation-triangle text-danger"></i>');
                     $('#mailteststatus-text').html('Mail could not be sent.');
                     if (result.responseJSON) {
-                        $('#mailteststatus-error').html('Error: ' + result.responseJSON.messages);
-                    } else {
-                        console.dir(data);
+                        $('#mailteststatus-error').text(result.responseJSON.messages);
                     }
                 }
 

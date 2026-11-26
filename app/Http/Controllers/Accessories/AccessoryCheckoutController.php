@@ -13,6 +13,7 @@ use App\Models\AccessoryCheckout;
 use App\Models\CheckoutAcceptance;
 use App\Models\CheckoutRequest;
 use App\Models\User;
+use App\Services\AccessoryStockLocations;
 use App\Services\DuplicateAssignments;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -59,6 +60,7 @@ class AccessoryCheckoutController extends Controller
             );
 
             return view('accessories/checkout', compact('accessory'))
+                ->with('stockBalances', AccessoryStockLocations::balances($accessory))
                 ->with('checkoutRequest', $context['checkoutRequest'])
                 ->with('otherPendingRequests', $context['otherPendingRequests']);
         }
@@ -138,6 +140,7 @@ class AccessoryCheckoutController extends Controller
                     'note' => $request->input('note'),
                 ]);
 
+                $accessory_checkout->stockLocationId = $request->filled('stock_location_id') ? $request->integer('stock_location_id') : null;
                 $accessory_checkout->created_by = auth()->id();
                 $accessory_checkout->save();
             }

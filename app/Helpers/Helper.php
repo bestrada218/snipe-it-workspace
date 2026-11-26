@@ -1841,6 +1841,23 @@ class Helper
         return $new_locale; // better that you have some weird locale that doesn't fit into our mappings anywhere than 'void'
     }
 
+    public static function select2Language(string $locale): ?string
+    {
+        $locale = str_replace('_', '-', $locale);
+        if (! preg_match('/\A[a-z]{2,3}(?:-[a-z0-9]{2,8})*\z/i', $locale)) {
+            return null;
+        }
+
+        $languages = array_unique([$locale, self::mapBackToLegacyLocale($locale), explode('-', $locale, 2)[0]]);
+        foreach ($languages as $language) {
+            if (is_file(public_path("js/select2/i18n/{$language}.js"))) {
+                return $language;
+            }
+        }
+
+        return null;
+    }
+
     public static function determineLanguageDirection()
     {
         return in_array(app()->getLocale(),

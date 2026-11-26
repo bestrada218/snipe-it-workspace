@@ -34,11 +34,12 @@ class BackupMonitor extends Command
         );
 
         $healthy = true;
+        $copyResults = CloudBackupSettings::results();
         foreach (BackupDestinationStatusFactory::createForMonitorConfig(MonitoredBackupsConfig::fromArray($monitors)) as $status) {
             $name = $status->backupDestination()->backupName();
             $disk = $status->backupDestination()->diskName();
 
-            if ($status->isHealthy()) {
+            if ($status->isHealthy() && ($copyResults[$disk]['ok'] ?? true)) {
                 $this->info("The {$name} backups on the {$disk} disk are considered healthy.");
                 event(new HealthyBackupWasFound($status));
             } else {

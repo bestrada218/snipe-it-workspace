@@ -21,4 +21,9 @@ return [
     'delete_disabled' => 'Este accesorio no se puede eliminar aún porque algunos elementos todavía están asignados.',
     'accessory_deleted_warning' => 'Este accesorio fue eliminado. Debe restaurarlo antes de asignarlo.',
 
+    'stock_by_location' => 'Unidades disponibles por bodega',
+    'stock_pick_from' => 'Retirar de la bodega',
+    'stock_pick_help' => 'Si no eliges bodega, se usan primero las unidades sin ubicación y luego la unidad más antigua de las bodegas a las que tienes acceso.',
+    'stock_location_unavailable' => 'No hay unidades disponibles en esa bodega. Elige otra bodega.',
+    'stock_quantity_floor' => 'La cantidad disponible quedaría por debajo de las unidades registradas en bodegas.',
 ];

@@ -1,8 +1,7 @@
 @component('mail::message')
-{{ trans('mail.hello') }} {{ $first_name }} {{$last_name}},
+{{ trans('mail.hello') }} {{ $first_name }},
 
-{{ trans('mail.login') }}: {{ $username }} <br>
-{{ trans('mail.password') }}: {{ $password }}
+{{ trans('mail.first_admin_ready') }}
 
 @component('mail::button', ['url' => $url])
 Go To {{$snipeSettings->site_name}}

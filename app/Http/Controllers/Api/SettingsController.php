@@ -166,10 +166,9 @@ class SettingsController extends Controller
 
                 return response()->json(['message' => 'Mail sent to '.config('mail.reply_to.address')], 200);
             } catch (\Exception $e) {
-                Log::error('Mail sent error using '.config('mail.reply_to.address').': '.$e->getMessage());
-                Log::debug($e);
+                Log::warning('API mail check failed.', ['type' => $e::class]);
 
-                return response()->json(['message' => $e->getMessage()], 500);
+                return response()->json(['message' => trans('mail-settings.transport_problem')], 502);
             }
         }
 
@@ -241,6 +240,7 @@ class SettingsController extends Controller
      */
     public function listBackups(): array
     {
+        $this->requireBackupApi();
         $settings = Setting::getSettings();
         $path = 'app/backups';
         $backup_files = Storage::files($path);
@@ -252,7 +252,7 @@ class SettingsController extends Controller
             for ($f = 0; $f < count($backup_files); $f++) {
 
                 // Skip dotfiles like .gitignore and .DS_STORE
-                if ((substr(basename($backup_files[$f]), 0, 1) != '.')) {
+                if ($this->sanitizeBackupFilename(basename($backup_files[$f])) !== null) {
                     $file_timestamp = Storage::lastModified($backup_files[$f]);
 
                     $files_raw[] = [
@@ -260,7 +260,7 @@ class SettingsController extends Controller
                         'filesize' => Setting::fileSizeConvert(Storage::size($backup_files[$f])),
                         'modified_value' => $file_timestamp,
                         'modified_display' => date($settings->date_display_format.' '.$settings->time_display_format, $file_timestamp),
-                        'backup_url' => config('app.url').'/settings/backups/download/'.basename($backup_files[$f]),
+                        'backup_url' => route('api.settings.backups.download', ['file' => basename($backup_files[$f])]),
 
                     ];
                     $count++;
@@ -284,6 +284,7 @@ class SettingsController extends Controller
      */
     public function downloadBackup($file): JsonResponse|BinaryFileResponse
     {
+        $this->requireBackupApi();
         $file = $this->sanitizeBackupFilename($file);
 
         if ($file === null) {
@@ -293,7 +294,7 @@ class SettingsController extends Controller
         $path = storage_path('app/backups');
 
         if (Storage::exists('app/backups/'.$file)) {
-            $headers = ['ContentType' => 'application/zip'];
+            $headers = ['Content-Type' => 'application/zip'];
 
             return response()->download($path.'/'.$file, $file, $headers);
         } else {
@@ -311,6 +312,7 @@ class SettingsController extends Controller
      */
     public function downloadLatestBackup(): JsonResponse|BinaryFileResponse
     {
+        $this->requireBackupApi();
 
         $fileData = collect();
         foreach (Storage::files('app/backups') as $file) {
@@ -323,8 +325,8 @@ class SettingsController extends Controller
         }
 
         $newest = $fileData->sortByDesc('date')->first();
-        if (Storage::exists($newest['file'])) {
-            $headers = ['ContentType' => 'application/zip'];
+        if ($newest !== null && Storage::exists($newest['file'])) {
+            $headers = ['Content-Type' => 'application/zip'];
 
             return response()->download(storage_path($newest['file']), basename($newest['file']), $headers);
         } else {
@@ -333,11 +335,16 @@ class SettingsController extends Controller
 
     }
 
+    private function requireBackupApi(): void
+    {
+        abort_unless(config('app.allow_backup_api') === true && ! config('app.lock_passwords'), 403);
+    }
+
     private function sanitizeBackupFilename(mixed $filename): ?string
     {
         $filename = trim((string) $filename);
 
-        if ($filename === '' || str_contains($filename, "\0")) {
+        if ($filename === '' || str_starts_with($filename, '.') || str_contains($filename, "\0")) {
             return null;
         }
 
@@ -347,6 +354,6 @@ class SettingsController extends Controller
             return null;
         }
 
-        return ($sanitized === $filename) ? $sanitized : null;
+        return $sanitized === $filename && ! str_contains($sanitized, '\\') && str_ends_with($sanitized, '.zip') ? $sanitized : null;
     }
 }

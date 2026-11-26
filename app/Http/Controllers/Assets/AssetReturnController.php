@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Assets;
 
 use App\Http\Controllers\Controller;
+use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\AssetReturn;
 use App\Models\AssetReturnItem;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 /**
@@ -47,7 +49,8 @@ class AssetReturnController extends Controller
         return view('asset-returns.create', [
             'person' => $person,
             'items' => $person ? AssetReturns::returnableItems($person) : collect(),
-            'clinicLocations' => AssetReturns::clinicLocationTree(),
+            'requestedAssetId' => $request->integer('asset_id'),
+            'ownWarehouseTree' => AssetReturns::ownWarehouseTree(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }
@@ -69,7 +72,8 @@ class AssetReturnController extends Controller
 
         return view('asset-returns.show', [
             'return' => $return,
-            'clinicLocations' => AssetReturns::clinicLocationTree(),
+            'canUpdate' => $this->canUpdate($return),
+            'ownWarehouseTree' => AssetReturns::ownWarehouseTree(),
             'partner' => AssetReturns::partnerName(),
         ]);
     }
@@ -77,7 +81,7 @@ class AssetReturnController extends Controller
     /** Mark a shipping step (the next one, or a later one) on a date. */
     public function advance(Request $request, AssetReturn $return): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         $input = $request->validate([
             'step' => ['nullable', Rule::in(AssetReturn::SHIPPING_STEPS)],
             'date' => ['nullable', 'date'],
@@ -89,7 +93,7 @@ class AssetReturnController extends Controller
 
     public function undo(AssetReturn $return): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         AssetReturns::undoShippingStep($return);
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.step_undone'));
@@ -97,7 +101,7 @@ class AssetReturnController extends Controller
 
     public function advanceItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         abort_unless($item->asset_return_id === $return->id, 404);
         $input = $request->validate([
             'step' => ['nullable', Rule::in(AssetReturnItem::PARTNER_STEPS)],
@@ -110,7 +114,7 @@ class AssetReturnController extends Controller
 
     public function undoItem(AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         abort_unless($item->asset_return_id === $return->id, 404);
         AssetReturns::undoPartnerStep($item);
 
@@ -119,7 +123,7 @@ class AssetReturnController extends Controller
 
     public function storeItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         abort_unless($item->asset_return_id === $return->id, 404);
         $input = $request->validate(['date' => ['nullable', 'date']]);
         AssetReturns::store($item, $request->user(), $this->date($input));
@@ -129,7 +133,7 @@ class AssetReturnController extends Controller
 
     public function updateDetails(Request $request, AssetReturn $return): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         AssetReturns::updateDetails($return, $request->validate(AssetReturns::detailRules()));
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.details_saved'));
@@ -145,7 +149,7 @@ class AssetReturnController extends Controller
 
     public function updateItem(Request $request, AssetReturn $return, AssetReturnItem $item): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         abort_unless($item->asset_return_id === $return->id, 404);
         AssetReturns::updateItem($item, $request->only(['destination', 'location_id', 'previously_with_partner']));
 
@@ -154,7 +158,7 @@ class AssetReturnController extends Controller
 
     public function addNote(Request $request, AssetReturn $return): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         $input = $request->validate(['note' => ['required', 'string', 'max:5000']]);
         AssetReturns::addNote($return, $input['note'], $request->user());
 
@@ -163,9 +167,20 @@ class AssetReturnController extends Controller
 
     public function cancel(AssetReturn $return): RedirectResponse
     {
-        $this->authorize('checkin', Asset::class);
+        $this->authorizeUpdating($return);
         AssetReturns::cancel($return);
 
         return redirect()->route('returns.show', $return)->with('success', trans('asset-returns.cancelled'));
+    }
+
+    private function authorizeUpdating(AssetReturn $return): void
+    {
+        abort_unless($this->canUpdate($return), 403);
+    }
+
+    private function canUpdate(AssetReturn $return): bool
+    {
+        return Gate::allows('checkin', Asset::class)
+            && (Gate::allows('checkin', Accessory::class) || ! $return->items()->where('item_type', Accessory::class)->exists());
     }
 }

@@ -82,6 +82,7 @@ return [
     'link_to_update_password' => 'Please click on the following link to update your :web password:',
     'login' => 'Login',
     'login_first_admin' => 'Login to your new Snipe-IT installation using the credentials below:',
+    'first_admin_ready' => 'Your installation is ready. Sign in to enroll your second factor.',
     'low_inventory_alert' => 'There is :count item that is below minimum inventory or will soon be low.|There are :count items that are below minimum inventory or will soon be low.',
     'min_QTY' => 'Min QTY',
     'name' => 'Name',

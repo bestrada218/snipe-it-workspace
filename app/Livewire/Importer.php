@@ -547,7 +547,7 @@ class Importer extends Component
             'state' => trans('general.state'),
             'username' => trans('admin/users/table.username'),
             'display_name' => trans('admin/users/table.display_name'),
-            'vip' => trans('general.importer.vip'),
+            'vip' => trans('admin/users/general.priority_user_label'),
             'website' => trans('general.website'),
             'zip' => trans('general.zip'),
         ];

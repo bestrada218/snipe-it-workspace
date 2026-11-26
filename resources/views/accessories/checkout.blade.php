@@ -38,6 +38,22 @@
 
             <x-form.static :label="trans('admin/components/general.remaining')">{{ $accessory->numRemaining() }}</x-form.static>
 
+            @if ($stockBalances->isNotEmpty())
+                <div class="form-group">
+                    <label for="stock-location" class="col-md-3 control-label">{{ trans('admin/accessories/general.stock_pick_from') }}</label>
+                    <div class="col-md-7">
+                        <select class="form-control" id="stock-location" name="stock_location_id" aria-describedby="stock-location-help">
+                            <option value="">{{ trans('general.select_location') }}</option>
+                            @foreach ($stockBalances as $balance)
+                                <option value="{{ $balance->id }}" @selected((string) old('stock_location_id') === (string) $balance->id)>{{ $balance->name }} ({{ $balance->units }})</option>
+                            @endforeach
+                        </select>
+                        <p id="stock-location-help" class="help-block">{{ trans('admin/accessories/general.stock_pick_help') }}</p>
+                        <x-form.error name="stock_location_id" />
+                    </div>
+                </div>
+            @endif
+
             @include ('partials.forms.checkout-selector', ['user_select' => 'true', 'asset_select' => 'true', 'location_select' => 'true'])
             <x-input.user-select
                 :label="trans('general.user')"

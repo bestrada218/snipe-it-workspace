@@ -45,7 +45,7 @@
                     @if ($items->isEmpty())
                         <p>{{ trans('asset-returns.no_items') }}</p>
                     @else
-                        @if ($clinicLocations->where('selectable', true)->isEmpty())
+                        @if ($ownWarehouseTree->where('selectable', true)->isEmpty())
                             <p class="callout callout-warning">{{ trans('asset-returns.no_locations') }}</p>
                         @endif
                         <div class="table-responsive">
@@ -63,7 +63,7 @@
                                         @php($key = $item['key'])
                                         @php($destination = old('items.'.$key.'.destination', 'partner'))
                                         <tr data-return-item>
-                                            <td><input type="checkbox" name="items[{{ $key }}][include]" value="1" @checked(old('items.'.$key.'.include', old('_token') ? false : true)) aria-label="{{ trans('asset-returns.include') }} {{ $item['tag'] }}"></td>
+                                            <td><input type="checkbox" name="items[{{ $key }}][include]" value="1" @checked(old('items.'.$key.'.include', old('_token') ? false : (! $requestedAssetId || $key === 'asset-'.$requestedAssetId))) aria-label="{{ trans('asset-returns.include') }} {{ $item['tag'] }}"></td>
                                             <td><strong class="return-tag">{{ $item['tag'] }}</strong></td>
                                             <td>{{ $item['name'] }}@if ($item['category'])<span class="return-item-category">{{ $item['category'] }}</span>@endif</td>
                                             <td class="return-destination">
@@ -79,7 +79,7 @@
                                                     @endforeach
                                                 </div>
                                                 <div data-when="storage">
-                                                    <x-input.clinic-location-select :name="'items['.$key.'][location_id]'" :tree="$clinicLocations" :selected="old('items.'.$key.'.location_id')" :aria-label="trans('asset-returns.storage_location')" />
+                                                    <x-input.warehouse-location-select :name="'items['.$key.'][location_id]'" :tree="$ownWarehouseTree" :selected="old('items.'.$key.'.location_id')" :aria-label="trans('asset-returns.storage_location')" />
                                                     <span class="return-item-category">{{ trans('asset-returns.only_last_level') }}</span>
                                                 </div>
                                                 <x-form.error :name="'items.'.$key" />

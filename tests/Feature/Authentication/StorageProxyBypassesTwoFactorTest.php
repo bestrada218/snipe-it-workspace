@@ -20,6 +20,7 @@ class StorageProxyBypassesTwoFactorTest extends TestCase
 {
     public function test_storage_proxy_is_not_redirected_for_a_two_factor_incomplete_session(): void
     {
+        config(['filesystems.public_proxy' => true]);
         // 2 = universal mandatory 2FA
         Setting::factory()->create();
         $settings = Setting::getSettings();

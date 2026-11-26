@@ -82,6 +82,7 @@ return [
     'link_to_update_password' => 'Por favor, haga clic en el siguiente enlace para actualizar su contraseña de :web :',
     'login' => 'Iniciar sesión',
     'login_first_admin' => 'Inicie sesión en su nueva instalación de Snipe-IT usando las credenciales:',
+    'first_admin_ready' => 'Tu instalación está lista. Inicia sesión para configurar tu segundo factor.',
     'low_inventory_alert' => 'Hay :count elemento que está por debajo del inventario mínimo o que pronto lo estará.|Hay :count elementos que están por debajo del inventario mínimo o que pronto lo estarán.',
     'min_QTY' => 'Cantidad mínima',
     'name' => 'Nombre',

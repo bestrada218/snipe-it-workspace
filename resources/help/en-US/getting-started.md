@@ -33,7 +33,7 @@ The dashboard opens with the **Needs attention** list: everything that needs an 
 - a **license** is about to expire;
 - there are pending **requests** or **acceptances**.
 
-When there is nothing, it says "All clear". The same can arrive every morning by email with the [daily summary](help:email-and-summary).
+When there is nothing, it says "All clear".
 
 ## Search
 
@@ -52,9 +52,7 @@ The interface is in **English** or **Spanish**; each person chooses it in their 
 
 ## Version and changes
 
-The installed version is shown at the bottom of every page, for example "Snipe-IT Workspace **0.1** · based on Snipe-IT v8.8.3". Clicking it opens [Changes by version](route:changelog), with what each version brought.
+The installed version is shown at the bottom of every page, with its version number. Clicking it opens [Changes by version](route:changelog), with what each version brought.
 
 - **Snipe-IT Workspace** has its own numbering: 0.1, 0.1.1 for small fixes, 0.2 for new features and 1.0 for the formal release.
 - **Snipe-IT** is the original software it is based on; its version is shown separately.
-
-More in [Server, versions and updates](help:server-and-updates).

@@ -32,6 +32,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -39,6 +40,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use League\Csv\EscapeFormula;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -229,12 +231,52 @@ class SettingsController extends Controller
             $setting->per_page = 200;
         }
 
-        if ($setting->save()) {
+        $saved = $request->boolean('return_settings_configured')
+            && filled($setting->return_partner_name)
+            && ! $setting->return_partner_location_id
+                ? $this->saveWithExternalWarehouse($setting)
+                : $setting->save();
+
+        if ($saved) {
             return redirect()->route('settings.index')
                 ->with('success', trans('admin/settings/message.update.success'));
         }
 
         return redirect()->back()->withInput()->withErrors($setting->getErrors());
+    }
+
+    private function saveWithExternalWarehouse(Setting $setting): bool
+    {
+        return DB::transaction(function () use ($setting): bool {
+            Setting::query()->whereKey($setting->id)->lockForUpdate()->firstOrFail();
+            $location = Location::query()->whereNull('parent_id')->whereNull('company_id')
+                ->where('name', $setting->return_partner_name)->first();
+
+            if ($location && ! $location->is_external) {
+                throw ValidationException::withMessages([
+                    'return_partner_location_id' => trans('asset-returns.external_warehouse_name_conflict'),
+                ]);
+            }
+
+            if (! $location) {
+                $location = new Location;
+                $location->name = $setting->return_partner_name;
+                $location->is_external = true;
+                $location->is_storage = true;
+                if (! $location->save()) {
+                    throw ValidationException::withMessages([
+                        'return_partner_location_id' => $location->getErrors()->all(),
+                    ]);
+                }
+            }
+
+            $setting->return_partner_location_id = $location->id;
+            if (! $setting->save()) {
+                throw ValidationException::withMessages($setting->getErrors()->toArray());
+            }
+
+            return true;
+        });
     }
 
     private function updateInventoryModuleNames(Request $request, Setting $setting): void
@@ -265,7 +307,7 @@ class SettingsController extends Controller
                         continue;
                     }
                     if (count($locationModules) >= 25) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
+                        throw ValidationException::withMessages([
                             'inventory_location_modules.new.name' => trans('admin/settings/general.inventory_location_limit'),
                         ]);
                     }
@@ -1072,9 +1114,9 @@ class SettingsController extends Controller
                     || str_starts_with($line, 'Copying the backup to'))
                 ->implode(' ');
 
-            Log::error('Manual backup failed: '.$output);
+            Log::error('Manual backup failed.', ['user' => auth()->id(), 'exit' => $exit]);
 
-            return redirect()->route('settings.backups.index')->with('error', $summary !== '' ? $summary : trim($output));
+            return redirect()->route('settings.backups.index')->with('error', $summary !== '' ? $summary : trans('admin/settings/message.backup.generation_failed'));
         }
 
         return redirect()->route('settings.backups.index')->with('error', trans('general.feature_disabled'));
@@ -1230,6 +1272,11 @@ class SettingsController extends Controller
             return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.backup.file_not_found'));
         }
 
+        $restoreLock = Cache::lock('snipeit-backup-restore', 7200);
+        if (! $restoreLock->get()) {
+            return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.in_progress'));
+        }
+
         // ZipArchive and snipeit:restore both need a local filesystem path.
         // On the local driver, resolve directly to the disk's on-disk path
         // and let the restore CLI read it in place. On any remote driver
@@ -1315,7 +1362,7 @@ class SettingsController extends Controller
             // Take a fresh pre-restore backup so we can point the operator at
             // it if the restore fails after we wipe. This is the mitigation
             // the pre-existing
-            $requestedBackupFilename = 'pre-restore-'.date('Y-m-d-H-i-s').'.zip';
+            $requestedBackupFilename = 'pre-restore-'.date('Y-m-d-H-i-s').'-'.Str::lower(Str::random(8)).'.zip';
             // spatie prepends filename_prefix to the filename provided so this is the actual name on disk:
             $preRestoreBackupFilename = config('backup.backup.destination.filename_prefix').$requestedBackupFilename;
             $preRestoreDiskPath = $backupName.'/'.$preRestoreBackupFilename;
@@ -1332,7 +1379,8 @@ class SettingsController extends Controller
                 '--local-only' => true,
             ]);
 
-            if ($preBackupExit !== 0 || ! $backupDisk->exists($preRestoreDiskPath)) {
+            if ($preBackupExit !== 0 || ! $backupDisk->exists($preRestoreDiskPath)
+                || (config('filesystems.disks.backup.driver') === 'local' && RestoreFromBackup::archiveProblem($preBackupHint, config('backup.backup.password')) !== null)) {
                 Log::warning('Pre-restore backup failed (exit '.$preBackupExit.'); aborting restore to protect existing data.');
 
                 return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.pre_backup_failed'));
@@ -1359,7 +1407,13 @@ class SettingsController extends Controller
                 $restore_params['--sanitize-with-prefix'] = $prefix;
             }
 
-            Artisan::call('db:wipe', ['--force' => true]);
+            if (Artisan::call('db:wipe', ['--force' => true]) !== 0) {
+                Log::error('Could not prepare the database for restore. Pre-restore backup available at '.$preBackupHint);
+
+                return redirect()->route('settings.backups.index')->with('error', trans('admin/settings/message.restore.wipe_failed', [
+                    'backup' => $preRestoreBackupFilename,
+                ]));
+            }
 
             // run the restore command
             $restoreExit = Artisan::call('snipeit:restore', $restore_params);
@@ -1418,6 +1472,7 @@ class SettingsController extends Controller
             if ($localTempPath !== null && file_exists($localTempPath)) {
                 @unlink($localTempPath);
             }
+            $restoreLock->release();
         }
     }
 
@@ -1639,10 +1694,9 @@ class SettingsController extends Controller
 
             return response()->json(Helper::formatStandardApiResponse('success', null, trans('mail_sent.mail_sent')));
         } catch (\Exception $e) {
-            Log::error('Mail sent from '.config('mail.from.address').' with errors '.$e->getMessage());
-            Log::debug($e);
+            Log::warning('Setup mail check failed.', ['type' => $e::class]);
 
-            return response()->json(Helper::formatStandardApiResponse('success', null, $e->getMessage()));
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('mail-settings.transport_problem')), 502);
         }
     }
 

@@ -1,4 +1,4 @@
-﻿First Name,Last Name,Email,Username,Display Name,Activated,Location,Address,City,State,Country,Postal Code,Website,Phone,Job Title,Notes,Employee Number,Company,Manager,Remote,VIP,Start Date,End Date,Gravatar
+﻿First Name,Last Name,Email,Username,Display Name,Activated,Location,Address,City,State,Country,Postal Code,Website,Phone,Job Title,Notes,Employee Number,Company,Manager,Remote,Priority User,Start Date,End Date,Gravatar
 Reagen,Tenant,rtenant0@example.org,rtenant0,Heywood,TRUE,"Braun, Ullrich and O'Hara",0406 Emmet Drive,,,,,https://netvibes.com,895-137-2034,Nurse Practicioner,ac tellus semper interdum mauris ullamcorper purus sit amet nulla quisque arcu libero rutrum,,,Reagen Tenant,TRUE,TRUE,2022-03-18,2022-12-04,rtenant0@example.org
 Kenneth,Lefeuvre,klefeuvre1@example.org,klefeuvre1,,FALSE,Mueller LLC,404 Dennis Alley,,,,,,,Senior Quality Engineer,lacus at turpis donec posuere metus vitae ipsum,,,,TRUE,,,,
 Kiel,Eland,keland2@example.org,keland2,,FALSE,"Mayer, Jacobi and Gibson",3058 Declaration Park,,,,,,,Web Developer I,eu est congue elementum in hac habitasse platea dictumst morbi vestibulum velit id,,,,TRUE,,,,
@@ -18,7 +18,7 @@ Gerardo,Scrowby,gscrowbyf@example.org,gscrowbyf,,FALSE,Cruickshank-Kling,18314 S
 Imojean,Veare,iveareg@example.org,iveareg,Testtest,FALSE,Schultz-Lakin,9 Blaine Street,,,,,https://soup.io,502-710-6094,Environmental Tech,consequat lectus in est risus auctor sed,,,Imojean Veare,FALSE,TRUE,2022-01-24,2022-08-06,iveareg@example.org
 Samuel,Bickley,sbickleyh@example.org,sbickleyh,,TRUE,Langworth-Friesen,5891 Bunker Hill Crossing,,,,,,,,,,Corkery and Sons,,FALSE,,,,
 Niall,Ethington,nethingtoni@example.org,nethingtoni,,TRUE,"Ledner, Klocko and Sipes",511 Springs Parkway,,,,,,,,,,,,FALSE,,,,
-Elfreda,Ilyukhov,eilyukhovj@example.org,eilyukhovj,,FALSE,Spinka-Ortiz,475 Bluestem Point,,,,,,,Clinical Specialist,felis ut at dolor quis odio consequat varius integer ac,,,,TRUE,,,,
+Elfreda,Ilyukhov,eilyukhovj@example.org,eilyukhovj,,FALSE,Spinka-Ortiz,475 Bluestem Point,,,,,,,Support Specialist,felis ut at dolor quis odio consequat varius integer ac,,,,TRUE,,,,
 Serena,Josling,sjoslingk@example.org,sjoslingk,,FALSE,Wuckert-Schuster,10512 Fuller Avenue,,,,,,,,,,"Cruickshank, Ziemann and Kreiger",,FALSE,,,,
 Sheelah,Dockwray,sdockwrayl@example.org,sdockwrayl,,TRUE,Orn-Koss,4241 Scofield Circle,,,,,,,Nurse,vestibulum sed magna at nunc commodo placerat praesent blandit nam nulla integer pede,,Hermann-Anderson,,TRUE,,,,
 Lanette,Remnant,lremnantm@example.org,lremnantm,,FALSE,Abshire LLC,8 Buena Vista Junction,,,,,,,General Manager,mauris ullamcorper purus sit amet,,Bahringer-Lockman,,FALSE,,,,

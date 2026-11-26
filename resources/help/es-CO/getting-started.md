@@ -33,7 +33,7 @@ Al entrar, el tablero muestra la lista **Requiere atención**: todo lo que neces
 - una **licencia** está por vencer;
 - hay **solicitudes** o **aceptaciones** pendientes.
 
-Si no hay nada, verás «Todo al día». Lo mismo puede llegar cada mañana por correo con el [resumen diario](help:email-and-summary).
+Si no hay nada, verás «Todo al día».
 
 ## Buscar
 
@@ -52,9 +52,7 @@ La interfaz está en **español** o **inglés**; cada persona lo elige en su per
 
 ## Versión y cambios
 
-La versión instalada aparece al pie de todas las páginas, por ejemplo «Snipe-IT Workspace **0.1** · basado en Snipe-IT v8.8.3». Al hacer clic se abre [Cambios por versión](route:changelog), con lo que trajo cada versión.
+La versión instalada aparece al pie de todas las páginas, con su número de versión. Al hacer clic se abre [Cambios por versión](route:changelog), con lo que trajo cada versión.
 
 - **Snipe-IT Workspace** tiene su propia numeración: 0.1, 0.1.1 para arreglos pequeños, 0.2 para funciones nuevas y 1.0 para la versión formal.
 - **Snipe-IT** es el programa original en el que se basa; su versión se muestra aparte.
-
-Más detalles en [Servidor, versiones y actualizaciones](help:server-and-updates).

@@ -27,7 +27,7 @@ class AssetShipmentFactory extends Factory
             'asset_id' => Asset::factory(),
             'recipient_id' => User::factory(),
             'created_by' => User::factory()->superuser(),
-            'platform' => 'Rippling',
+            'platform' => 'Supplier portal',
             'carrier' => $this->faker->company(),
             'tracking_number' => (string) $this->faker->unique()->numerify('##########'),
             'purchase_approver_name' => $this->faker->name(),

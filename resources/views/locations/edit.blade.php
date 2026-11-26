@@ -138,6 +138,13 @@
                     :item="$item"
                 />
 
+                <x-form.checkbox-row
+                    name="is_external"
+                    :label="trans('warehouse-inventory.external_location')"
+                    :help_text="trans('warehouse-inventory.external_location_help')"
+                    :item="$item"
+                />
+
                 <x-form.address :item="$item" />
 
                 @if ($snipeSettings->ldap_enabled == 1)

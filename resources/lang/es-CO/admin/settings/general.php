@@ -427,6 +427,7 @@ return [
     'two_factor_enabled_warning' => 'Al activar el doble factor si no está activado, se le obligará inmediatamente a autenticarse con un dispositivo registrado en Google Auth. Tendrá la posibilidad de inscribir su dispositivo si uno no está inscrito actualmente.',
     'two_factor_enabled_help' => 'Esto activará la autenticación de dos factores mediante Google Authenticator.',
     'two_factor_optional' => 'Selectivo (los usuarios pueden activar o desactivar si está permitido)',
+    'two_factor_required_superusers' => 'Requerido para superadministradores',
     'two_factor_required' => 'Requerido para todos los usuarios',
     'two_factor_disabled' => 'Desactivado',
     'two_factor_enter_code' => 'Ingrese el código de verificación de dos factores',

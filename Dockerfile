@@ -47,8 +47,10 @@ dnsutils \
 && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
-RUN curl -L -O https://github.com/pear/pearweb_phars/raw/master/go-pear.phar
-RUN php go-pear.phar
+# Reject images built from mirrors that have not applied Ubuntu Noble's
+# November 2026 PHP security fixes.
+RUN dpkg --compare-versions "$(dpkg-query -W -f='${Version}' php8.3-common)" ge '8.3.6-0ubuntu0.24.04.14' \
+ || { echo 'The Ubuntu package mirror must provide the November 2026 PHP security update or newer.' >&2; exit 1; }
 
 RUN phpenmod gd
 RUN phpenmod bcmath
@@ -99,7 +101,7 @@ RUN chown -R docker /var/www/html
 RUN \
 	rm -r "/var/www/html/storage/private_uploads" && ln -fs "/var/lib/snipeit/data/private_uploads" "/var/www/html/storage/private_uploads" \
       && rm -rf "/var/www/html/public/uploads" && ln -fs "/var/lib/snipeit/data/uploads" "/var/www/html/public/uploads" \
-      && rm -r "/var/www/html/storage/app/backups" && ln -fs "/var/lib/snipeit/dumps" "/var/www/html/storage/app/backups" \
+      && rm -rf "/var/www/html/storage/app/backups" && ln -fs "/var/lib/snipeit/dumps" "/var/www/html/storage/app/backups" \
       && mkdir -p "/var/lib/snipeit/keys" && ln -fs "/var/lib/snipeit/keys/oauth-private.key" "/var/www/html/storage/oauth-private.key" \
       && ln -fs "/var/lib/snipeit/keys/oauth-public.key" "/var/www/html/storage/oauth-public.key" \
       && ln -fs "/var/lib/snipeit/keys/ldap_client_tls.cert" "/var/www/html/storage/ldap_client_tls.cert" \

@@ -96,12 +96,17 @@
                         <x-page-column class="col-md-4">
                             <x-well>
                                 <x-info-element.status :infoObject="$asset"/>
-                                {{-- Returned, available, and waiting in a warehouse (a clinic or the partner's). --}}
+                                {{-- Returned, available, and waiting in a warehouse (internal or external). --}}
                                 @if ($storage = \App\Services\AssetReturns::storageFor($asset))
                                     <div class="asset-warehouse">
                                         <x-icon type="location" class="fa-fw"/>
                                         <a href="{{ route('locations.show', $storage['location']) }}">{{ $storage['label'] }}</a>
                                         · <a href="{{ route('returns.show', $storage['return']) }}">{{ trans('asset-returns.from_return', ['id' => $storage['return']->id]) }}</a>
+                                    </div>
+                                @elseif (! $asset->assigned_to && $asset->warehouse_location_id !== null && (int) $asset->warehouse_location_id === (int) $asset->location_id && $asset->location)
+                                    <div class="asset-warehouse">
+                                        <x-icon type="location" class="fa-fw"/>
+                                        <a href="{{ route('locations.show', $asset->location) }}">{{ trans('asset-returns.in_warehouse', ['place' => $asset->location->name]) }}</a>
                                     </div>
                                 @endif
                             </x-well>

@@ -34,6 +34,17 @@
         @endif
 
         <x-page-column class="col-md-9 main-panel">
+            @if ($stockBalances->isNotEmpty())
+                <x-box :header="trans('admin/accessories/general.stock_by_location')">
+                    <dl class="dl-horizontal">
+                        @foreach ($stockBalances as $balance)
+                            <dt>{{ $balance->name }}</dt>
+                            <dd>{{ $balance->units }}</dd>
+                        @endforeach
+                    </dl>
+                </x-box>
+            @endif
+
 
 
             <x-tabs>

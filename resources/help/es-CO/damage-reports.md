@@ -21,6 +21,10 @@ Los activos en esos estados **no se pueden asignar** a nadie.
 
 El reporte se guarda en el **historial del activo** como «Daño reportado», con el cambio de estado, la fecha y quién lo hizo. Así, aunque el equipo se repare después, queda el registro de lo que pasó.
 
+<!-- admin-only -->
+
 ## Configurar los estados de daño
 
 En **Configuraciones → General**, campo **Estados que requieren reporte de daño**, un superadministrador elige uno o varios estados. Elige estados que signifiquen equipo malo o dañado, que ya no se puede asignar.
+
+<!-- end-admin-only -->

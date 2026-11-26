@@ -368,7 +368,7 @@ class ImportAssetsTest extends ImportDataTestCase implements TestsPermissionsReq
             ->where('serial', $importFileBuilder->firstRow()['serialNumber'])
             ->sole();
 
-        $this->assertEquals('Ready to Deploy', $newAsset->status->name);
+        $this->assertSame('ready', $newAsset->status->workflow_key);
         $this->assertNull($newAsset->purchase_date);
         $this->assertNull($newAsset->purchase_cost);
     }

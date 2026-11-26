@@ -64,6 +64,10 @@
                     />
                 @endif
 
+                @unless ($hideLocationFields)
+                    <x-form.warehouse-edit />
+                @endunless
+
                 {{-- Next audit date. Prefilled with today + audit_interval
                      from settings so users can accept the calculated
                      default or override for this batch. --}}

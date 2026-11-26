@@ -27,12 +27,14 @@ class SetupUserRequest extends Request
             'last_name' => 'required|string|min:1',
             'username' => 'required|string|min:2|unique:users,username,NULL,deleted_at',
             'email' => 'email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ];
     }
 
     public function response(array $errors)
     {
-        return $this->redirector->back()->withInput()->withErrors($errors, $this->errorBag);
+        return $this->redirector->back()
+            ->withInput($this->except(['password', 'password_confirmation']))
+            ->withErrors($errors, $this->errorBag);
     }
 }

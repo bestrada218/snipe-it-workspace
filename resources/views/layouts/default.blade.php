@@ -483,6 +483,23 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('view', \App\Models\Location::class)
+                            <li @class(['active' => request()->routeIs('locations.*')])>
+                                <a href="{{ route('locations.index') }}" @if (request()->routeIs('locations.*')) aria-current="page" @endif>
+                                    <x-icon type="location" class="fa-fw" />
+                                    <span>{{ trans('general.locations') }}</span>
+                                </a>
+                            </li>
+                        @endcan
+                        @if ((\App\Models\Setting::inventoryModuleEnabled('assets') && auth()->user()->can('index', \App\Models\Asset::class))
+                            || (\App\Models\Setting::inventoryModuleEnabled('accessories') && auth()->user()->can('index', \App\Models\Accessory::class)))
+                            <li @class(['active' => request()->routeIs('warehouse-inventory.index')])>
+                                <a href="{{ route('warehouse-inventory.index') }}" @if (request()->routeIs('warehouse-inventory.index')) aria-current="page" @endif>
+                                    <x-icon type="warehouse" class="fa-fw" />
+                                    <span>{{ trans('warehouse-inventory.title') }}</span>
+                                </a>
+                            </li>
+                        @endif
                         </x-nav.group>
                         <x-nav.group :label="trans('navigation.tracking')">
                         @canBrowse('index', \App\Models\Asset::class)
@@ -783,14 +800,6 @@
                                         </li>
                                     @endcan
 
-                                    @can('view', \App\Models\Location::class)
-                                        <li {!! (request()->is('locations*') ? ' class="active" aria-current="page"' : '') !!}>
-                                            <a href="{{ route('locations.index') }}">
-                                                {{ trans('general.locations') }}
-                                            </a>
-                                        </li>
-                                    @endcan
-
                                     @can('view', \App\Models\Company::class)
                                         <li {!! (request()->is('companies*') ? ' class="active" aria-current="page"' : '') !!}>
                                             <a href="{{ route('companies.index') }}">
@@ -1066,30 +1075,45 @@
 
         {{-- Javascript files --}}
         <script src="{{ url(mix('js/dist/all.js')) }}" nonce="{{ csrf_token() }}"></script>
-        <script src="{{ url('js/select2/i18n/'.Helper::mapBackToLegacyLocale(app()->getLocale()).'.js') }}"></script>
+        @if ($select2Language = Helper::select2Language(app()->getLocale()))
+            <script src="{{ url('js/select2/i18n/'.$select2Language.'.js') }}"></script>
+        @endif
 
         <script nonce="{{ csrf_token() }}">
             (() => {
-                const searchFields = [
+                const ordinaryFields = [
+                    'input:not([type])',
+                    'input[type="text"]',
                     'input[type="search"]',
-                    'input[role="searchbox"]',
-                    '.select2-search__field',
-                    '.js-select2-checkboxes-scrollbox-search',
-                    '#tagSearch',
+                    'input[type="email"]',
+                    'input[type="tel"]',
+                    'input[type="url"]',
+                    'input[type="number"]',
+                    'textarea',
                 ].join(',');
 
-                function markSearchField(field) {
+                function markOrdinaryField(field) {
+                    const autocomplete = field.getAttribute('autocomplete');
+                    // Keep explicit browser autofill semantics and skip credential
+                    // fields whose type can become text via a visibility toggle.
+                    if ((autocomplete && autocomplete !== 'off')
+                        || /password|passwd|passphrase|secret|credential|token|two_factor|otp/i.test(field.name)
+                        || field.closest('[data-credential-form]')) {
+                        return;
+                    }
+
                     field.setAttribute('autocomplete', 'off');
+                    field.setAttribute('data-form-type', 'other');
                     field.setAttribute('data-1p-ignore', 'true');
                     field.setAttribute('data-lpignore', 'true');
                     field.setAttribute('data-bwignore', 'true');
                 }
 
-                function markSearchFields(root) {
-                    if (root.matches(searchFields)) {
-                        markSearchField(root);
+                function markOrdinaryFields(root) {
+                    if (root.matches(ordinaryFields)) {
+                        markOrdinaryField(root);
                     }
-                    root.querySelectorAll(searchFields).forEach(markSearchField);
+                    root.querySelectorAll(ordinaryFields).forEach(markOrdinaryField);
                 }
 
                 // Select2 can focus a dropdown search field as soon as it opens.
@@ -1098,17 +1122,17 @@
                     for (const adapter of [picker?.dropdown, picker?.selection]) {
                         const field = adapter?.$search?.[0];
                         if (field) {
-                            markSearchField(field);
+                            markOrdinaryField(field);
                         }
                     }
                 });
 
-                markSearchFields(document.body);
+                markOrdinaryFields(document.body);
                 new MutationObserver(records => {
                     for (const record of records) {
                         for (const node of record.addedNodes) {
                             if (node instanceof Element) {
-                                markSearchFields(node);
+                                markOrdinaryFields(node);
                             }
                         }
                     }

@@ -60,6 +60,8 @@ class AccessoryCheckoutRequest extends ImageUploadRequest
                     'integer',
                 ],
 
+                'stock_location_id' => ['nullable', 'integer', 'min:1'],
+
                 'checkout_qty' => [
                     'integer',
                     'lte:number_currently_remaining',

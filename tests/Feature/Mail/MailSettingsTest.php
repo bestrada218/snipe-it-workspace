@@ -22,7 +22,7 @@ class MailSettingsTest extends TestCase
     private function onPage(User $user): static
     {
         return $this->actingAs($user)->withSession([
-            RequireSensitiveConfirmation::PAGE_TOKEN => ['user' => $user->id, 'at' => now()->getTimestamp(), 'token' => 'page-token'],
+            RequireSensitiveConfirmation::PAGE_TOKEN => ['user' => $user->id, 'at' => now()->getTimestamp(), 'token' => 'page-token', 'scope' => 'settings.mail.index'],
         ]);
     }
 
@@ -30,7 +30,7 @@ class MailSettingsTest extends TestCase
     {
         $user = $this->superuser();
 
-        $this->actingAs($user)->withSession([RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp()]])
+        $this->actingAs($user)->withSession([RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp(), 'scope' => 'settings.mail.index']])
             ->get(route('settings.mail.index'))
             ->assertOk()
             ->assertSee(trans('mail-settings.providers.google'))
@@ -64,10 +64,16 @@ class MailSettingsTest extends TestCase
 
         $this->assertStringNotContainsString('SG.secret-key', (string) DB::table('mail_settings')->value('settings'));
 
+        $audit = (string) DB::table('action_logs')->where('created_by', $user->id)->where('note', 'like', 'SMTP settings%')->value('note');
+        $this->assertStringContainsString('password', $audit);
+        $this->assertStringNotContainsString('SG.secret-key', $audit);
+
         MailSettings::apply();
         $this->assertSame('smtp', config('mail.default'));
         $this->assertSame('smtp.sendgrid.net', config('mail.mailers.smtp.host'));
         $this->assertSame('smtps', config('mail.mailers.smtp.scheme'));
+        $this->assertTrue(config('mail.mailers.smtp.require_tls'));
+        $this->assertTrue(config('mail.mailers.smtp.verify_peer'));
         $this->assertSame('SG.secret-key', config('mail.mailers.smtp.password'));
         $this->assertSame('inventory@example.com', config('mail.from.address'));
 
@@ -76,7 +82,7 @@ class MailSettingsTest extends TestCase
             '_sensitive' => 'page-token', 'enabled' => 1, 'provider' => 'sendgrid', 'host' => 'smtp.sendgrid.net', 'port' => 587, 'from_address' => 'inventory@example.com',
         ])->assertSessionHasNoErrors();
         $this->assertSame('SG.secret-key', MailSettings::saved()['password']);
-        $this->actingAs($user)->withSession([RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp()]])
+        $this->actingAs($user)->withSession([RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp(), 'scope' => 'settings.mail.index']])
             ->get(route('settings.mail.index'))->assertDontSee('SG.secret-key');
     }
 

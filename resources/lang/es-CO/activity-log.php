@@ -46,6 +46,8 @@ return [
         'note' => 'Nota',
     ],
     'actions' => [
+        'logged_in' => 'Inicio de sesión',
+        'logged_out' => 'Cierre de sesión',
         'create' => 'Creación de :type',
         'update' => 'Actualización de :type',
         'delete' => 'Eliminación de :type',

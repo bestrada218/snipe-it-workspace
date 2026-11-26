@@ -75,11 +75,6 @@ main() {
     # Backups are also copied to a Documents folder after each one.
     "$DIR/scripts/snipe-it-workspace" sync-backups || true
 
-    port="$(grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"")"
-    if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -q "Status: active"; then
-        sudo ufw allow "${port:-8000}/tcp" >/dev/null && echo "Firewall: port ${port:-8000} opened."
-    fi
-
     auto_update="${WORKSPACE_AUTO_UPDATE:-}"
     [ -n "$auto_update" ] || auto_update="$(ask 'Update automatically every night at 3:30 when there is a new version? [y/N] ')"
     case "$auto_update" in

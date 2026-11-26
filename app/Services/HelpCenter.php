@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -34,6 +35,8 @@ class HelpCenter
         'server-and-updates',
     ];
 
+    private const ADMIN_SECTIONS = ['backups', 'email-and-summary', 'server-and-updates'];
+
     public const FALLBACK_LOCALE = 'en-US';
 
     /**
@@ -55,13 +58,17 @@ class HelpCenter
      */
     public static function section(string $slug): ?array
     {
-        if (! in_array($slug, self::SECTIONS, true)) {
+        if (! self::canView($slug)) {
             return null;
         }
 
         $markdown = self::read($slug);
         if ($markdown === null) {
             return null;
+        }
+
+        if (! Gate::allows('superuser')) {
+            $markdown = preg_replace('/<!-- admin-only -->.*?(?:<!-- end-admin-only -->|\z)/s', '', $markdown);
         }
 
         $title = preg_match('/^# (.+)$/m', $markdown, $match) ? trim($match[1]) : Str::headline($slug);
@@ -98,6 +105,12 @@ class HelpCenter
         ];
     }
 
+    private static function canView(string $slug): bool
+    {
+        return in_array($slug, self::SECTIONS, true)
+            && (! in_array($slug, self::ADMIN_SECTIONS, true) || Gate::allows('superuser'));
+    }
+
     private static function read(string $slug): ?string
     {
         foreach (array_unique([app()->getLocale(), self::FALLBACK_LOCALE]) as $locale) {
@@ -118,7 +131,7 @@ class HelpCenter
     {
         return preg_replace_callback('/\]\((route|help):([a-z0-9._\/-]+)(#[a-z0-9-]+)?\)/i', function (array $link) {
             $url = match (true) {
-                $link[1] === 'help' && in_array($link[2], self::SECTIONS, true) => route('help.show', $link[2]),
+                $link[1] === 'help' && self::canView($link[2]) => route('help.show', $link[2]),
                 $link[1] === 'route' && Route::has($link[2]) => route($link[2]),
                 default => '#',
             };

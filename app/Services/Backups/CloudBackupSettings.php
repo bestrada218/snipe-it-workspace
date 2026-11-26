@@ -2,9 +2,11 @@
 
 namespace App\Services\Backups;
 
+use App\Models\Actionlog;
 use App\Models\BackupCloudSetting;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -143,7 +145,10 @@ class CloudBackupSettings
         $row = self::row() ?? new BackupCloudSetting;
         $row->settings = $settings;
         $row->updated_by = $actor->id;
-        $row->save();
+        DB::transaction(function () use ($row, $actor, $saved): void {
+            $row->save();
+            Actionlog::logSettingsChanges($actor, 'Cloud backup settings', $saved, $row->settings);
+        });
     }
 
     /**
@@ -170,14 +175,22 @@ class CloudBackupSettings
         $probe = config('backup.backup.name', 'backups').'/.connection-test-'.Str::random(8).'.txt';
         try {
             $storage = Storage::disk($disk);
-            $storage->put($probe, 'Snipe-IT Workspace connection test');
-            $found = $storage->exists($probe);
-            $storage->delete($probe);
-
-            return $found ? null : 'The test file was not there after writing it.';
+            $contents = 'Snipe-IT Workspace connection test';
+            if ($storage->put($probe, $contents)) {
+                try {
+                    $found = $storage->get($probe) === $contents;
+                } finally {
+                    $removed = $storage->delete($probe);
+                }
+                if ($found && $removed) {
+                    return null;
+                }
+            }
         } catch (Throwable $error) {
-            return $error->getMessage();
+            Log::warning('Cloud backup connection test failed.', ['disk' => $disk, 'type' => $error::class]);
         }
+
+        return trans('cloud-backups.connection_problem');
     }
 
     /**
@@ -203,7 +216,7 @@ class CloudBackupSettings
             $row->status = $status;
             $row->save();
         } catch (Throwable $error) {
-            Log::warning('Could not record the cloud backup result: '.$error->getMessage());
+            Log::warning('Could not record the cloud backup result.', ['type' => $error::class]);
         }
     }
 

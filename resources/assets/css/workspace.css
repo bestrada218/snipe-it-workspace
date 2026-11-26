@@ -2467,26 +2467,51 @@ body.workspace-ui,
 
 /* Changes by version (CHANGELOG.md rendered in the app) */
 .workspace-changelog {
-    max-width: 72ch;
+    container-type: inline-size;
     line-height: 1.6;
+    overflow-wrap: anywhere;
 }
-.workspace-changelog h1 {
-    display: none; /* the box header already names the page */
-}
-.workspace-changelog h2 {
-    margin: 32px 0 8px;
-    padding-top: 16px;
+.workspace-changelog-release + .workspace-changelog-release {
+    margin-top: 32px;
+    padding-top: 24px;
     border-top: 1px solid var(--workspace-border);
-    font-size: 20px;
-    font-weight: 600;
 }
-.workspace-changelog h3 {
-    margin: 20px 0 6px;
-    font-size: 15px;
-    font-weight: 600;
+.workspace-changelog-release > h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
 }
-.workspace-changelog hr {
-    display: none;
+.workspace-changelog-release > p {
+    max-width: 72ch;
+}
+.workspace-changelog-topics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px 28px;
+    margin-top: 18px;
+}
+.workspace-changelog-topic {
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--workspace-border);
+}
+.workspace-changelog-topic > h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+}
+.workspace-changelog-topic > :last-child {
+    margin-bottom: 0;
+}
+@container (min-width: 720px) {
+    .workspace-changelog-topics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@container (min-width: 1180px) {
+    .workspace-changelog-topics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 .workspace-changelog ul {
     padding-left: 20px;
@@ -2506,12 +2531,6 @@ body.workspace-ui,
     text-align: left;
     vertical-align: top;
 }
-.workspace-changelog > h2:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-}
-
 /* Cloud copies of the backups */
 .cloud-backup-status {
     margin: 0 0 12px;

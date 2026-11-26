@@ -13,6 +13,7 @@
         <div class="col-md-12">
             <div class="box box-default">
                 <div class="box-body">
+                    <p class="text-muted">{{ trans('general.asset_audit_report_help') }}</p>
 
                     <table
                             data-cookie-id-table="auditReport"

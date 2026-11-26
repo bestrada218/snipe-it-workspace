@@ -108,8 +108,12 @@ class UserImporter extends ItemImporter
         // 0 for empty); present-with-value means the parsed 1/0. Absent
         // means don't touch the DB value on update.
         foreach (['activated', 'remote', 'vip', 'autoassign_licenses'] as $flag) {
-            if ($this->csvRowHas($row, $flag)) {
-                $raw = $this->findCsvMatch($row, $flag);
+            $column = $flag;
+            if ($flag === 'vip' && ! $this->csvRowHas($row, $flag)) {
+                $column = array_key_exists('priority user', $row) ? 'priority user' : 'usuario prioritario';
+            }
+            if ($this->csvRowHas($row, $column)) {
+                $raw = $this->findCsvMatch($row, $column);
                 $this->item[$flag] = ($this->fetchHumanBoolean($raw) == 1) ? '1' : 0;
             }
         }

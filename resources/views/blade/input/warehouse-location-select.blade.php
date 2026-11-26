@@ -1,4 +1,4 @@
-{{-- Locations as a tree (country → state → clinic). Only the last level
+{{-- Warehouse locations grouped by their configured hierarchy. Only the deepest level
      can be chosen; the upper levels show as disabled headings. --}}
 @props([
     'name',

@@ -67,6 +67,10 @@ The shipments page has three tabs:
 
 Shipments due today or late also appear in the dashboard's **Needs attention** and in the menu counter.
 
+<!-- admin-only -->
+
 ## Setting up purchase approvers
 
 In **Settings → General**, section **Purchase approvals**, a superadmin chooses who can be recorded as approver on shipments.
+
+<!-- end-admin-only -->

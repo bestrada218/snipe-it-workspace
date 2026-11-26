@@ -32,6 +32,20 @@ class ImportUsersTest extends ImportDataTestCase implements TestsPermissionsRequ
         return parent::importFileResponse($parameters);
     }
 
+    public function test_priority_user_columns_are_imported_in_english_spanish_and_legacy_files(): void
+    {
+        $this->actingAsForApi(User::factory()->superuser()->create());
+
+        foreach (['Priority User', 'Usuario prioritario', 'vip'] as $header) {
+            $file = new ImportFileBuilder;
+            $file->push($file->definition() + [$header => '1']);
+            $import = Import::factory()->users()->create(['file_path' => $file->saveToImportsDirectory()]);
+
+            $this->importFileResponse(['import' => $import->id])->assertOk();
+            $this->assertDatabaseHas('users', ['username' => $file->firstRow()['username'], 'vip' => 1]);
+        }
+    }
+
     #[Test]
     public function test_requires_permission()
     {

@@ -119,7 +119,7 @@ class ExportUsersTest extends TestCase
                 trans('general.state') => 'TA',
                 trans('general.country') => 'Outer Rim',
                 trans('general.zip') => '12345',
-                trans('general.importer.vip') => trans('general.yes'),
+                trans('admin/users/general.priority_user_label') => trans('general.yes'),
                 trans('admin/users/general.remote') => trans('general.yes'),
                 trans('general.autoassign_licenses') => trans('general.yes'),
                 trans('general.ldap_sync') => trans('general.yes'),

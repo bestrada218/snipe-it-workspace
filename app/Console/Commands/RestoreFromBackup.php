@@ -247,8 +247,8 @@ class RestoreFromBackup extends Command
 
     /**
      * Checks, without touching the database, that the archive holds exactly
-     * one database dump and that it can be read in full with the password
-     * available (CRC verified). Returns why it cannot be restored, or null.
+     * one database dump and that every file can be read in full with the
+     * available password. Returns why it cannot be restored, or null.
      * Settings > Backups calls this before wiping the database.
      */
     public static function archiveProblem(string $path, ?string $password): ?string
@@ -258,7 +258,7 @@ class RestoreFromBackup extends Command
         }
 
         $za = new ZipArchive;
-        if ($za->open($path) !== true) {
+        if ($za->open($path, ZipArchive::RDONLY) !== true) {
             return 'The file is not a readable zip archive.';
         }
 
@@ -282,37 +282,62 @@ class RestoreFromBackup extends Command
                 return 'This backup is encrypted. Set BACKUP_ARCHIVE_PASSWORD in .env or pass --password= to restore it.';
             }
 
-            $stat = $za->statIndex($dumps[0]);
-            $stream = $za->getStream($stat['name']);
-            $read = 0;
-            $crc = hash_init('crc32b');
-            if ($stream !== false) {
-                while (! feof($stream)) {
-                    $chunk = @fread($stream, 1048576);
-                    if ($chunk === false || $chunk === '') {
-                        break;
-                    }
-                    $read += strlen($chunk);
-                    hash_update($crc, $chunk);
+            $dumpIndex = $dumps[0];
+            for ($index = 0; $index < $za->numFiles; $index++) {
+                $entry = $za->statIndex($index);
+                if ($entry === false) {
+                    return 'The backup has an unreadable archive entry.';
                 }
-                fclose($stream);
-            }
-
-            $intact = $stream !== false
-                && $read > 0
-                && $read === (int) $stat['size']
-                && hexdec(hash_final($crc)) === ($stat['crc'] & 0xFFFFFFFF);
-
-            if (! $intact) {
-                return $encrypted
-                    ? 'The database dump cannot be read: the backup password is wrong or the file is damaged.'
-                    : 'The database dump is damaged or empty.';
+                if (str_ends_with($entry['name'], '/')) {
+                    continue;
+                }
+                if ($index === $dumpIndex && ($entry['size'] === 0 || ! self::entryIsIntact($za, $index, $entry))) {
+                    return $encrypted
+                        ? 'The database dump cannot be read: the backup password is wrong or the file is damaged.'
+                        : 'The database dump is damaged or empty.';
+                }
+                if ($index !== $dumpIndex && ! self::entryIsIntact($za, $index, $entry)) {
+                    return 'An attachment or another file in the backup is damaged or cannot be decrypted.';
+                }
             }
         } finally {
             $za->close();
         }
 
         return null;
+    }
+
+    /**
+     * @param  array{size: int, crc: int, encryption_method: int}  $entry
+     */
+    private static function entryIsIntact(ZipArchive $archive, int $index, array $entry): bool
+    {
+        $stream = @$archive->getStreamIndex($index);
+        if ($stream === false) {
+            return false;
+        }
+
+        try {
+            $read = 0;
+            $crc = hash_init('crc32b');
+            while (! feof($stream)) {
+                $chunk = @fread($stream, 1048576);
+                if ($chunk === false || ($chunk === '' && ! feof($stream))) {
+                    return false;
+                }
+                $read += strlen($chunk);
+                hash_update($crc, $chunk);
+            }
+
+            // AE-2 archives leave the CRC at zero and libzip checks the authentication tag.
+            $aesWithoutCrc = $entry['crc'] === 0 && in_array($entry['encryption_method'], [
+                ZipArchive::EM_AES_128, ZipArchive::EM_AES_192, ZipArchive::EM_AES_256,
+            ], true);
+
+            return $read === $entry['size'] && ($aesWithoutCrc || hexdec(hash_final($crc)) === ($entry['crc'] & 0xFFFFFFFF));
+        } finally {
+            fclose($stream);
+        }
     }
 
     private function failWith(string $message): int

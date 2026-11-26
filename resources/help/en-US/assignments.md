@@ -46,9 +46,13 @@ The rule applies to **every** way of handing something over: single and bulk che
 
 Rows marked "No justification recorded" are duplicates from before this rule or made outside the flow; they are worth reviewing.
 
+<!-- admin-only -->
+
 ## Setting up approvers and categories
 
 In **Settings → General**, section **Duplicate assignment approval** (superadmins only):
 
 - **Authorized approvers**: the people who can be recorded as approvers.
 - **Categories that require approval**: where a duplicate needs an approver and evidence. Elsewhere the justification and ticket are enough.
+
+<!-- end-admin-only -->

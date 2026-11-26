@@ -55,6 +55,7 @@ class SecurityHeaders
 
         $feature_policy = implode(';', $feature_policy);
         $response->headers->set('Feature-Policy', $feature_policy);
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), display-capture=(), usb=()');
 
         // Defaults to same-origin if REFERRER_POLICY is not set in the .env
         $response->headers->set('Referrer-Policy', config('app.referrer_policy'));
@@ -74,19 +75,23 @@ class SecurityHeaders
         // Seriously though, please run Snipe-IT over TLS. Let's Encrypt is free.
         // https://letsencrypt.org
 
-        if (config('app.enable_hsts') === true) {
+        if (config('app.enable_hsts') === true && $request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
         // We have to exclude debug mode here because debugbar pulls from a CDN or two
         // and it will break things.
 
-        if ((config('app.debug') != 'true') && (config('app.enable_csp') == 'true')) {
+        if (! config('app.debug') && config('app.enable_csp') && ! $response->headers->has('Content-Security-Policy')) {
             $csp_policy[] = "default-src 'self'";
             $csp_policy[] = "style-src 'self' 'unsafe-inline'";
             $csp_policy[] = "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
             $csp_policy[] = "connect-src 'self'";
             $csp_policy[] = "object-src 'none'";
+            $csp_policy[] = "base-uri 'self'";
+            if (! config('app.allow_iframing')) {
+                $csp_policy[] = "frame-ancestors 'none'";
+            }
             $csp_policy[] = "font-src 'self' data:";
             $csp_policy[] = "img-src 'self' data: ".config('app.url').' '.config('app.additional_csp_urls').' '.config('filesystems.disks.public.url').' https://secure.gravatar.com http://gravatar.com maps.google.com maps.gstatic.com *.googleapis.com';
 
@@ -100,6 +105,10 @@ class SecurityHeaders
 
     private function removeUnwantedHeaders($headerList)
     {
+        if (headers_sent()) {
+            return;
+        }
+
         foreach ($headerList as $header) {
             header_remove($header);
         }

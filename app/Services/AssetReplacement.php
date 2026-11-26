@@ -66,6 +66,24 @@ final class AssetReplacement
         ];
     }
 
+    /**
+     * @return array<string, int>
+     */
+    public static function windowCounts(): array
+    {
+        $windows = self::windows();
+        $query = self::query()->toBase();
+        foreach ($windows as $key => [$from, $until]) {
+            if ($from === null) {
+                $query->selectRaw("COUNT(CASE WHEN assets.replacement_due_on <= ? THEN 1 END) AS {$key}", [$until]);
+            } else {
+                $query->selectRaw("COUNT(CASE WHEN assets.replacement_due_on BETWEEN ? AND ? THEN 1 END) AS {$key}", [$from, $until]);
+            }
+        }
+
+        return array_map('intval', (array) $query->first());
+    }
+
     public static function query(?array $window = null): Builder
     {
         $query = Asset::query()->notArchived()->whereNotNull('assets.replacement_due_on');

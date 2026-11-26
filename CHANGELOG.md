@@ -17,6 +17,10 @@ of every page, and by `snipe-it-workspace status`.
 
 The current number is in the [`VERSION`](VERSION) file.
 
+Spanish notes are in [the localized changelog](resources/lang/es-CO/changelog.md).
+Use the version number alone for its release headings. Release order, dates and
+publication status come from this file.
+
 ## How a version reaches the servers
 
 - Day-to-day work goes to the `develop` branch. Servers never install from it.
@@ -27,52 +31,103 @@ The current number is in the [`VERSION`](VERSION) file.
 
 ---
 
-## Unreleased (next: 0.2)
+## 0.2 — 2026-11-25
 
-New features and noticeable changes since 0.1, so the next version is 0.2.
+Based on **Snipe-IT v8.8.3**.
 
-- The Snipe-IT Workspace version is shown next to the Snipe-IT version in
-  Settings, and at the bottom of every page.
-- Returns: the destinations read "<partner> warehouse" (the partner name set
-  in Settings, for example Rippling) and "A clinic's storage"; choosing a
-  clinic asks which one, from all the locations.
-- Returns are recorded by hand, since the shipment is handled on another
-  platform: pick what happened and its date (a later step fills in the
-  earlier ones), undo a step marked by mistake, and edit the ticket, owners,
-  carrier and tracking number. The clinic picker shows locations as a tree
-  (country → state → clinic) and only clinics can be chosen.
-- Returned items are no longer assigned to the warehouse location: they are
-  checked in, ready to deploy, and their location is the clinic or the
-  partner warehouse. The asset page shows "In the <place> warehouse" with a
-  link to the return until the asset is checked out again.
-- *Cloud copies* page (Settings → Backups): set up encrypted copies to
-  Amazon S3 or Google Drive from the app, test the connection and see how
-  the last copy went. Superadmins only, after typing their password and a
-  two-factor code every time they open it (leaving, coming back or
-  reloading asks again); two-factor is mandatory to open it. Each
-  destination has a step-by-step guide (AWS and Google Cloud) and every
-  field explains what it is and where it comes from.
-- *Help center* (Help menu): how every feature works, in 13 sections with
-  an index, each section with its own table of contents, search across all
-  the text, and links straight to the screens it talks about. English and
-  Spanish.
-- *Email* page (Settings → Email, superadmins, password and two-factor
-  every time): set up the outgoing mail server from the app, with a
-  step-by-step guide for Google, Microsoft 365, SendGrid, Amazon SES and
-  Mailgun, an explanation for every field and a test email.
-- Daily email summary of what needs attention (shipments to confirm,
-  replacements coming up, returns not moving, backup problems), sent at the
-  chosen hour only when something is pending.
-- Returns not moving: an open return with nothing recorded for a few days
-  (7 by default) shows in "Needs attention" and in a new "Not moving" tab.
-- The daily backup check (mail when a backup is missing or older than a
-  day) also watches the cloud destinations set up in the app.
-- Faster pages: the side menu counters are kept for a few minutes per
-  person instead of being counted on every page, and refresh right away
-  when an asset, shipment, return or setting changes.
-- Automated tests run on every change, before a version is released.
-- *Changes by version* page: the version number in Settings and in the
-  footer opens the list of changes of every version.
+### Warehouses and inventory
+
+- The Warehouses view includes stock charts, search, CSV export and filters
+  for internal and external warehouses. Internal warehouses can also be
+  filtered by state.
+- Returned accessories keep a warehouse location for each available unit.
+  The accessory page shows stock by warehouse, and checkout can select a
+  source.
+- Direct asset check-in asks which internal warehouse will receive the
+  asset. Shipments to an external provider warehouse start in Returns.
+- Asset statuses distinguish equipment that's ready to deploy, under review,
+  awaiting setup, in repair, damaged or retired. Returns update readiness
+  and physical location independently.
+
+### Returns
+
+- Each returned item goes to an internal warehouse or to a warehouse
+  managed by an external provider. Settings supplies the provider name.
+- Record each shipment step and its date, and undo eligible steps.
+  The return ticket, owners, carrier and tracking number can be edited.
+- The warehouse picker shows the location hierarchy and allows selection
+  at the deepest eligible level.
+- Checked-in assets stay unassigned. The asset page shows their physical
+  warehouse and links to the location and return until the next checkout.
+- Returns apply company access rules to lists, counts, direct links, edits
+  and owner selection. Returns that include accessories also require
+  accessory permissions.
+
+### Backups and recovery
+
+- Set up encrypted Amazon S3 or Google Drive copies from *Cloud copies*
+  (Settings → Backups). Each service has a setup guide and field
+  explanations. You can test the connection and check the last copy result.
+- The daily backup check also monitors cloud destinations configured in the
+  app and reports missing or outdated backups.
+- Cloud copies verify AES-256 encryption and compare SHA-256 checksums after
+  upload. Downloaded archives are validated before appearing in the local
+  list.
+- Restores validate attachments and the database dump. The web interface
+  allows one restore at a time.
+
+### Access and data protection
+
+- *Cloud copies* and *Email* are restricted to superadmins and ask for a
+  password and a two-factor code on each visit, including reloads.
+  Confirmation applies only to the section opened.
+- Web backup downloads require fresh two-factor confirmation. The legacy
+  download API is disabled by default.
+- New installations require superadmins to enroll in two-factor
+  authentication and encrypt session data. The database encrypts both
+  existing and new two-factor secrets.
+- The Activity Report records completed web sign-ins.
+- Cloud and SMTP credentials are excluded from validation session data and
+  connection test diagnostics. SMTP configured in the app requires TLS with
+  certificate validation.
+
+### Email, alerts and navigation
+
+- Set up outgoing mail in Settings → Email with guides for Google,
+  Microsoft 365, SendGrid, Amazon SES and Mailgun, field explanations and
+  a test email.
+- A daily email at the chosen time reports pending shipments, upcoming
+  replacements, stalled returns and backup problems. It sends only when
+  there are pending items and includes counts and a link to Workspace.
+- Stalled returns appear in *Needs attention* and in their own tab after
+  a configurable period without progress (7 days by default).
+- The bilingual *Help center* has 14 sections with indexes, full-text search
+  and links to the relevant screens.
+- Settings and the footer show both version numbers. The Workspace version
+  opens *Changes by version*.
+- Sidebar counters are cached per user and refresh when an asset, shipment,
+  return or setting changes.
+- Select2 dropdowns load the available translation for regional languages
+  such as Spanish (Colombia).
+
+### Installation and updates
+
+- New installations bind to the loopback interface, generate a backup
+  password and use secure cookies when configured for HTTPS. Setup emails
+  omit login credentials.
+- Production debug output is disabled. Docker builds exclude local secrets,
+  backups, uploads and runtime data. Apache confines access to the web root,
+  blocks executable uploads and omits URLs from access logs.
+- The public storage proxy is opt-in, rejects overlapping S3 backup and
+  private storage prefixes, and isolates active content in the browser.
+- Updates pull the current base image and can rebuild with fresh packages.
+  Incomplete updates retry until Workspace passes its health check.
+- Ubuntu container builds require the November 2026 PHP security patch
+  and skip the unused PEAR installer.
+- CI runs the automated tests and audits PHP and JavaScript dependencies
+  before release.
+- CSV and Excel dependencies include the security fixes from League CSV
+  9.28.1 and SheetJS 0.20.3.
 
 ## 0.1 — 2026-11-24
 

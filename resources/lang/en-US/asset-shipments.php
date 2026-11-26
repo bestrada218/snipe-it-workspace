@@ -68,7 +68,7 @@ return [
     'received_at' => 'Date received',
     'receive_help' => 'Confirming delivery assigns the equipment to your account if the assignment is authorized.',
     'create_help' => 'Registering a shipment reserves the asset until the recipient confirms delivery.',
-    'platform_placeholder' => 'e.g. Rippling or Amazon',
+    'platform_placeholder' => 'e.g. Supplier portal',
     'carrier_placeholder' => 'e.g. FedEx',
     'approval_reference_placeholder' => 'e.g. Approved by email on Nov 18 by the IT manager',
     'receipt_note_placeholder' => 'e.g. Confirmed by phone with the recipient',

@@ -211,6 +211,8 @@ class IconHelper
                 return 'fas fa-map-marker-alt';
             case 'location':
                 return 'fas fa-map-marker-alt';
+            case 'warehouse':
+                return 'fas fa-warehouse';
             case 'markdown':
                 return 'fab fa-markdown';
             case 'superadmin':

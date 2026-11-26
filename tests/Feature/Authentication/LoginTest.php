@@ -91,7 +91,7 @@ class LoginTest extends TestCase
 
     public function test_logs_successful_login()
     {
-        User::factory()->create(['username' => 'username_here']);
+        $user = User::factory()->create(['username' => 'username_here']);
 
         $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.100'])
             ->post('/login', [
@@ -107,5 +107,48 @@ class LoginTest extends TestCase
             'user_agent' => 'Some Custom User Agent',
             'successful' => 1,
         ]);
+
+        $this->assertDatabaseHas('action_logs', [
+            'action_type' => 'logged in',
+            'created_by' => $user->id,
+            'item_id' => $user->id,
+            'item_type' => User::class,
+        ]);
+
+        $this->post(route('logout.post'))->assertRedirect();
+        $this->assertGuest();
+        $this->assertDatabaseMissing('action_logs', [
+            'action_type' => 'logged out',
+            'created_by' => $user->id,
+            'item_id' => $user->id,
+            'item_type' => User::class,
+        ]);
+
+        $reportViewer = User::factory()->superuser()->create();
+        $this->actingAsForApi($reportViewer)->getJson(route('api.reports.inventory.activity', [
+            'action_type' => ['logged in', 'logged out'],
+            'created_by' => [$user->id],
+        ]))->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonFragment(['action_type' => mb_strtolower(trans('general.logged_in'))]);
+    }
+
+    public function test_reports_sign_in_only_after_required_two_factor_is_confirmed(): void
+    {
+        $this->settings->set(['two_factor_enabled' => '2']);
+        $user = User::factory()->create([
+            'two_factor_enrolled' => 1,
+            'two_factor_secret' => \Google2FA::generateSecretKey(),
+        ]);
+
+        $this->post('/login', ['username' => $user->username, 'password' => 'password']);
+        $attributes = ['action_type' => 'logged in', 'created_by' => $user->id];
+        $this->assertDatabaseMissing('action_logs', $attributes);
+
+        $this->post(route('two-factor'), [
+            'two_factor_secret' => \Google2FA::getCurrentOtp($user->two_factor_secret),
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('action_logs', $attributes);
     }
 }

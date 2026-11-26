@@ -118,12 +118,16 @@
                                         <label for="return_partner_location_id" class="col-md-3 control-label">{{ trans('asset-returns.settings_partner_location') }}</label>
                                         <div class="col-md-7">
                                             <select class="form-control" id="return_partner_location_id" name="return_partner_location_id" aria-describedby="return-partner-location-help">
-                                                <option value="">—</option>
+                                                <option value="">{{ trans('asset-returns.external_warehouse_automatic') }}</option>
                                                 @foreach (\App\Services\AssetReturns::storageLocations() as $storageLocation)
                                                     <option value="{{ $storageLocation->id }}" @selected((string) old('return_partner_location_id', $setting->return_partner_location_id) === (string) $storageLocation->id)>{{ $storageLocation->name }}</option>
                                                 @endforeach
                                             </select>
                                             <p class="help-block" id="return-partner-location-help">{{ trans('asset-returns.settings_partner_location_help') }}</p>
+                                            @can('create', \App\Models\Location::class)
+                                                <a href="{{ route('locations.create', ['partner_warehouse' => 1]) }}">{{ trans('asset-returns.settings_create_warehouse') }}</a>
+                                            @endcan
+
                                             <x-form.error name="return_partner_location_id" />
                                         </div>
                                     </div>

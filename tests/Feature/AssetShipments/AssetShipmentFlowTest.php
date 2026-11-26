@@ -170,7 +170,7 @@ class AssetShipmentFlowTest extends TestCase
     {
         return [
             'recipient_id' => $recipient->id,
-            'platform' => 'Rippling',
+            'platform' => 'Supplier portal',
             'carrier' => 'Servientrega',
             'tracking_number' => '9988776655',
             'expected_on' => now()->addWeek()->toDateString(),

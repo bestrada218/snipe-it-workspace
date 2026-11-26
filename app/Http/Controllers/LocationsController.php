@@ -54,12 +54,18 @@ class LocationsController extends Controller
      * @see LocationsController::postCreate() method that validates and stores the data
      * @since [v1.0]
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('create', Location::class);
 
-        return view('locations/edit')
-            ->with('item', new Location);
+        $location = new Location;
+        if ($request->boolean('partner_warehouse') && Gate::allows('superuser')) {
+            $location->name = Setting::getSettings()?->return_partner_name;
+            $location->is_storage = true;
+            $location->is_external = true;
+        }
+
+        return view('locations/edit')->with('item', $location);
     }
 
     /**
@@ -93,7 +99,8 @@ class LocationsController extends Controller
         $location->fax = request('fax');
         $location->tag_color = $request->input('tag_color');
         $location->notes = $request->input('notes');
-        $location->is_storage = $request->boolean('is_storage');
+        $location->is_external = $request->boolean('is_external');
+        $location->is_storage = $location->is_external || $request->boolean('is_storage');
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));
         } else {
@@ -179,7 +186,8 @@ class LocationsController extends Controller
         $location->manager_id = $request->input('manager_id');
         $location->tag_color = $request->input('tag_color');
         $location->notes = $request->input('notes');
-        $location->is_storage = $request->boolean('is_storage');
+        $location->is_external = $request->boolean('is_external');
+        $location->is_storage = $location->is_external || $request->boolean('is_storage');
 
         if (Setting::getSettings()->scope_locations_fmcs) {
             $location->company_id = Company::getIdForCurrentUser($request->input('company_id'));

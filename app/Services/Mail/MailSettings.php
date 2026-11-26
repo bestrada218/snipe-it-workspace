@@ -2,6 +2,7 @@
 
 namespace App\Services\Mail;
 
+use App\Models\Actionlog;
 use App\Models\MailSetting;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -10,7 +11,6 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -96,6 +96,8 @@ class MailSettings
             'mail.mailers.smtp.port' => $port,
             // 465 is TLS from the first byte; 587 and 25 upgrade with STARTTLS.
             'mail.mailers.smtp.scheme' => $port === 465 ? 'smtps' : 'smtp',
+            'mail.mailers.smtp.require_tls' => true,
+            'mail.mailers.smtp.verify_peer' => true,
             'mail.mailers.smtp.username' => $settings['username'] ?? null,
             'mail.mailers.smtp.password' => $settings['password'] ?? null,
             'mail.from.address' => $settings['from_address'] ?? config('mail.from.address'),
@@ -132,7 +134,10 @@ class MailSettings
             'reply_to' => trim((string) ($input['reply_to'] ?? '')),
         ];
         $row->updated_by = $actor->id;
-        $row->save();
+        DB::transaction(function () use ($row, $actor, $saved): void {
+            $row->save();
+            Actionlog::logSettingsChanges($actor, 'SMTP settings', $saved, $row->settings);
+        });
         Cache::forget(self::CACHE_KEY);
     }
 
@@ -156,8 +161,8 @@ class MailSettings
             });
             $error = null;
         } catch (Throwable $exception) {
-            $error = Str::limit($exception->getMessage(), 500);
-            Log::warning('Test email failed: '.$error);
+            $error = trans('mail-settings.transport_problem');
+            Log::warning('Test email failed.', ['type' => $exception::class]);
         }
 
         self::recordStatus('test', $error, ['to' => $to]);
@@ -178,6 +183,7 @@ class MailSettings
      */
     public static function saveDigest(array $digest, User $actor): void
     {
+        $saved = self::digest();
         $row = self::row() ?? new MailSetting;
         $row->digest = [
             'enabled' => (bool) ($digest['enabled'] ?? false),
@@ -185,7 +191,10 @@ class MailSettings
             'hour' => max(0, min(23, (int) ($digest['hour'] ?? 7))),
         ];
         $row->updated_by = $actor->id;
-        $row->save();
+        DB::transaction(function () use ($row, $actor, $saved): void {
+            $row->save();
+            Actionlog::logSettingsChanges($actor, 'Daily email summary settings', $saved, $row->digest);
+        });
     }
 
     /**
@@ -200,7 +209,7 @@ class MailSettings
             $row->status = $status;
             $row->save();
         } catch (Throwable $exception) {
-            Log::warning('Could not record the mail status: '.$exception->getMessage());
+            Log::warning('Could not record the mail status.', ['type' => $exception::class]);
         }
     }
 

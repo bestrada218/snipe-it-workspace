@@ -427,6 +427,7 @@ return [
     'two_factor_enabled_warning' => 'Enabling two-factor if it is not currently enabled will immediately force you to authenticate with a Google Auth enrolled device. You will have the ability to enroll your device if one is not currently enrolled.',
     'two_factor_enabled_help' => 'This will turn on two-factor authentication using Google Authenticator.',
     'two_factor_optional' => 'Selective (Users can enable or disable if permitted)',
+    'two_factor_required_superusers' => 'Required for superadmins',
     'two_factor_required' => 'Required for all users',
     'two_factor_disabled' => 'Disabled',
     'two_factor_enter_code' => 'Enter Two-Factor Code',

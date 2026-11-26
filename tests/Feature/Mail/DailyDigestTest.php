@@ -68,7 +68,7 @@ class DailyDigestTest extends TestCase
         $this->artisan('snipeit:daily-digest')->assertSuccessful();
 
         Mail::assertSent(DailyDigestMail::class, 1);
-        Mail::assertSent(DailyDigestMail::class, fn (DailyDigestMail $mail) => $mail->hasTo('lead@example.com') && isset($mail->sections['returns']));
+        Mail::assertSent(DailyDigestMail::class, fn (DailyDigestMail $mail) => $mail->hasBcc('lead@example.com') && $mail->to === [] && isset($mail->sections['returns']));
     }
 
     public function test_nothing_is_sent_at_another_hour_or_with_nothing_pending(): void
@@ -100,6 +100,8 @@ class DailyDigestTest extends TestCase
         $html = (new DailyDigestMail(DailyDigest::sections()))->render();
 
         $this->assertStringContainsString(trans('mail-settings.digest.sections.returns'), $html);
-        $this->assertStringContainsString(route('returns.show', $return), $html);
+        $this->assertStringContainsString(route('home'), $html);
+        $this->assertStringNotContainsString(route('returns.show', $return), $html);
+        $this->assertStringNotContainsString(e($return->person->display_name), $html);
     }
 }

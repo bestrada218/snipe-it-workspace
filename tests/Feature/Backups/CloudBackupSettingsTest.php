@@ -7,6 +7,7 @@ use App\Models\BackupCloudSetting;
 use App\Models\User;
 use App\Services\Backups\CloudBackupSettings;
 use Google2FA;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -34,7 +35,7 @@ class CloudBackupSettingsTest extends TestCase
     private function confirmed(User $user): static
     {
         return $this->actingAs($user)->withSession([
-            RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp()],
+            RequireSensitiveConfirmation::SESSION_KEY => ['user' => $user->id, 'at' => now()->getTimestamp(), 'scope' => 'settings.cloud_backups.index'],
         ]);
     }
 
@@ -42,7 +43,7 @@ class CloudBackupSettingsTest extends TestCase
     private function onPage(User $user): static
     {
         return $this->actingAs($user)->withSession([
-            RequireSensitiveConfirmation::PAGE_TOKEN => ['user' => $user->id, 'at' => now()->getTimestamp(), 'token' => 'page-token'],
+            RequireSensitiveConfirmation::PAGE_TOKEN => ['user' => $user->id, 'at' => now()->getTimestamp(), 'token' => 'page-token', 'scope' => 'settings.cloud_backups.index'],
         ]);
     }
 
@@ -129,6 +130,30 @@ class CloudBackupSettingsTest extends TestCase
         $this->actingAs($user)->get(route('settings.cloud_backups.index'))->assertOk();
     }
 
+    public function test_a_cloud_confirmation_or_form_token_cannot_open_email_settings(): void
+    {
+        $user = $this->enrolledSuperuser();
+        $this->confirmed($user)->get(route('settings.mail.index'))->assertRedirect(route('sensitive.confirm'));
+        $this->onPage($user)->put(route('settings.mail.save'), ['_sensitive' => 'page-token'])
+            ->assertRedirect(route('sensitive.confirm'));
+    }
+
+    public function test_confirming_a_backup_download_only_allows_it_once(): void
+    {
+        $user = $this->enrolledSuperuser();
+        Storage::fake('backup')->put('backups/example.zip', 'Backup fixture');
+        $url = route('settings.backups.download', 'example.zip');
+
+        $this->actingAs($user)->get($url)->assertRedirect(route('sensitive.confirm'));
+        $this->post(route('sensitive.confirm.store'), [
+            'password' => 'correct-password',
+            'two_factor_code' => Google2FA::getCurrentOtp($user->two_factor_secret),
+        ])->assertRedirect($url);
+
+        $this->get($url)->assertDownload('example.zip');
+        $this->get($url)->assertRedirect(route('sensitive.confirm'));
+    }
+
     public function test_someone_without_two_factor_has_to_enroll_to_get_in(): void
     {
         $user = User::factory()->superuser()->create(['password' => bcrypt('correct-password'), 'two_factor_secret' => null, 'two_factor_enrolled' => 0]);
@@ -151,6 +176,9 @@ class CloudBackupSettingsTest extends TestCase
         $user->refresh();
         $this->assertSame(1, (int) $user->two_factor_enrolled);
         $this->assertSame($pending, $user->two_factor_secret);
+        $encrypted = DB::table('users')->where('id', $user->id)->value('two_factor_secret');
+        $this->assertNotSame($pending, $encrypted);
+        $this->assertSame($pending, Crypt::decryptString($encrypted));
     }
 
     public function test_credentials_are_stored_encrypted_and_kept_when_left_blank(): void
@@ -174,6 +202,11 @@ class CloudBackupSettingsTest extends TestCase
             's3' => ['enabled' => 1, 'key' => 'AKIAEXAMPLE', 'region' => 'eu-west-1', 'bucket' => 'workspace-backups'],
         ])->assertSessionHasNoErrors();
 
+        $this->assertDatabaseHas('action_logs', [
+            'created_by' => $user->id,
+            'note' => 'Cloud backup settings — s3.region',
+        ]);
+
         $saved = CloudBackupSettings::saved();
         $this->assertSame('super-secret-value', $saved['s3']['secret']);
         $this->assertSame('a-long-backup-password', $saved['password']);
@@ -194,6 +227,24 @@ class CloudBackupSettingsTest extends TestCase
         ])->assertSessionHasErrors(['password', 's3.key', 's3.secret', 's3.bucket', 'google.folder_id', 'google.service_account_json']);
 
         $this->assertSame(0, BackupCloudSetting::count());
+        $this->assertNull(session()->getOldInput('google.service_account_json'));
+        $this->assertNull(session()->getOldInput('_sensitive'));
+    }
+
+    public function test_invalid_fields_do_not_flash_cloud_credentials_to_the_session(): void
+    {
+        $this->onPage($this->enrolledSuperuser())->put(route('settings.cloud_backups.save'), [
+            '_sensitive' => 'page-token',
+            'password' => 'a-long-backup-password',
+            'password_confirmation' => 'a-long-backup-password',
+            's3' => ['secret' => 'example-s3-secret', 'bucket' => 'my-backups', 'endpoint' => 'http://storage.example.com'],
+            'google' => ['service_account_json' => '{"private_key":"example-private-key"}'],
+        ])->assertSessionHasErrors('s3.endpoint');
+
+        foreach (['_sensitive', 'password', 'password_confirmation', 's3.secret', 'google.service_account_json'] as $field) {
+            $this->assertNull(session()->getOldInput($field));
+        }
+        $this->assertSame('my-backups', session()->getOldInput('s3.bucket'));
     }
 
     public function test_saved_destinations_are_added_to_the_backup_config(): void
@@ -251,7 +302,8 @@ class CloudBackupSettingsTest extends TestCase
     {
         Event::fake([UnhealthyBackupWasFound::class]);
         Storage::fake('backup');
-        Storage::disk('backup')->put('backups/2026-11-25-01-30-00.zip', 'zip');
+        $backupName = now()->subMinute()->format('Y-m-d-H-i-s').'.zip';
+        Storage::disk('backup')->put('backups/'.$backupName, 'zip');
 
         CloudBackupSettings::save([
             'password' => 'a-long-backup-password',

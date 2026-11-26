@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Exception\NotSupportedException;
 use JsonException;
@@ -226,6 +227,10 @@ class Handler extends ExceptionHandler
                 $route = 'settings.labels.index';
             }
 
+            if (! Route::has($route)) {
+                return parent::render($request, $e);
+            }
+
             // Normalize the space-separated derived name to underscore
             // so compound class names (AssetModel -> "asset model" -> "asset_model")
             // resolve to keys that actually exist in general.php.
@@ -276,6 +281,12 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        '_sensitive',
+        'two_factor_code',
+        'two_factor_secret',
+        's3.secret',
+        'google.service_account_json',
+        'google.service_account_file',
     ];
 
     /**

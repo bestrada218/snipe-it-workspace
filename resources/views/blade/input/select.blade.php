@@ -5,11 +5,12 @@
     'selected' => null,
     'includeEmpty' => false,
     'forLivewire' => false,
+    'native' => false,
     'required' => false,
 ])
 
 <select
-    {{ $attributes->class(['select2', 'livewire-select2' => $forLivewire]) }}
+    {{ $attributes->class(['form-control' => $native, 'select2' => ! $native, 'livewire-select2' => ! $native && $forLivewire]) }}
     @required($required)
     @if($forLivewire) data-livewire-component="{{ $this->getId() }}" @endif
 >

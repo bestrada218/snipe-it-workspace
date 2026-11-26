@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'transport_problem' => 'Revisa el servidor de correo, las credenciales y el certificado TLS.',
     'title' => 'Correo',
     'open' => 'Correo y resumen diario',
     'card_help' => 'Servidor de envío de correos y resumen diario de pendientes.',

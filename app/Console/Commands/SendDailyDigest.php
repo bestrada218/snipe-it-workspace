@@ -6,6 +6,7 @@ use App\Mail\DailyDigestMail;
 use App\Services\Mail\DailyDigest;
 use App\Services\Mail\MailSettings;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
@@ -48,10 +49,11 @@ class SendDailyDigest extends Command
         }
 
         try {
-            Mail::to($recipients)->send(new DailyDigestMail($sections));
+            Mail::bcc($recipients)->send(new DailyDigestMail($sections));
         } catch (Throwable $error) {
-            MailSettings::recordStatus('digest', $error->getMessage(), ['sent' => false]);
-            $this->error('The daily summary could not be sent: '.$error->getMessage());
+            MailSettings::recordStatus('digest', trans('mail-settings.transport_problem'), ['sent' => false]);
+            Log::warning('Could not send the daily summary.', ['type' => $error::class]);
+            $this->error('The daily summary could not be sent.');
 
             return self::FAILURE;
         }

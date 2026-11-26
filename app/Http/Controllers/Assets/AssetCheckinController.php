@@ -12,6 +12,9 @@ use App\Models\CheckoutAcceptance;
 use App\Models\LicenseSeat;
 use App\Models\Location;
 use App\Models\Statuslabel;
+use App\Models\User;
+use App\Services\AssetReturns;
+use Illuminate\Validation\Rule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +81,9 @@ class AssetCheckinController extends Controller
             ->with('show_requestable_toggle', $showRequestableToggle)
             ->with('backto', $backto)
             ->with('checkoutLog', $checkoutLog)
+            ->with('ownWarehouseTree', AssetReturns::ownWarehouseTree())
+            ->with('returnPerson', $asset->assignedTo instanceof User ? $asset->assignedTo : null)
+            ->with('partner', AssetReturns::partnerName())
             ->with('table_name', 'Assets');
     }
 
@@ -108,6 +114,18 @@ class AssetCheckinController extends Controller
         }
 
         $this->authorize('checkin', $asset);
+
+        $warehouseId = null;
+        if ($request->has('warehouse_checkin') || $request->has('warehouse_location_id')) {
+            $ownWarehouseIds = AssetReturns::ownWarehouseLocations()->pluck('id')->all();
+            $warehouse = $request->validate([
+                'warehouse_location_id' => ['required', 'integer', Rule::in($ownWarehouseIds)],
+            ], [
+                'warehouse_location_id.required' => trans('asset-returns.choose_location'),
+                'warehouse_location_id.in' => trans('asset-returns.only_last_level'),
+            ]);
+            $warehouseId = (int) $warehouse['warehouse_location_id'];
+        }
 
         session()->put('checkedInFrom', $asset->assignedTo->id);
         session()->put('checkout_to_type', match ($asset->assigned_type) {
@@ -182,6 +200,11 @@ class AssetCheckinController extends Controller
                     ->with('error', trans('admin/hardware/message.create.target_not_found.location'));
             }
             $asset->{$field} = $submittedLocation->id;
+        }
+
+        if ($warehouseId !== null) {
+            $asset->location_id = $warehouseId;
+            $asset->warehouse_location_id = $warehouseId;
         }
 
         $originalValues = $asset->getRawOriginal();

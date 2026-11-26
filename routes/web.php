@@ -52,6 +52,7 @@ use App\Http\Controllers\UnacceptedAcceptancesController;
 use App\Http\Controllers\UploadedFilesController;
 use App\Http\Controllers\ViewAssetsController;
 use App\Livewire\Importer;
+use App\Http\Controllers\WarehouseInventoryController;
 use App\Models\MaintenanceType;
 use App\Models\ReportTemplate;
 use App\Services\HelpCenter;
@@ -515,7 +516,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
     // Backups
     Route::group(['prefix' => 'backups', 'middleware' => 'auth'], function () {
         Route::get('download/{filename}',
-            [SettingsController::class, 'downloadFile'])->name('settings.backups.download');
+            [SettingsController::class, 'downloadFile'])
+            ->middleware('confirm.sensitive:settings.backups.download')
+            ->name('settings.backups.download');
 
         Route::delete('delete/{filename}',
             [SettingsController::class, 'deleteFile'])->name('settings.backups.destroy');
@@ -554,7 +557,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
         ->name('sensitive.confirm.store');
 
     // Outgoing mail: holds the mail account's password, same protection.
-    Route::middleware('confirm.sensitive')->prefix('mail')->group(function () {
+    Route::middleware('confirm.sensitive:settings.mail.index')->prefix('mail')->group(function () {
         Route::get('/', [MailSettingsController::class, 'index'])
             ->name('settings.mail.index')
             ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.index')
@@ -565,7 +568,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
         Route::post('/digest/send', [MailSettingsController::class, 'sendDigest'])->name('settings.mail.digest.send');
     });
 
-    Route::middleware('confirm.sensitive')->prefix('backups/cloud')->group(function () {
+    Route::middleware('confirm.sensitive:settings.cloud_backups.index')->prefix('backups/cloud')->group(function () {
         Route::get('/', [CloudBackupSettingsController::class, 'index'])
             ->name('settings.cloud_backups.index')
             ->breadcrumbs(fn (Trail $trail) => $trail->parent('settings.backups.index')
@@ -993,10 +996,10 @@ Route::group(['prefix' => 'setup', 'middleware' => 'web'], function () {
         [SetupController::class, 'getSetupDone']
     )->name('setup.done');
 
-    Route::get(
+    Route::post(
         'mailtest',
         [SettingsController::class, 'ajaxTestEmail']
-    )->name('setup.mailtest');
+    )->middleware('throttle:5,1')->name('setup.mailtest');
 
     Route::get(
         '/',
@@ -1161,6 +1164,12 @@ Route::get('/changelog', ChangelogController::class)->middleware('auth')
     ->name('changelog')
     ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
         ->push(trans('general.workspace_changelog'), route('changelog')));
+
+Route::get('/inventory/warehouses', [WarehouseInventoryController::class, 'index'])
+    ->middleware('auth')
+    ->name('warehouse-inventory.index')
+    ->breadcrumbs(fn (Trail $trail) => $trail->parent('home')
+        ->push(trans('warehouse-inventory.title'), route('warehouse-inventory.index')));
 
 Route::view('/guide/asset-tags', 'guide.asset-tags')->middleware('auth')
     ->name('guide.asset-tags')

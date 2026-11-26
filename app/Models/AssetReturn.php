@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * A person returning what they hold, because they leave (termination) or
@@ -18,6 +20,10 @@ class AssetReturn extends Model
     use HasFactory;
 
     public const REASONS = ['termination', 'change'];
+
+    public const COMPANY_SCOPE = 'visible-to-company';
+
+    public const ACCESSORY_SCOPE = 'visible-with-accessory-access';
 
     /** Box shipment to the partner warehouse, in order. */
     public const SHIPPING_STEPS = ['address_confirmed_at', 'boxes_sent_at', 'boxes_shipped_at', 'warehouse_arrived_at'];
@@ -32,6 +38,26 @@ class AssetReturn extends Model
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(self::ACCESSORY_SCOPE, function (Builder $returns): void {
+            if (Auth::hasUser() && Gate::denies('index', Accessory::class)) {
+                $returns->whereDoesntHave('items', fn (Builder $items) => $items->where('item_type', Accessory::class));
+            }
+        });
+
+        static::addGlobalScope(self::COMPANY_SCOPE, function (Builder $returns): void {
+            $viewer = Auth::user();
+            if ($viewer === null || $viewer->isSuperUser() || ! Company::isFullMultipleCompanySupportEnabled()) {
+                return;
+            }
+
+            $returns->whereHas('person')->whereDoesntHave('items', function (Builder $items): void {
+                $items->whereDoesntHaveMorph('item', [Asset::class, Accessory::class]);
+            });
+        });
+    }
 
     public function person(): BelongsTo
     {

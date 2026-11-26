@@ -18,9 +18,12 @@ else
     COMPOSE=(sudo docker compose -f compose.workspace.yml)
 fi
 BRANCH="${WORKSPACE_BRANCH:-main}"
+pending_update="$(git rev-parse --git-path workspace-update-pending)"
+
+chmod 600 .env
 
 git fetch --quiet origin "$BRANCH"
-if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ] && [ "${1:-}" != "--force" ]; then
+if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ] && [ "${1:-}" != "--force" ] && [ ! -f "$pending_update" ]; then
     echo "Already up to date ($(git rev-parse --short HEAD))."
     exit 0
 fi
@@ -35,6 +38,7 @@ echo "1/4 Backing up the current data..."
 "${COMPOSE[@]}" exec -T --user docker app php artisan snipeit:backup --local-only --filename="pre-update-$(date +%Y-%m-%d-%H-%M-%S)"
 
 echo "2/4 Downloading the new version..."
+: >"$pending_update"
 previous="$(git rev-parse --short HEAD)"
 previous_version="$(cat VERSION 2>/dev/null || echo unknown)"
 git merge --ff-only --quiet "origin/$BRANCH"
@@ -43,13 +47,18 @@ echo "    What changed: CHANGELOG.md"
 git log --oneline "${previous}..HEAD" | sed 's/^/    /'
 
 echo "3/4 Rebuilding and restarting..."
-"${COMPOSE[@]}" build app
+build_options=(--pull)
+if [ "${1:-}" = "--force" ]; then
+    build_options+=(--no-cache)
+fi
+"${COMPOSE[@]}" build "${build_options[@]}" app
 "${COMPOSE[@]}" up -d
 
 echo "4/4 Checking the application..."
 port="$(grep '^APP_PORT=' .env | cut -d= -f2 | tr -d "'\"")"
 for _ in $(seq 1 60); do
-    if curl -fsS "http://localhost:${port:-8000}/health" >/dev/null 2>&1; then
+    if curl -fsS "http://localhost:${port:-8000}/health" 2>/dev/null | grep -Eq '"status"[[:space:]]*:[[:space:]]*"ok"'; then
+        rm -f "$pending_update"
         echo "Updated and running."
         # Copy the backups (the pre-update one included) to Documents.
         scripts/snipe-it-workspace sync-backups || true

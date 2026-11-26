@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Setting;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,33 +38,10 @@ class CheckForTwoFactor
      */
     public static function isComplete(Request $request): bool
     {
-        if (! Auth::check()) {
+        if (! Auth::user()?->two_factor_active()) {
             return true;
         }
 
-        $settings = Setting::getSettings();
-        if (! $settings) {
-            return true;
-        }
-
-        // Normalize to the only two "on" values (optional/required). Anything
-        // else — '', '0', null, the integer 0 SQLite occasionally hands back
-        // for an empty tinyInteger column — counts as disabled. Loose `== ''`
-        // would miscount '0' as enabled under PHP 8's stricter comparison
-        // rules and trigger spurious 403s, which is how this manifested on
-        // CI's SQLite even though local SQLite stored the value as ''.
-        $mode = (string) $settings->two_factor_enabled;
-        if ($mode !== '1' && $mode !== '2') {
-            return true;
-        }
-
-        // 2FA is optional and this user has not opted in.
-        if ($mode === '1' && auth()->user()->two_factor_optin != '1') {
-            return true;
-        }
-
-        // 2FA required (or opted in): session must carry the authed marker
-        // set by Auth\TwoFactorAuthController after a valid code is entered.
         return $request->hasSession()
             && $request->session()->get('2fa_authed') == auth()->id();
     }
@@ -89,27 +65,13 @@ class CheckForTwoFactor
             return $next($request);
         }
 
-        // Two-factor is enabled (either optional or required)
-        if ($settings = Setting::getSettings()) {
-            if (Auth::check() && ($settings->two_factor_enabled != '')) {
-                // This user is already 2fa-authed
-                if ($request->session()->get('2fa_authed') == auth()->id()) {
-                    return $next($request);
-                }
-
-                // Two-factor is optional and the user has NOT opted in, let them through
-                if (($settings->two_factor_enabled == '1') && (auth()->user()->two_factor_optin != '1')) {
-                    return $next($request);
-                }
-
-                redirect()->setIntendedUrl(url()->full()); // save the 'current' URL so we can send the user back to it?
-                // Otherwise make sure they're enrolled and show them the 2FA code screen
-                if ((auth()->user()->two_factor_secret != '') && (auth()->user()->two_factor_enrolled == '1')) {
-                    return redirect()->route('two-factor')->with('info', trans('auth/message.two_factor.enter_two_factor_code'));
-                }
-
-                return redirect()->route('two-factor-enroll')->with('success', trans('auth/message.two_factor.please_enroll'));
+        if (! self::isComplete($request)) {
+            redirect()->setIntendedUrl(url()->full());
+            if (Auth::user()->two_factor_active_and_enrolled() && filled(Auth::user()->two_factor_secret)) {
+                return redirect()->route('two-factor')->with('info', trans('auth/message.two_factor.enter_two_factor_code'));
             }
+
+            return redirect()->route('two-factor-enroll')->with('success', trans('auth/message.two_factor.please_enroll'));
         }
 
         return $next($request);

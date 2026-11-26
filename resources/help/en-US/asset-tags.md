@@ -39,6 +39,8 @@ The tag is built above on its own. **The tag field cannot be typed by hand**, wh
 
 When creating assets you can add rows to register several units of the same model in one step. Each row gets its own sequence number (the next free one, and so on).
 
+<!-- admin-only -->
+
 ## Tag types (PP)
 
 Types are managed in **Settings → Asset Tags → Tag types (PP)** ([open](route:settings.asset_tag_types.index)). There is also a **Manage types** link next to the tag builder.
@@ -52,3 +54,5 @@ Types are managed in **Settings → Asset Tags → Tag types (PP)** ([open](rout
 ## Repeated tags from old data
 
 If data with repeated numbers was imported, an administrator can list them with `php artisan snipeit:asset-tag-duplicates`. The first record of each number keeps it and the others must be corrected.
+
+<!-- end-admin-only -->

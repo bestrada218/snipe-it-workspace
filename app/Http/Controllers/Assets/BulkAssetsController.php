@@ -21,6 +21,7 @@ use App\Models\Location;
 use App\Models\Setting;
 use App\Models\Statuslabel;
 use App\Models\User;
+use App\Services\AssetReturns;
 use App\Services\DuplicateAssignments;
 use App\View\Label;
 use Carbon\Carbon;
@@ -287,6 +288,10 @@ class BulkAssetsController extends Controller
         }
 
         $assets = Asset::whereIn('id', $request->input('ids'))->get();
+        $warehouse = AssetReturns::warehouseEditAttributes($request);
+        if ($warehouse !== []) {
+            AssetReturns::requireUnassignedForWarehouseEdit($assets);
+        }
 
         /**
          * If ANY of these are filled, prepare to update the values on the assets.
@@ -301,7 +306,7 @@ class BulkAssetsController extends Controller
         // in different currencies, the value written here reads as
         // the system default for every row. Callers are expected to
         // narrow the selection to a single currency first. See #19564.
-        if (($request->filled('name'))
+        if ($warehouse !== [] || ($request->filled('name'))
             || ($request->filled('purchase_date'))
             || ($request->filled('expected_checkin'))
             || ($request->filled('supplier_id'))
@@ -563,7 +568,7 @@ class BulkAssetsController extends Controller
                 }
 
                 // Check if it passes validation, and then try to save
-                if (! $asset->update($this->update_array)) {
+                if (! $asset->fill($this->update_array)->forceFill($warehouse)->save()) {
 
                     // Build the error array
                     foreach ($asset->getErrors()->toArray() as $key => $message) {
@@ -1092,6 +1097,11 @@ class BulkAssetsController extends Controller
         $asset_ids = array_filter($request->input('selected_assets'));
         $assets = Asset::whereIn('id', $asset_ids)->get();
 
+        $warehouse = AssetReturns::warehouseEditAttributes($request);
+        if ($warehouse !== []) {
+            AssetReturns::requireUnassignedForWarehouseEdit($assets);
+        }
+
         // Resolve the submitted location once, before we touch any asset,
         // so a location the actor can't see (or a fabricated id) fails
         // fast. Matches the pattern the storeCheckin method uses.
@@ -1121,9 +1131,9 @@ class BulkAssetsController extends Controller
         $errors = [];
         $succeeded = 0;
 
-        DB::transaction(function () use ($assets, $request, $submittedLocation, &$errors, &$succeeded) {
+        DB::transaction(function () use ($assets, $request, $submittedLocation, $warehouse, &$errors, &$succeeded) {
             foreach ($assets as $asset) {
-                $rowError = $this->auditSingleAsset($asset, $request, $submittedLocation);
+                $rowError = $this->auditSingleAsset($asset, $request, $submittedLocation, $warehouse);
                 if ($rowError === null) {
                     $succeeded++;
                 } else {
@@ -1161,7 +1171,7 @@ class BulkAssetsController extends Controller
      * - A single uploaded image is copied per-asset (per-row filename
      *   avoids collisions when two audits fire in the same second).
      */
-    private function auditSingleAsset(Asset $asset, UploadFileRequest $request, ?Location $submittedLocation): ?array
+    private function auditSingleAsset(Asset $asset, UploadFileRequest $request, ?Location $submittedLocation, array $warehouse): ?array
     {
         $this->authorize('audit', $asset);
 
@@ -1174,7 +1184,11 @@ class BulkAssetsController extends Controller
 
         if ($submittedLocation && $request->input('update_location') == '1') {
             $asset->location_id = $submittedLocation->id;
+            if ($asset->isDirty('location_id')) {
+                $asset->warehouse_location_id = null;
+            }
         }
+        $asset->forceFill($warehouse);
 
         $asset->unsetEventDispatcher();
 
@@ -1189,7 +1203,7 @@ class BulkAssetsController extends Controller
 
         $asset->logAudit(
             $request->input('note'),
-            $submittedLocation?->id,
+            $warehouse['location_id'] ?? $submittedLocation?->id,
             $file_name,
             $originalValues,
         );

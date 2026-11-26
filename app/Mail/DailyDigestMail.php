@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Envelope;
 class DailyDigestMail extends BaseMailable
 {
     /**
-     * @param  array<string, array{count: int, items: list<array{label: string, detail: string, url: string}>}>  $sections
+     * @param  array<string, array{count: int}>  $sections
      */
     public function __construct(public readonly array $sections) {}
 

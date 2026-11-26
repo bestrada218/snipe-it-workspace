@@ -18,6 +18,8 @@ From then on, whenever it is asked, open the app and type the current code.
 
 > If you change or lose your phone, ask an administrator to **reset your two-factor** from your user profile; next time you set it up again with the new phone.
 
+<!-- admin-only -->
+
 ### Requiring it at sign-in
 
 In **Settings → Security**, **Enable two-factor authentication**, an administrator chooses:
@@ -37,11 +39,13 @@ The [Cloud copies](help:backups#cloud-copies) and [Email](help:email-and-summary
 - **Two-factor is mandatory** here: if your account does not have it, the same screen asks you to set it up before letting you in.
 - The keys are stored **encrypted** and never shown again.
 
+<!-- end-admin-only -->
+
 ## Permissions
 
 What each person can see and do depends on their **groups** and permissions:
 
 - **Superadmins** can do everything, Settings included.
 - **Groups** set permissions per module (view, create, edit, check out, delete).
-- A group can be [limited to a location](help:locations-and-inventory#groups-limited-to-a-location).
+- A group can be limited to a location.
 - Search and lists only show what each person is allowed to see.

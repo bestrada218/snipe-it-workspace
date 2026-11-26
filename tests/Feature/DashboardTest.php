@@ -8,6 +8,7 @@ use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\User;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -63,6 +64,35 @@ class DashboardTest extends TestCase
         // admins on empty installs) must also be absent for
         // non-admins regardless of inventory state.
         $response->assertDontSee(trans('general.dashboard_empty'), false);
+    }
+
+    #[DataProvider('select2Locales')]
+    public function test_dashboard_loads_an_available_select2_language(string $locale, ?string $file): void
+    {
+        $response = $this->actingAs(User::factory()->admin()->create(['locale' => $locale]))
+            ->get(route('home'))
+            ->assertOk();
+
+        if ($file === null) {
+            $response->assertDontSee('/js/select2/i18n/', false);
+
+            return;
+        }
+
+        $response->assertSee('src="'.url('js/select2/i18n/'.$file.'.js').'"', false);
+        if ($locale !== $file) {
+            $response->assertDontSee('/js/select2/i18n/'.$locale.'.js', false);
+        }
+    }
+
+    public static function select2Locales(): array
+    {
+        return [
+            'Spanish (Colombia)' => ['es-CO', 'es'],
+            'Portuguese (Brazil)' => ['pt-BR', 'pt-BR'],
+            'English (US)' => ['en-US', 'en'],
+            'unavailable translation' => ['am-ET', null],
+        ];
     }
 
     public function test_counts_are_loaded_correctly_for_admins(): void

@@ -72,6 +72,10 @@
                     </div>
                 </div>
 
+                @if (! $asset->assigned_to)
+                    <x-form.warehouse-edit />
+                @endif
+
                 {{-- Last audit (read-only). --}}
                 <x-form.row :label="trans('general.last_audit')" name="last_audit_display" input_div_class="col-md-8">
                     <x-slot:input>

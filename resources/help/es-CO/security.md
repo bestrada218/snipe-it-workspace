@@ -18,6 +18,8 @@ Desde ese momento, cada vez que se pida, abre la aplicación y escribe el códig
 
 > Si cambias o pierdes el celular, pide a un administrador que **restablezca tu doble factor** desde tu perfil de usuario; la próxima vez lo vuelves a activar con el celular nuevo.
 
+<!-- admin-only -->
+
 ### Exigirlo al iniciar sesión
 
 En **Configuraciones → Seguridad**, **Activar la verificación de dos factores**, un administrador elige:
@@ -37,11 +39,13 @@ Las secciones [Copia en la nube](help:backups#copia-en-la-nube) y [Correo](help:
 - **El doble factor es obligatorio** aquí: si tu cuenta no lo tiene, la misma pantalla te pide activarlo antes de dejarte pasar.
 - Las llaves se guardan **cifradas** y nunca se vuelven a mostrar.
 
+<!-- end-admin-only -->
+
 ## Permisos
 
 Lo que cada persona puede ver y hacer depende de sus **grupos** y permisos:
 
 - Los **superadministradores** pueden todo, incluidas las Configuraciones.
 - Los **grupos** definen permisos por módulo (ver, crear, editar, asignar, borrar).
-- Un grupo puede quedar [limitado a una ubicación](help:locations-and-inventory#grupos-limitados-a-una-ubicacion).
+- Un grupo puede quedar limitado a una ubicación.
 - La búsqueda y los listados solo muestran lo que cada persona tiene permitido ver.

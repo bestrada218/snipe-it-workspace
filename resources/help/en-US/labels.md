@@ -20,6 +20,8 @@ The tag's **barcode or QR code** sits beside it without covering the text.
 
 A print-ready view opens with the configured label format. Use the label printer and check in the preview that the size matches the roll.
 
+<!-- admin-only -->
+
 ## Setting up the format
 
 In **Settings → Labels** an administrator sets:
@@ -30,3 +32,5 @@ In **Settings → Labels** an administrator sets:
 - The **code type** (QR or barcode) and whether the logo is printed.
 
 > After changing the template, print a test label first.
+
+<!-- end-admin-only -->

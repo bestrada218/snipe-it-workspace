@@ -42,5 +42,5 @@ return [
     'signed_by' => 'Firmado por:',
     'clone' => 'Clonar localización',
     'is_storage' => 'Bodega / almacenamiento',
-    'is_storage_help' => 'Marca las bodegas o cuartos de almacenamiento. Lo que quede asignado aquí se muestra como guardado en bodega, no como un activo fijo en uso.',
+    'is_storage_help' => 'Marca las áreas de almacenamiento físico. Un activo puede estar en una bodega y seguir sin asignar. Los activos almacenados se excluyen de la vista de activos fijos en uso.',
 ];

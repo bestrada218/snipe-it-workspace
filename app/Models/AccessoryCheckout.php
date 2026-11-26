@@ -6,6 +6,7 @@ use App\Models\Builders\AccessoryCheckoutQueryBuilder;
 use App\Models\Traits\CompanyableChildTrait;
 use App\Models\Traits\Searchable;
 use App\Presenters\AccessoryPresenter;
+use App\Services\AccessoryStockLocations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,23 @@ class AccessoryCheckout extends Model
     use CompanyableChildTrait;
     use HasFactory;
     use Searchable;
+
+    public ?int $stockLocationId = null;
+
+    protected function performInsert(Builder $query): bool
+    {
+        return $this->getConnection()->transaction(function () use ($query): bool {
+            $accessory = Accessory::whereKey($this->accessory_id)->lockForUpdate()->firstOrFail();
+            $remainingBeforeInsert = $accessory->numRemaining();
+            if (! parent::performInsert($query)) {
+                return false;
+            }
+
+            AccessoryStockLocations::take($accessory, $this->stockLocationId, $remainingBeforeInsert);
+
+            return true;
+        });
+    }
 
     protected $fillable = [
         'accessory_id',

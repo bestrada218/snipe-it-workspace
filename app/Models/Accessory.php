@@ -515,6 +515,13 @@ class Accessory extends SnipeModel
         return (int) $this->numCheckedOut();
     }
 
+    protected function validateAvailableQuantityAfterAdjustment(int $available): void
+    {
+        if ($available < \App\Services\AccessoryStockLocations::trackedCount($this)) {
+            throw new \DomainException(trans('admin/accessories/general.stock_quantity_floor'));
+        }
+    }
+
     /**
      * Check how many items of an accessory remain.
      *

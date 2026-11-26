@@ -268,7 +268,7 @@
 
                                 @if($user->vip == '1')
                                     <x-icon type="vip" class="fa-fw text-warning"/>
-                                    {{ trans('admin/users/general.vip_label') }}
+                                    {{ trans('admin/users/general.priority_user_label') }}
                                     <br>
                                 @endif
 

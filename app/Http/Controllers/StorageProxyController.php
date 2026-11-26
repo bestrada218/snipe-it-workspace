@@ -17,7 +17,11 @@ class StorageProxyController extends Controller
      */
     public function show(string $path): Response|StreamedResponse
     {
-        if ($this->hasPathTraversalSegments($path)) {
+        if (! config('filesystems.public_proxy') || $this->hasPathTraversalSegments($path)) {
+            abort(404);
+        }
+
+        if ($this->overlapsPrivateStorage()) {
             abort(404);
         }
 
@@ -26,7 +30,7 @@ class StorageProxyController extends Controller
         // The S3 adapter includes the disk's root prefix in generated URLs,
         // but Flysystem also prepends it internally on every operation.
         // Strip it here to avoid double-prefixing.
-        $root = trim(config('filesystems.disks.public.root', ''), '/');
+        $root = trim((string) config('filesystems.disks.public.root'), '/');
         if ($root !== '' && str_starts_with($path, $root.'/')) {
             $path = substr($path, strlen($root) + 1);
         }
@@ -39,26 +43,62 @@ class StorageProxyController extends Controller
         $lastModified = $disk->lastModified($path);
         $etag = md5($path.$lastModified);
         $size = $disk->size($path);
+        $headers = [
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            'X-Content-Type-Options' => 'nosniff',
+            'ETag' => '"'.$etag.'"',
+        ];
 
         if ($this->isNotModified($etag, $lastModified)) {
             return response('', 304)
-                ->header('ETag', '"'.$etag.'"')
+                ->withHeaders($headers)
                 ->header('Cache-Control', 'public, max-age=86400');
+        }
+
+        if (! in_array($mimeType, ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/webp', 'image/avif', 'image/bmp', 'image/x-icon', 'image/vnd.microsoft.icon'], true)) {
+            $mimeType = 'application/octet-stream';
+            $headers['Content-Disposition'] = 'attachment';
         }
 
         return new StreamedResponse(function () use ($disk, $path) {
             $stream = $disk->readStream($path);
-            fpassthru($stream);
             if (is_resource($stream)) {
-                fclose($stream);
+                try {
+                    fpassthru($stream);
+                } finally {
+                    fclose($stream);
+                }
             }
-        }, 200, [
+        }, 200, $headers + [
             'Content-Type' => $mimeType,
             'Content-Length' => $size,
-            'ETag' => '"'.$etag.'"',
             'Last-Modified' => gmdate('D, d M Y H:i:s', $lastModified).' GMT',
             'Cache-Control' => 'public, max-age=86400',
         ]);
+    }
+
+    private function overlapsPrivateStorage(): bool
+    {
+        $public = config('filesystems.disks.public');
+        if (($public['driver'] ?? null) !== 's3') {
+            return false;
+        }
+
+        $publicRoot = trim((string) ($public['root'] ?? ''), '/');
+        foreach ([config('filesystems.default'), 'backup', 'backup_s3'] as $diskName) {
+            $private = config('filesystems.disks.'.$diskName, []);
+            if (($private['driver'] ?? null) !== 's3' || ($private['bucket'] ?? null) !== ($public['bucket'] ?? null)) {
+                continue;
+            }
+
+            $privateRoot = trim((string) ($private['root'] ?? ''), '/');
+            if ($publicRoot === '' || $privateRoot === '' || $publicRoot === $privateRoot
+                || str_starts_with($publicRoot, $privateRoot.'/') || str_starts_with($privateRoot, $publicRoot.'/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isNotModified(string $etag, int $lastModified): bool

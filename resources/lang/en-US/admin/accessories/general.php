@@ -21,4 +21,9 @@ return [
     'delete_disabled' => 'This accessory cannot be deleted yet because some items are still checked out.',
     'accessory_deleted_warning' => 'This accessory has been deleted. You must restore it before you can assign it.',
 
+    'stock_by_location' => 'Available units by warehouse',
+    'stock_pick_from' => 'Pick up from',
+    'stock_pick_help' => 'If no warehouse is selected, stock without a location is used first, followed by the oldest stored unit you can access.',
+    'stock_location_unavailable' => 'There are no available units in that warehouse. Choose another warehouse.',
+    'stock_quantity_floor' => 'Available quantity would fall below the number of units recorded in warehouses.',
 ];

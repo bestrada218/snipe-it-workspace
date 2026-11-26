@@ -135,23 +135,24 @@
                         </div>
                     </div>
 
-                        {{-- Location and default-location pickers. Both are
-                             pre-populated with the asset's rtd_location_id so
-                             the common case (submit without touching either
-                             field) resets `location` to rtd and leaves the
-                             default unchanged, matching the codebase-wide
-                             checkin convention. Fixes #19401, where a blank
-                             submission used to wipe `location` to null.
-
-                             Users can override either field by picking a
-                             different location or clearing via the select2 X
-                             button. --}}
-                    <x-input.location-select
-                        :label="trans('general.location')"
-                        name="location_id"
-                        :selected="old('location_id', $asset->rtd_location_id)"
-                        :company_id="$asset->company_id"
-                    />
+                    <input type="hidden" name="warehouse_checkin" value="1">
+                    <x-form.row :label="trans('asset-returns.checkin_warehouse')" name="warehouse_location_id" input_div_class="col-md-8">
+                        <x-slot:input>
+                            <x-input.warehouse-location-select id="warehouse_location_id" name="warehouse_location_id"
+                                :tree="$ownWarehouseTree" :selected="old('warehouse_location_id')" required />
+                            <x-form.error name="warehouse_location_id" />
+                            @if ($ownWarehouseTree->where('selectable', true)->isEmpty())
+                                <p class="help-block">{{ trans('asset-returns.no_locations') }}</p>
+                            @endif
+                            @if ($returnPerson)
+                                <p class="help-block">
+                                    <a href="{{ route('returns.create', ['user_id' => $returnPerson->id, 'asset_id' => $asset->id]) }}">
+                                        {{ trans('asset-returns.checkin_send_to_partner', ['partner' => $partner]) }}
+                                    </a>
+                                </p>
+                            @endif
+                        </x-slot:input>
+                    </x-form.row>
 
                         <x-input.location-select
                             :label="trans('admin/hardware/form.default_location')"

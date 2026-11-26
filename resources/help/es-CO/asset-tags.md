@@ -39,6 +39,8 @@ La placa se arma arriba sola. **El campo de la placa no se escribe a mano**: as�
 
 Al crear activos puedes agregar filas para registrar varias unidades del mismo modelo en un solo paso. Cada fila recibe su propio consecutivo (el siguiente libre, y así sucesivamente).
 
+<!-- admin-only -->
+
 ## Tipos de placa (PP)
 
 Los tipos se administran en **Configuraciones → Placas de activos → Tipos de placa (PP)** ([abrir](route:settings.asset_tag_types.index)). También hay un enlace **Administrar tipos** junto al constructor de la placa.
@@ -52,3 +54,5 @@ Los tipos se administran en **Configuraciones → Placas de activos → Tipos de
 ## Placas repetidas de datos antiguos
 
 Si se importaron datos con números repetidos, un administrador puede listarlos con el comando `php artisan snipeit:asset-tag-duplicates`. El primer registro de cada número lo conserva y los demás deben corregirse.
+
+<!-- end-admin-only -->

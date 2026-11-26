@@ -84,10 +84,11 @@ class SensitiveConfirmationController extends Controller
         }
 
         // A one-time pass: the page opens once, and asks again next time.
-        RequireSensitiveConfirmation::grant($request);
+        $intended = $request->session()->pull(RequireSensitiveConfirmation::INTENDED, ['scope' => 'settings.cloud_backups.index', 'parameters' => []]);
+        RequireSensitiveConfirmation::grant($request, $intended['scope']);
         Log::info("User {$user->id} confirmed their password and two-factor code for a sensitive page.");
 
-        $response = redirect($this->intended($request));
+        $response = redirect()->route($intended['scope'], $intended['parameters']);
 
         return $enrolling ? $response->with('success', trans('cloud-backups.enrolled')) : $response;
     }
@@ -95,14 +96,6 @@ class SensitiveConfirmationController extends Controller
     private function hasTwoFactor(User $user): bool
     {
         return strlen((string) $user->two_factor_secret) >= 16 && (int) $user->two_factor_enrolled === 1;
-    }
-
-    private function intended(Request $request): string
-    {
-        $url = (string) $request->session()->pull('url.sensitive_intended', route('settings.cloud_backups.index'));
-
-        // Only this application's own pages.
-        return str_starts_with($url, url('/')) ? $url : route('settings.cloud_backups.index');
     }
 
     private function settingsSiteName(): string

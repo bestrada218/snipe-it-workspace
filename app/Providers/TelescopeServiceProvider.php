@@ -35,14 +35,17 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     protected function hideSensitiveRequestDetails(): void
     {
-        if ($this->app->environment('local')) {
-            return;
-        }
-
-        Telescope::hideRequestParameters(['_token']);
+        Telescope::hideRequestParameters([
+            '_token', '_sensitive', 'password', 'password_confirmation', 'current_password',
+            'two_factor_code', 'two_factor_secret', 'SAMLResponse', 'SAMLRequest', 'code',
+            'client_secret', 'access_token', 'refresh_token', 'ldaptest_password',
+            's3', 'google',
+        ]);
 
         Telescope::hideRequestHeaders([
             'cookie',
+            'authorization',
+            'proxy-authorization',
             'x-csrf-token',
             'x-xsrf-token',
         ]);

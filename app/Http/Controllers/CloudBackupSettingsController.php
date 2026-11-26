@@ -6,6 +6,7 @@ use App\Services\Backups\CloudBackupSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 use Illuminate\View\View;
 
@@ -47,19 +48,13 @@ class CloudBackupSettingsController extends Controller
             return redirect()->route('settings.cloud_backups.index')->with('error', trans('general.feature_disabled'));
         }
 
-        if ($request->hasFile('google.service_account_file')) {
-            $request->merge(['google' => array_merge((array) $request->input('google'), [
-                'service_account_json' => (string) file_get_contents($request->file('google.service_account_file')->getRealPath()),
-            ])]);
-        }
-
         $request->validate([
             'password' => ['nullable', 'string', 'min:12', 'confirmed'],
             's3.key' => ['nullable', 'string', 'max:255'],
             's3.secret' => ['nullable', 'string', 'max:255'],
             's3.region' => ['nullable', 'string', 'max:64'],
             's3.bucket' => ['nullable', 'string', 'max:255'],
-            's3.endpoint' => ['nullable', 'url:https,http', 'max:255'],
+            's3.endpoint' => ['nullable', 'url:https', 'max:255'],
             's3.root' => ['nullable', 'string', 'max:255'],
             'google.service_account_file' => ['nullable', 'file', 'max:20'],
             'google.service_account_json' => ['nullable', 'string', 'max:20000'],
@@ -68,10 +63,18 @@ class CloudBackupSettingsController extends Controller
             'password' => trans('cloud-backups.password'),
         ]);
 
+        if ($request->hasFile('google.service_account_file')) {
+            $json = file_get_contents($request->file('google.service_account_file')->getRealPath());
+            if ($json === false || strlen($json) > 20000) {
+                throw ValidationException::withMessages(['google.service_account_file' => trans('cloud-backups.invalid_service_account')]);
+            }
+            $request->merge(['google.service_account_json' => $json]);
+        }
+
         $validator = validator([], []);
         $this->checkDestinations($request, $validator);
         if ($validator->errors()->isNotEmpty()) {
-            return back()->withErrors($validator)->withInput($request->except(['password', 'password_confirmation', 's3.secret', 'google.service_account_json']));
+            throw new ValidationException($validator);
         }
 
         CloudBackupSettings::save($request->all(), $request->user());

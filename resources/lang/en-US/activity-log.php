@@ -46,6 +46,8 @@ return [
         'note' => 'Note',
     ],
     'actions' => [
+        'logged_in' => 'Signed in',
+        'logged_out' => 'Signed out',
         'create' => 'Created :type',
         'update' => 'Updated :type',
         'delete' => 'Deleted :type',

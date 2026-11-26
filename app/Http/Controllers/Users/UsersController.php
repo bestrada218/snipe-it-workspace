@@ -602,7 +602,7 @@ class UsersController extends Controller
                 trans('general.notes'),
                 trans('admin/users/table.activated'),
                 trans('general.created_at'),
-                trans('general.importer.vip'),
+                trans('admin/users/general.priority_user_label'),
                 trans('admin/users/general.remote'),
                 trans('general.language'),
                 trans('general.autoassign_licenses'),

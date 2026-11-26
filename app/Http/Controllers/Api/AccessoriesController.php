@@ -707,6 +707,7 @@ class AccessoriesController extends Controller
                     'note' => $request->input('note'),
                 ]);
 
+                $accessory_checkout->stockLocationId = $request->filled('stock_location_id') ? $request->integer('stock_location_id') : null;
                 $accessory_checkout->created_by = auth()->id();
                 $accessory_checkout->save();
 

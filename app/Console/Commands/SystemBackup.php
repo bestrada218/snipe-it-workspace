@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\Backups\CloudBackupSettings;
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,7 @@ use RuntimeException;
 use Spatie\Backup\Events\BackupZipWasCreated;
 use Spatie\Backup\Listeners\EncryptBackupArchive;
 use Throwable;
+use ZipArchive;
 
 class SystemBackup extends Command
 {
@@ -65,8 +67,18 @@ class SystemBackup extends Command
         // The archive carries the database and possibly the .env file: it
         // never leaves the server unencrypted. Keep the local copy and fail
         // so monitoring and Settings > Backups report it.
-        $refusedCloud = $cloudDisks !== [] && blank(config('backup.backup.password'));
-        $copyTo = ($this->option('local-only') || $refusedCloud) ? [] : $cloudDisks;
+        $copyTo = $this->option('local-only') ? [] : $cloudDisks;
+        $password = config('backup.backup.password');
+        $localIsRemote = config('filesystems.disks.backup.driver') !== 'local';
+        if ($localIsRemote && (blank($password) || config('backup.backup.encryption') !== 'default' || ! EncryptBackupArchive::shouldEncrypt())) {
+            $this->error('The primary backup disk is remote and requires archive encryption.');
+
+            return self::FAILURE;
+        }
+        $refusedCloud = $copyTo !== [] && blank($password);
+        if ($refusedCloud) {
+            $copyTo = [];
+        }
 
         // spatie writes the archive to the local disk only; each cloud copy is
         // made here, so one failing destination neither stops the others nor
@@ -85,21 +97,57 @@ class SystemBackup extends Command
         }
 
         $results = [];
+        $digest = null;
+        $staged = null;
+        $stagedPath = null;
+        if ($copyTo !== []) {
+            try {
+                $staged = $this->stageBackup($local, $storedName);
+                $stagedPath = stream_get_meta_data($staged)['uri'];
+                if (! $this->isEncrypted($stagedPath)) {
+                    throw new RuntimeException('Could not verify AES-256 encryption on the backup.');
+                }
+                $digest = hash_file('sha256', $stagedPath);
+                if ($digest === false) {
+                    throw new RuntimeException('The staged backup could not be checksummed.');
+                }
+            } catch (Throwable $error) {
+                $failed = array_merge($failed, $copyTo);
+                $results = array_fill_keys($copyTo, 'The backup could not be verified as AES-256 encrypted and was not uploaded.');
+                $copyTo = [];
+                Log::error('Backup verification failed before cloud copy.', ['type' => $error::class]);
+            }
+        }
+
         foreach ($copyTo as $disk) {
             try {
                 $cloud = Storage::disk($disk);
-                $cloud->writeStream($storedName, $local->readStream($storedName));
-                if (! $cloud->exists($storedName)) {
-                    throw new RuntimeException('the file is not there after the upload');
+                $stream = fopen($stagedPath, 'rb');
+                if (! is_resource($stream)) {
+                    throw new RuntimeException('The local backup could not be read.');
+                }
+                try {
+                    if (! $cloud->writeStream($storedName, $stream)) {
+                        throw new RuntimeException('The destination did not accept the backup.');
+                    }
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+                if ($this->digest($cloud, $storedName) !== $digest) {
+                    throw new RuntimeException('The destination checksum did not match the local backup.');
                 }
                 $stored[] = $disk;
                 $results[$disk] = null;
             } catch (Throwable $error) {
                 $failed[] = $disk;
-                $results[$disk] = $error->getMessage();
-                $this->error("Copying the backup to {$disk} failed: {$error->getMessage()}");
-                Log::error("Backup copy to {$disk} failed: {$error->getMessage()}");
+                $results[$disk] = 'The upload or checksum verification failed. Check the destination and its read and write permissions.';
+                Log::error('Cloud backup upload or checksum verification failed.', ['disk' => $disk, 'type' => $error::class]);
             }
+        }
+        if (is_resource($staged)) {
+            fclose($staged);
         }
 
         if ($stored !== []) {
@@ -117,6 +165,80 @@ class SystemBackup extends Command
         }
 
         return ($failed === [] && ! $refusedCloud) ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function isEncrypted(string $path): bool
+    {
+        $archive = new ZipArchive;
+        if ($archive->open($path, ZipArchive::RDONLY) !== true) {
+            return false;
+        }
+
+        try {
+            $hasFiles = false;
+            for ($index = 0; $index < $archive->numFiles; $index++) {
+                $entry = $archive->statIndex($index);
+                if ($entry === false) {
+                    return false;
+                }
+                if (str_ends_with($entry['name'], '/')) {
+                    continue;
+                }
+                if (($entry['encryption_method'] ?? null) !== ZipArchive::EM_AES_256) {
+                    return false;
+                }
+                $hasFiles = true;
+            }
+
+            return $hasFiles;
+        } finally {
+            $archive->close();
+        }
+    }
+
+    /** @return resource */
+    private function stageBackup(FilesystemAdapter $disk, string $path)
+    {
+        $source = $disk->readStream($path);
+        if (! is_resource($source)) {
+            throw new RuntimeException('The local backup could not be read.');
+        }
+
+        $staged = null;
+        try {
+            $staged = tmpfile();
+            if ($staged === false || stream_copy_to_stream($source, $staged) !== $disk->size($path) || ! fflush($staged)) {
+                throw new RuntimeException('The backup could not be staged in full.');
+            }
+
+            return $staged;
+        } catch (Throwable $error) {
+            if (is_resource($staged)) {
+                fclose($staged);
+            }
+            throw $error;
+        } finally {
+            fclose($source);
+        }
+    }
+
+    private function digest(FilesystemAdapter $disk, string $path): string
+    {
+        $stream = $disk->readStream($path);
+        if (! is_resource($stream)) {
+            throw new RuntimeException('The backup could not be read for verification.');
+        }
+
+        try {
+            $hash = hash_init('sha256');
+            if (hash_update_stream($hash, $stream) !== $disk->size($path)) {
+                throw new RuntimeException('The backup could not be read in full.');
+            }
+
+            return hash_final($hash);
+        } finally {
+            fclose($stream);
+        }
     }
 
     /**

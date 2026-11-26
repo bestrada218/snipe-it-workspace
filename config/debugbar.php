@@ -16,7 +16,7 @@ return [
      |
      */
 
-    'enabled' => env('DEBUGBAR_ENABLED'),
+    'enabled' => env('APP_ENV') === 'local' && env('DEBUGBAR_ENABLED', false),
     'collect_jobs' => env('DEBUGBAR_COLLECT_JOBS', false),
     'except' => [
         'telescope*',

@@ -32,6 +32,8 @@ enum ActionType: string
     case QuantityAdjust = 'adjusted quantity';
 
     // Users
+    case LoggedIn = 'logged in';
+    case LoggedOut = 'logged out';
     case TwoFactorReset = '2FA reset';
     case Merged = 'merged';
     case TokenRevoked = 'token revoked';

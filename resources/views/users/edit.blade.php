@@ -482,12 +482,12 @@
                                   :item="$user"
                               />
 
-                              <!-- VIP checkbox -->
+                              <!-- Priority user -->
                               <x-form.checkbox-row
                                   name="vip"
-                                  :label="trans('admin/users/general.vip_label')"
+                                  :label="trans('admin/users/general.priority_user_label')"
                                   :item="$user"
-                                  :help_text="trans('admin/users/general.vip_help')"
+                                  :help_text="trans('admin/users/general.priority_user_help')"
                               />
 
                               <!-- Auto assign checkbox -->

@@ -67,6 +67,10 @@ La página de envíos tiene tres pestañas:
 
 Los envíos que llegan hoy o están atrasados también aparecen en **Requiere atención** del tablero y en el contador del menú.
 
+<!-- admin-only -->
+
 ## Configurar los aprobadores de compras
 
 En **Configuraciones → General**, sección **Aprobaciones de compra**, un superadministrador elige las personas que pueden figurar como aprobadoras en los envíos.
+
+<!-- end-admin-only -->

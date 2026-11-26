@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'connection_problem' => 'Revisa la configuración del destino y los permisos para escribir, leer y eliminar archivos.',
     'title' => 'Copia en la nube',
     'open' => 'Copia en la nube',
     'intro' => 'Cada backup se guarda en este servidor y, además, se puede copiar cifrado a Amazon S3 (o un servicio compatible) y a Google Drive.',

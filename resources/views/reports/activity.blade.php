@@ -107,7 +107,7 @@
                             style="width: 100%;"
                         >
                             @foreach ($actionTypes as $actionType)
-                                <option value="{{ $actionType }}">{{ ucwords($actionType) }}</option>
+                                <option value="{{ $actionType }}">{{ in_array($actionType, ['logged in', 'logged out'], true) ? trans('general.'.str_replace(' ', '_', $actionType)) : ucwords($actionType) }}</option>
                             @endforeach
                         </select>
                     </div>

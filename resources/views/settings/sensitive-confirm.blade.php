@@ -7,7 +7,7 @@
         <div class="row">
             <div class="col-md-6 col-md-offset-3">
                 <x-box :header="trans('cloud-backups.confirm_title')">
-                    <form method="POST" action="{{ route('sensitive.confirm.store') }}" class="sensitive-confirm" autocomplete="off">
+                    <form method="POST" action="{{ route('sensitive.confirm.store') }}" class="sensitive-confirm" autocomplete="off" data-credential-form>
                         @csrf
                         <p>{{ trans('cloud-backups.confirm_intro', ['minutes' => $minutes]) }}</p>
 

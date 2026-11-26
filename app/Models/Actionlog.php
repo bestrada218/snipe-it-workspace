@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,34 @@ class Actionlog extends SnipeModel
 {
     use CompanyableTrait;
     use HasFactory;
+
+    /**
+     * @param  array<string, mixed>  $previous
+     * @param  array<string, mixed>  $current
+     */
+    public static function logSettingsChanges(User $actor, string $section, array $previous, array $current): void
+    {
+        $before = Arr::dot($previous);
+        $after = Arr::dot($current);
+        $changed = [];
+        foreach (array_keys($before + $after) as $field) {
+            if (($before[$field] ?? null) !== ($after[$field] ?? null)) {
+                $changed[] = $field;
+            }
+        }
+
+        if ($changed === []) {
+            return;
+        }
+
+        $log = new self;
+        $log->created_by = $actor->id;
+        $log->company_id = null;
+        $log->note = $section.' — '.implode(', ', $changed);
+        if (! $log->logaction(ActionType::Update)) {
+            throw new \RuntimeException('Could not record the configuration update.');
+        }
+    }
 
     public function scopeForEnabledInventoryModules(Builder $query, bool $filterModules = true): Builder
     {

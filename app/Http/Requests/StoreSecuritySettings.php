@@ -24,6 +24,7 @@ class StoreSecuritySettings extends FormRequest
     public function rules(): array
     {
         return [
+            'two_factor_enabled' => 'nullable|in:0,1,2,3',
             'pwd_secure_min' => 'numeric|required|min:8',
             'custom_forgot_pass_url' => 'url|nullable',
             'privacy_policy_link' => 'nullable|url',

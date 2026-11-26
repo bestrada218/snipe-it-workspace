@@ -48,11 +48,13 @@ Set any of these before `bash` to skip the questions or change the defaults:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `WORKSPACE_PORT` | `8000` | Web port |
-| `WORKSPACE_APP_URL` | `http://<IP>:8000` | Address people will use |
+| `WORKSPACE_APP_URL` | `http://localhost:8000` | Local address or the HTTPS address served by your reverse proxy |
 | `WORKSPACE_AUTO_UPDATE` | asked | `yes` / `no`: nightly automatic updates |
 | `WORKSPACE_KEEP_AWAKE` | asked | `yes` / `no`: disable sleep and suspend |
 | `WORKSPACE_DIR` | `/opt/snipe-it-workspace` | Install folder |
 | `WORKSPACE_BRANCH` | `main` | Branch to follow |
+
+On a new installation, Docker listens on `127.0.0.1` and backups are encrypted with a generated password stored in `.env`. Keep a protected copy of that file off the server. For network access, configure a reverse proxy with a valid TLS certificate and direct it to the local port. Installing with an HTTPS URL enables secure cookies.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bestrada218/snipe-it-workspace/main/scripts/workspace-setup.sh | WORKSPACE_PORT=80 WORKSPACE_AUTO_UPDATE=no bash
@@ -148,6 +150,8 @@ Everything in Snipe-IT is still there. On top of it:
 ## Backups
 
 Backups run every 6 hours (01:30, 07:30, 13:30 and 19:30) and are kept on the server; half an hour later they are also copied to a *Snipe-IT Workspace backups* folder in your Documents. `snipe-it-workspace backups` lists them, and they can be downloaded or restored from **Settings → Backups**.
+
+Web downloads ask superadmins to confirm their password and second factor. The legacy backup API is disabled by default. Existing automation that requires it can explicitly set `ALLOW_BACKUP_API=true` on a protected deployment.
 
 To also send an **encrypted copy off the server**, open **Settings → Backups → Cloud copies**. Only superadmins can open it, and only after typing their password and a two-factor code again (someone without two-factor sets it up right there). The credentials are stored encrypted, a *Test connection* button checks each destination, and the page shows how the last copy to each one went.
 

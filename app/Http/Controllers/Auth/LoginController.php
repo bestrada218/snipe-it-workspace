@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\ActionType;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
+use App\Listeners\LogSuccessfulLogin;
 use App\Models\Ldap;
 use App\Models\SamlNonce;
 use App\Models\Setting;
@@ -496,7 +498,11 @@ class LoginController extends Controller
             $user->two_factor_enrolled = 1;
             $user->last_login = \Carbon::now();
             $user->saveQuietly();
+            $completingLogin = $user->two_factor_active() && $request->session()->get('2fa_authed') != $user->id;
             $request->session()->put('2fa_authed', $user->id);
+            if ($completingLogin) {
+                LogSuccessfulLogin::recordSessionActivity($user, ActionType::LoggedIn);
+            }
 
             return Helper::safeIntended()->with('success', trans('auth/message.signin.success'));
         }

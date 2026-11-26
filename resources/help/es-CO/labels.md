@@ -20,6 +20,8 @@ Al lado va el **código de barras o QR** de la placa, sin tapar el texto.
 
 Se abre una vista lista para imprimir con el formato de etiqueta configurado. Usa la impresora de etiquetas y revisa en la vista previa que el tamaño coincida con el rollo.
 
+<!-- admin-only -->
+
 ## Configurar el formato
 
 En **Configuraciones → Etiquetas** un administrador define:
@@ -30,3 +32,5 @@ En **Configuraciones → Etiquetas** un administrador define:
 - El **tipo de código** (QR o código de barras) y si se imprime el logo.
 
 > Si cambias la plantilla, imprime primero una etiqueta de prueba.
+
+<!-- end-admin-only -->

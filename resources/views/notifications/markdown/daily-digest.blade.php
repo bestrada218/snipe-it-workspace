@@ -8,16 +8,9 @@
 
 @endif
 @foreach ($sections as $key => $section)
-## {{ trans('mail-settings.digest.sections.'.$key) }} ({{ $section['count'] }})
-
-@foreach ($section['items'] as $item)
-- [{{ $item['label'] }}]({{ $item['url'] }}){{ $item['detail'] ? ' — '.$item['detail'] : '' }}
+- {{ trans('mail-settings.digest.sections.'.$key) }} ({{ $section['count'] }})
 @endforeach
-@if ($section['count'] > count($section['items']))
-- {{ trans('mail-settings.digest.and_more', ['count' => $section['count'] - count($section['items'])]) }}
-@endif
 
-@endforeach
 @component('mail::button', ['url' => route('home')])
 {{ trans('mail-settings.digest.open') }}
 @endcomponent

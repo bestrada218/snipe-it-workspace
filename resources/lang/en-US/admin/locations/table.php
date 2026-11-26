@@ -42,5 +42,5 @@ return [
     'signed_by' => 'Signed Off By:',
     'clone' => 'Clone Location',
     'is_storage' => 'Storage / warehouse',
-    'is_storage_help' => 'Mark warehouses and store rooms. Anything assigned here shows as stored, not as a fixed asset in use.',
+    'is_storage_help' => 'Use this for physical storage areas. An asset can be kept in a warehouse and remain unassigned. Stored assets are excluded from the fixed assets in use view.',
 ];

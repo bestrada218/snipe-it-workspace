@@ -14,6 +14,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -151,15 +152,14 @@ class SetupController extends Controller
     {
 
         $user = new User;
-        $user->first_name = $data['first_name'] = $request->input('first_name');
+        $user->first_name = $request->input('first_name');
         $user->last_name = $request->input('last_name');
-        $user->email = $data['email'] = $request->input('email');
+        $user->email = $request->input('email');
         $user->activated = 1;
         $permissions = ['superuser' => 1];
         $user->permissions = json_encode($permissions);
-        $user->username = $data['username'] = $request->input('username');
+        $user->username = $request->input('username');
         $user->password = bcrypt($request->input('password'));
-        $data['password'] = $request->input('password');
 
         $settings = new Setting;
         $settings->full_multiple_companies_support = $request->input('full_multiple_companies_support', 0);
@@ -167,6 +167,7 @@ class SetupController extends Controller
         $settings->alert_email = $request->input('email');
         $settings->alerts_enabled = 1;
         $settings->pwd_secure_min = 10;
+        $settings->two_factor_enabled = '3';
         $settings->brand = 1;
         $request->validate([
             'link_light_color' => ['nullable', new CssColor],
@@ -189,20 +190,25 @@ class SetupController extends Controller
 
         if ((! $user->isValid()) || (! $settings->isValid())) {
             return redirect()->to(Helper::sameOriginUrl(url()->previous()) ?? route('setup.user'))
-                ->withInput()->withErrors($user->getErrors())->withErrors($settings->getErrors());
+                ->withInput($request->except(['password', 'password_confirmation']))
+                ->withErrors($user->getErrors())->withErrors($settings->getErrors());
         } else {
-            $user->save();
-            Auth::login($user, true);
-            $settings->save();
+            $lock = Cache::lock('workspace-initial-setup', 60);
+            abort_unless($lock->get(), 409);
 
-            if ($request->input('email_creds') == '1') {
-                $data = [];
-                $data['email'] = $user->email;
-                $data['username'] = $user->username;
-                $data['first_name'] = $user->first_name;
-                $data['last_name'] = $user->last_name;
-                $data['password'] = $request->input('password');
-                $user->notify(new FirstAdminNotification($data));
+            try {
+                abort_if(Setting::setupCompleted(), 409);
+                DB::transaction(function () use ($user, $settings): void {
+                    abort_unless($user->save() && $settings->save(), 409);
+                });
+            } finally {
+                $lock->release();
+            }
+
+            Auth::login($user);
+
+            if ($request->boolean('email_creds') && filled($user->email)) {
+                $user->notify(new FirstAdminNotification(['first_name' => $user->first_name]));
             }
 
             return redirect()

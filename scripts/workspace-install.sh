@@ -20,7 +20,26 @@ fi
 if [ -f .env ]; then
     echo ".env already exists: keeping it."
 else
-    cp .env.docker .env
+    port="${WORKSPACE_PORT:-8000}"
+    if [[ ! "$port" =~ ^[1-9][0-9]{0,4}$ ]] || (( port > 65535 )); then
+        echo "WORKSPACE_PORT must be between 1 and 65535." >&2
+        exit 1
+    fi
+    default_url="http://localhost:${port}"
+    app_url="${WORKSPACE_APP_URL:-}"
+    if [ -z "$app_url" ] && [ -r /dev/tty ]; then
+        read -rp "Browser address [${default_url}]. Use HTTPS with a reverse proxy for network access: " app_url </dev/tty || true
+    fi
+    app_url="${app_url:-$default_url}"
+    secure_cookies=false
+    if [[ "$app_url" =~ ^https://[a-zA-Z0-9.-]+(:[0-9]+)?(/[a-zA-Z0-9._/-]*)?$ ]]; then
+        secure_cookies=true
+    elif [ "$app_url" != "$default_url" ] && [ "$app_url" != "http://127.0.0.1:${port}" ]; then
+        echo "Use ${default_url} or an HTTPS address served by a reverse proxy." >&2
+        exit 1
+    fi
+
+    (umask 077; cp .env.docker .env)
     # Unique passwords for this server (never the example ones).
     sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$(openssl rand -hex 20)|" .env
     sed -i "s|^MYSQL_ROOT_PASSWORD=.*|MYSQL_ROOT_PASSWORD=$(openssl rand -hex 20)|" .env
@@ -30,20 +49,19 @@ else
     timezone="$(timedatectl show -p Timezone --value 2>/dev/null || echo UTC)"
     sed -i "s|^APP_TIMEZONE=.*|APP_TIMEZONE='${timezone}'|" .env
 
-    port="${WORKSPACE_PORT:-8000}"
     sed -i "s|^APP_PORT=.*|APP_PORT=${port}|" .env
-    default_url="http://$(hostname -I | awk '{print $1}'):${port}"
-    app_url="${WORKSPACE_APP_URL:-}"
-    if [ -z "$app_url" ]; then
-        if [ -r /dev/tty ]; then
-            read -rp "Address people will open in the browser [${default_url}]: " app_url </dev/tty || true
-        fi
-    fi
-    sed -i "s|^APP_URL=.*|APP_URL=${app_url:-$default_url}|" .env
+    sed -i "s|^APP_URL=.*|APP_URL=${app_url}|" .env
+    sed -i "s|^SECURE_COOKIES=.*|SECURE_COOKIES=${secure_cookies}|" .env
+    sed -i 's|^ENCRYPT=.*|ENCRYPT=true|' .env
+    sed -i "s|^ENABLE_CSP=.*|ENABLE_CSP=true|" .env
+    sed -i "s|^ENABLE_HSTS=.*|ENABLE_HSTS=${secure_cookies}|" .env
+    printf '\nAPP_BIND_ADDRESS=127.0.0.1\nBACKUP_ARCHIVE_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> .env
 fi
 
+chmod 600 .env
+
 echo "Building the Snipe-IT Workspace image (a few minutes the first time)..."
-"${COMPOSE[@]}" build app
+"${COMPOSE[@]}" build --pull app
 
 # The example .env ships with a public key: replace it with a new one.
 if grep -q '^APP_KEY=base64:3ilviXqB9u6DX1NRcyWGJ+sjySF+H18CPDGb3+IVwMQ=' .env || grep -q '^APP_KEY=$' .env; then

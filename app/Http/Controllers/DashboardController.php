@@ -93,12 +93,7 @@ class DashboardController extends Controller
             Artisan::call('passport:install', ['--no-interaction' => true]);
         }
 
-        $replacementCounts = [];
-        if (Gate::allows('index', Asset::class)) {
-            foreach (AssetReplacement::windows() as $key => $window) {
-                $replacementCounts[$key] = AssetReplacement::query($window)->count();
-            }
-        }
+        $replacementCounts = Gate::allows('index', Asset::class) ? AssetReplacement::windowCounts() : [];
 
         return view('dashboard')
             ->with('attention', $this->attentionItems($replacementCounts))

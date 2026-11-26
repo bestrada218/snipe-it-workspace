@@ -48,6 +48,7 @@
                                                 '' => trans('admin/settings/general.two_factor_disabled'),
                                                 '1' => trans('admin/settings/general.two_factor_optional'),
                                                 '2' => trans('admin/settings/general.two_factor_required'),
+                                                '3' => trans('admin/settings/general.two_factor_required_superusers'),
                                             ]"
                                             :disabled="config('app.lock_passwords')"
                                         />

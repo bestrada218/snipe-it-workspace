@@ -7,6 +7,7 @@ return [
         'success' => 'Configuración actualizada correctamente.',
     ],
     'backup' => [
+        'generation_failed' => 'No se pudo crear la copia de seguridad. Revisa el monitor de copias y el registro del servidor.',
         'delete_confirm' => '¿Está seguro de que desea eliminar este archivo de respaldo? Esta acción no puede se puede deshacer. ',
         'file_deleted' => 'El archivo de copia de seguridad se ha eliminado correctamente. ',
         'generated' => 'Se ha creado correctamente un nuevo archivo de copia de seguridad.',
@@ -16,6 +17,8 @@ return [
         'delete_disabled_help' => 'La eliminación de copias de seguridad está deshabilitada. Contacte a su administrador si quiere habilitarla.',
     ],
     'restore' => [
+        'in_progress' => 'Ya hay una restauración de copia de seguridad en curso.',
+        'wipe_failed' => 'No se pudo preparar la base de datos para la recuperación. Verifica su estado. La copia previa :backup está disponible.',
         'success' => 'Se ha restaurado la copia de seguridad de su sistema. Por favor, vuelva a iniciar sesión.',
         'archive_unusable' => 'La copia :filename no se puede restaurar (:reason). La base de datos no se modificó.',
         'archive_invalid' => 'La copia de seguridad seleccionada (:filename) no es un archivo zip válido. La restauración se canceló antes de tocar la base de datos.',

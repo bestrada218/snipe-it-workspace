@@ -28,52 +28,67 @@ class RequireSensitiveConfirmation
     /** Form field that carries the page token. */
     public const FIELD = '_sensitive';
 
+    public const INTENDED = 'sensitive_intended';
+
     /** Minutes a pass or a page token stays valid. */
     public const MINUTES = 15;
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $scope): Response
     {
         $session = $request->session();
 
-        if ($request->isMethod('GET')) {
+        if ($request->isMethod('GET') || $request->isMethod('HEAD')) {
             $pass = $session->pull(self::SESSION_KEY);
-            if (! $this->isFresh($request, $pass)) {
-                $session->put('url.sensitive_intended', $request->fullUrl());
+            if (! $this->isFresh($request, $pass, $scope)) {
+                $route = $request->route();
+                $parameters = array_intersect_key($route->parameters(), array_flip($route->parameterNames()));
 
-                return redirect()->route('sensitive.confirm');
+                return $this->challenge($request, $scope, $parameters);
             }
 
             $token = Str::random(40);
-            $session->put(self::PAGE_TOKEN, ['user' => $request->user()->id, 'at' => now()->getTimestamp(), 'token' => $token]);
+            $session->put(self::PAGE_TOKEN, ['user' => $request->user()->id, 'at' => now()->getTimestamp(), 'token' => $token, 'scope' => $scope]);
             $request->attributes->set(self::FIELD, $token);
 
             return $next($request);
         }
 
         $page = $session->get(self::PAGE_TOKEN);
-        if (! $this->isFresh($request, $page) || ! hash_equals((string) ($page['token'] ?? ''), (string) $request->input(self::FIELD))) {
-            return redirect()->route('sensitive.confirm');
+        $token = $request->input(self::FIELD);
+        if (! $this->isFresh($request, $page, $scope) || ! is_string($token)
+            || ! is_string($page['token'] ?? null) || ! hash_equals($page['token'], $token)) {
+            return $this->challenge($request, $scope);
         }
 
+        $session->forget(self::PAGE_TOKEN);
         $response = $next($request);
-        self::grant($request);
+        self::grant($request, $scope);
 
         return $response;
     }
 
     /** Leave a one-time pass for the next opening of the page. */
-    public static function grant(Request $request): void
+    public static function grant(Request $request, string $scope): void
     {
-        $request->session()->put(self::SESSION_KEY, ['user' => $request->user()->id, 'at' => now()->getTimestamp()]);
+        $request->session()->put(self::SESSION_KEY, ['user' => $request->user()->id, 'at' => now()->getTimestamp(), 'scope' => $scope]);
     }
 
     /**
-     * @param  mixed  $entry
+     * @param  array<string, mixed>  $parameters
      */
-    private function isFresh(Request $request, $entry): bool
+    private function challenge(Request $request, string $scope, array $parameters = []): Response
+    {
+        $request->session()->forget([self::SESSION_KEY, self::PAGE_TOKEN]);
+        $request->session()->put(self::INTENDED, ['scope' => $scope, 'parameters' => $parameters]);
+
+        return redirect()->route('sensitive.confirm');
+    }
+
+    private function isFresh(Request $request, mixed $entry, string $scope): bool
     {
         return is_array($entry)
             && ($entry['user'] ?? null) === $request->user()?->id
+            && ($entry['scope'] ?? null) === $scope
             && ($entry['at'] ?? 0) >= now()->subMinutes(self::MINUTES)->getTimestamp();
     }
 }

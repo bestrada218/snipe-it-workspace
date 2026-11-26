@@ -150,6 +150,10 @@
         :helpText="trans('general.location_edit_help')"
     />
 
+    @if ($item?->exists && ! $item->assigned_to)
+        <x-form.warehouse-edit />
+    @endif
+
     {{-- Default (ready-to-deploy) location --}}
     <x-input.location-select
         :label="trans('admin/hardware/form.default_location')"

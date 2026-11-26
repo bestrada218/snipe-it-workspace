@@ -12,7 +12,31 @@ node_modules
 .idea
 
 # Local secrets and development files never go into the image.
-.env
+.env*
+**/.env
+**/.env.*
 .local-dev
 .lima
 tests/coverage
+storage/logs/*
+!storage/logs/.gitignore
+storage/debugbar/*
+!storage/debugbar/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+!storage/framework/cache/.gitignore
+storage/app/*
+!storage/app/.gitignore
+storage/private_uploads/**/*
+!storage/private_uploads/**/.gitignore
+!storage/private_uploads/**/.gitkeep
+storage/*.key
+storage/*.cert
+bootstrap/cache/*.php
+public/uploads/**/*
+!public/uploads/**/.gitignore
+!public/uploads/**/.gitkeep
+!public/uploads/default.png
+!public/uploads/barcodes/invalid_barcode.gif

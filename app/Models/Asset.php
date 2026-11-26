@@ -300,6 +300,11 @@ class Asset extends Depreciable
     protected static function booted(): void
     {
         // Moving an asset into a damaged/undeployable status needs a report.
+        static::saving(function (Asset $asset): void {
+            if ($asset->warehouse_location_id !== null && (filled($asset->assigned_to) || (int) $asset->warehouse_location_id !== (int) $asset->location_id)) {
+                $asset->warehouse_location_id = null;
+            }
+        });
         static::saving(fn (Asset $asset) => DamageReports::require($asset));
         static::saved(fn (Asset $asset) => DamageReports::record($asset));
 

@@ -46,9 +46,13 @@ La regla aplica en **todas** las formas de entregar algo: asignación individual
 
 Las filas marcadas «Sin justificación registrada» son duplicados de antes de esta regla o hechos por fuera del flujo; conviene revisarlos.
 
+<!-- admin-only -->
+
 ## Configurar aprobadores y categorías
 
 En **Configuraciones → General**, sección **Aprobación de asignaciones duplicadas** (solo superadministradores):
 
 - **Aprobadores autorizados**: las personas que pueden figurar como aprobadoras.
 - **Categorías que requieren aprobación**: donde un duplicado exige aprobador y comprobante. En las demás basta la justificación y el ticket.
+
+<!-- end-admin-only -->

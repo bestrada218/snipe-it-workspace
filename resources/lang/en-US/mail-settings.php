@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'transport_problem' => 'Check the mail server, credentials, and TLS certificate.',
     'title' => 'Email',
     'open' => 'Email and daily summary',
     'card_help' => 'Outgoing mail server and the daily summary of pending items.',

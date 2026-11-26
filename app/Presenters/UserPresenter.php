@@ -128,7 +128,7 @@ class UserPresenter extends Presenter
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => trans('admin/users/general.vip_label'),
+                'title' => trans('admin/users/general.priority_user_label'),
                 'visible' => false,
                 'formatter' => 'trueFalseFormatter',
             ],

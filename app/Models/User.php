@@ -137,6 +137,7 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
 
     protected $casts = [
         'activity_report_columns' => 'array',
+        'two_factor_secret' => 'encrypted',
         'manager_id' => 'integer',
         'location_id' => 'integer',
         'legacy_company_id' => 'integer',
@@ -1667,11 +1668,12 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
     }
 
     /**
-     * Check whether two-factor authorization is requiredfor this user
+     * Check whether two-factor authorization is required for this user
      *
      * 0 = 2FA disabled
      * 1 = 2FA optional
      * 2 = 2FA universally required
+     * 3 = 2FA required for superadmins
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      *
@@ -1679,50 +1681,19 @@ class User extends SnipeModel implements AuthenticatableContract, AuthorizableCo
      *
      * @return bool
      */
-    public function two_factor_active()
+    public function two_factor_active(): bool
     {
-
-        // If the 2FA is optional and the user has opted in
-        if ((Setting::getSettings()->two_factor_enabled == '1') && ($this->two_factor_optin == '1')) {
-            return true;
-        }
-
-        // If the 2FA is required for everyone so is implicitly active
-        elseif (Setting::getSettings()->two_factor_enabled == '2') {
-            return true;
-        }
-
-        return false;
+        return match ((string) Setting::getSettings()?->two_factor_enabled) {
+            '1' => (string) $this->two_factor_optin === '1',
+            '2' => true,
+            '3' => $this->isSuperUser(),
+            default => false,
+        };
     }
 
-    /**
-     * Check whether two-factor authorization is required and the user has activated it
-     * and enrolled a device
-     *
-     * 0 = 2FA disabled
-     * 1 = 2FA optional
-     * 2 = 2FA universally required
-     *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
-     *
-     * @since  [v4.6.14]
-     *
-     * @return bool
-     */
-    public function two_factor_active_and_enrolled()
+    public function two_factor_active_and_enrolled(): bool
     {
-
-        // If the 2FA is optional and the user has opted in and is enrolled
-        if ((Setting::getSettings()->two_factor_enabled == '1') && ($this->two_factor_optin == '1') && ($this->two_factor_enrolled == '1')) {
-            return true;
-        }
-        // If the 2FA is required for everyone and the user has enrolled
-        elseif ((Setting::getSettings()->two_factor_enabled == '2') && ($this->two_factor_enrolled)) {
-            return true;
-        }
-
-        return false;
-
+        return $this->two_factor_active() && (string) $this->two_factor_enrolled === '1';
     }
 
     /**

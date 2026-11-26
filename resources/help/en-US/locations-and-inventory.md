@@ -4,21 +4,23 @@ How locations are organized, what a storage location is, how inventory modules a
 
 ## Locations as a tree
 
-Locations are organized as a tree: **country → state → clinic**. Each location can have a **parent location**. They are managed in [Settings → Locations](route:locations.index).
+Locations can be organized in a hierarchy, such as **region → site → warehouse**. Each location can have a **parent location**. [Settings → Locations](route:locations.index)
 
 The tree is used in several places:
 
 - The **XX** part of the [asset tag](help:asset-tags) is the parent location, usually the state.
-- In [returns](help:returns) only clinics, the last level, can be chosen.
-- A [group limited to a location](#groups-limited-to-a-location) also sees the locations under it.
+- For internal storage in [returns](help:returns), choose an eligible location at the deepest level.
+- A group limited to a location also sees the locations under it.
 
 ## Storage locations
 
 When editing a location, the **Storage / warehouse** box marks it as a warehouse or store room. What is in a storage location counts as **stored**, not **installed and in use**.
 
-This matters because a fixed asset can be in use at a clinic (a TV on a wall) or stored because it is not being used. Items assigned to a storage location **do not appear** as in use in location-based modules.
+A fixed asset can be installed at a site or stored in a warehouse. Location-based modules show installed assets separately from warehouse stock.
 
-The Rippling warehouse location, for returns, must be marked as storage.
+The external provider warehouse location, for returns, must be marked as storage.
+
+<!-- admin-only -->
 
 ## Inventory modules
 
@@ -41,8 +43,10 @@ The module lists the assets **assigned to a location** that match, leaving out s
 
 ## Groups limited to a location
 
-In the admin page (the gear at the top right) → **Groups**, when editing a group, the **Location scope** field limits what its members can see and do to one location and the ones under it. For example, the Edgewater clinic team only works with Edgewater.
+In the admin page (the gear at the top right) → **Groups**, when editing a group, the **Location scope** field limits what its members can see and do to one location and the ones under it.
 
 - Leave it blank for no location limit.
 - The group's permissions (view, create, check out…) are set below as usual.
 - Choosing a location outside the scope is refused.
+
+<!-- end-admin-only -->

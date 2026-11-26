@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'connection_problem' => 'Check the destination settings and permissions to write, read, and remove files.',
     'title' => 'Cloud copies',
     'open' => 'Cloud copies',
     'intro' => 'Every backup is kept on this server and can also be copied, encrypted, to Amazon S3 (or a compatible service) and to Google Drive.',

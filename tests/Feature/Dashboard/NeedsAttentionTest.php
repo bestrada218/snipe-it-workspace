@@ -6,10 +6,23 @@ use App\Models\Asset;
 use App\Models\AssetShipment;
 use App\Models\Maintenance;
 use App\Models\User;
+use App\Services\AssetReplacement;
 use Tests\TestCase;
 
 class NeedsAttentionTest extends TestCase
 {
+    public function test_replacement_counts_match_the_individual_windows(): void
+    {
+        $this->actingAs(User::factory()->superuser()->create());
+        foreach ([-2, 0, 7, 20, 45, 110] as $days) {
+            Asset::factory()->create(['replacement_due_on' => today()->addDays($days)->toDateString()]);
+        }
+
+        $expected = array_map(fn (array $window): int => AssetReplacement::query($window)->count(), AssetReplacement::windows());
+
+        $this->assertSame($expected, AssetReplacement::windowCounts());
+    }
+
     public function test_shows_what_needs_action(): void
     {
         Asset::factory()->create(['replacement_due_on' => now()->addDays(5)->toDateString()]);

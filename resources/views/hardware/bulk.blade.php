@@ -156,6 +156,8 @@
                     :selected="old('rtd_location_id')"
                 />
 
+                <x-form.warehouse-edit />
+
                 {{-- Actual-location update rule (3-way radio) --}}
                 <x-form.radio-row
                     name="update_real_loc"
